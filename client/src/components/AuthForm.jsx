@@ -45,7 +45,7 @@ function AuthForm({ mode }) {
   return (
     <div className="auth-container">
       <div className="auth-box">
-        <h1 className="logo">TECHNOVA</h1>
+        <h1 className="logo">......</h1>
         <h2>{isLogin ? "Đăng nhập tài khoản" : "Tạo tài khoản mới"}</h2>
 
         <form onSubmit={handleSubmit}>

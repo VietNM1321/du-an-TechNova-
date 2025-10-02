@@ -2,7 +2,7 @@ import mongoose from "mongoose";
 
 const BookSchema = new mongoose.Schema(
   {
-    title: {
+    title: { 
       type: String,
       required: [true, "Vui lòng cung cấp tên sách"],
       trim: true,
