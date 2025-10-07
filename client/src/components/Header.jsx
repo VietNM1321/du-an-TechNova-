@@ -7,7 +7,6 @@ import {
   faHistory,
   faLocationDot,
   faMagnifyingGlass,
-  faSignIn,
   faSignOut,
   faUser,
 } from '@fortawesome/free-solid-svg-icons'
@@ -26,10 +25,7 @@ const Header = () => {
         </div>
 
         {/* Search */}
-        <form
-          action=""
-          className="relative w-72 max-w-md hidden md:block"
-        >
+        <form action="" className="relative w-72 max-w-md hidden md:block">
           <input
             type="text"
             placeholder="Tìm sách..."
@@ -97,16 +93,11 @@ const Header = () => {
               </li>
             </ul>
           </div>
-
-          {/* Nếu chưa login thì show Login */}
-          {/* <Link to="/login" className="hover:text-blue-600">
-            <FontAwesomeIcon icon={faSignIn} /> Login
-          </Link> */}
         </div>
       </div>
 
       {/* Navigation */}
-      <nav className="bg-blue-700">
+      <nav className="bg-blue-700 relative">
         <ul className="container mx-auto flex gap-6 items-center px-4">
           <li>
             <Link
@@ -116,6 +107,26 @@ const Header = () => {
               Trang chủ
             </Link>
           </li>
+
+          {/* Thay “Thể loại sách” bằng “Sách” */}
+          <li>
+            <Link
+              to="/books"
+              className="text-white px-4 py-3 block hover:bg-blue-800 rounded transition"
+            >
+              Sách
+            </Link>
+          </li>
+
+          <li>
+            <Link
+              to="/authors"
+              className="text-white px-4 py-3 block hover:bg-blue-800 rounded transition"
+            >
+              Tác giả
+            </Link>
+          </li>
+
           <li>
             <Link
               to="/about"
