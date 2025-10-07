@@ -4,6 +4,7 @@ import Login from "./pages/Login";
 import Register from "./pages/Register";
 import AdminLayout from "./layout/AdminLayout";
 import ClientLayout from "./layout/ClientLayout";
+import AdminHome from "./pages/AdminHome";
 
 function App() {
   return (
@@ -16,8 +17,10 @@ function App() {
           <Route path="register" element={<Register />} />
         </Route>
 
-        {/* Layout cho admin (nếu có) */}
-        <Route path="/admin/*" element={<AdminLayout />} />
+        {/* Layout cho admin */}
+        <Route path="/admin/*" element={<AdminLayout />}>
+          <Route index element={<AdminHome />} />
+        </Route>
       </Routes>
     </Router>
   );
