@@ -130,14 +130,7 @@ const Header = () => {
               Tác giả
             </Link>
           </li>
-          <li>
-            <Link
-              to="/categories"
-              className="text-white px-4 py-3 block hover:bg-[#c89f7b] rounded transition"
-            >
-              Thể loại
-            </Link>
-          </li>
+          
           <li>
             <Link
               to="/about"
