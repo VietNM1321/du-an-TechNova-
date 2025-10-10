@@ -11,6 +11,15 @@ router.get("/", async (req, res) => {
     res.status(500).json({ message: "Lỗi server", error });
   }
 });
+router.get("/:id", async (req, res) => {
+  try {
+    const {id} = req.params;
+    const categories = await Category.findById(id);
+    res.json(categories);
+  } catch (error) {
+    res.status(500).json({ message: "Lỗi server", error });
+  }
+});
 
 router.post("/", async (req, res) => {
   try {

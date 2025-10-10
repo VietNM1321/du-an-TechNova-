@@ -8,7 +8,15 @@ router.get("/", async (req, res) => {
   const authors = await Author.find();
   res.json(authors);
 });
-
+router.get("/:id", async (req, res) => {
+  try {
+    const {id} = req.params;
+    const author = await Author.findById(id);
+    res.json(author);
+  } catch (error) {
+    res.status(500).json({ message: "Lỗi server", error });
+  }
+});
 router.post("/", async (req, res) => {
   const author = new Author(req.body);
   await author.save();
