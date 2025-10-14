@@ -44,7 +44,7 @@ const CategoryManager = () => {
   const handleDelete = async (id) => {
     if (window.confirm("Bạn có chắc muốn xóa thể loại này?")) {
       try {
-        await axios.delete(`http://localhost:5000/api/categories/${id}`);
+        await axios.delete(`http://localhost:5000/categories/${id}`);
         alert("🗑️ Xóa thành công!");
         fetchCategories();
       } catch (err) {

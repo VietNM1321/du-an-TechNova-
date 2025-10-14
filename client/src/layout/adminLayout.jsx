@@ -6,9 +6,11 @@ const sidebarLinks = [
   { to: "/admin", label: "Bảng điều khiển", icon: "🏠" },
   { to: "/admin/categories", label: "Quản lý danh mục", icon: "📚" },
   { to: "/admin/users", label: "Quản lý người dùng", icon: "👤" },
+  { to: "/admin/setpassword", label: "Cấp mật khẩu", icon: "🔑" }, 
   { to: "/admin/products", label: "Quản lý sản phẩm", icon: "📦" },
   { to: "/admin/orders", label: "Quản lý đơn hàng", icon: "🧾" },
 ];
+
 
 const AdminLayout = () => {
   const location = useLocation();

@@ -1,30 +1,33 @@
 import React, { useState } from "react";
 import axios from "axios";
 
-const Register = () => {
+const ForgotPassword = () => {
   const [studentCode, setStudentCode] = useState("");
   const [email, setEmail] = useState("");
+  const [newPassword, setNewPassword] = useState("");
   const [message, setMessage] = useState("");
 
-  const handleRegister = async (e) => {
+  const handleResetPassword = async (e) => {
     e.preventDefault();
     try {
-      const res = await axios.post("http://localhost:5000/auth/register", {
+      const res = await axios.post("http://localhost:5000/api/auth/forgot-password", {
         studentCode,
         email,
+        newPassword,
       });
       setMessage(res.data.message);
       setStudentCode("");
       setEmail("");
+      setNewPassword("");
     } catch (err) {
-      setMessage(err.response?.data?.message || "Đăng ký thất bại!");
+      setMessage(err.response?.data?.message || "Yêu cầu cấp lại mật khẩu thất bại!");
     }
   };
 
   return (
     <div className="auth-form">
-      <h2>Đăng ký tài khoản sinh viên</h2>
-      <form onSubmit={handleRegister}>
+      <h2>Xin cấp lại mật khẩu</h2>
+      <form onSubmit={handleResetPassword}>
         <input
           type="text"
           placeholder="Mã sinh viên"
@@ -39,11 +42,18 @@ const Register = () => {
           onChange={(e) => setEmail(e.target.value)}
           required
         />
-        <button type="submit">Đăng ký</button>
+        <input
+          type="password"
+          placeholder="Mật khẩu mới"
+          value={newPassword}
+          onChange={(e) => setNewPassword(e.target.value)}
+          required
+        />
+        <button type="submit">Cấp lại mật khẩu</button>
       </form>
       {message && <p>{message}</p>}
     </div>
   );
 };
 
-export default Register;
+export default ForgotPassword;
