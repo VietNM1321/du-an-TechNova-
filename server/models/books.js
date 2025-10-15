@@ -39,6 +39,10 @@ const BookSchema = new mongoose.Schema(
       required: [true, "Vui lòng chọn năm xuất bản"],
       min: [100, "Năm xuất bản không hợp lệ, phải > 100"],
     },
+    views: {
+      type: Number,
+      default: 0,
+    },
   },
   {
     timestamps: true,

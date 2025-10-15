@@ -4,8 +4,6 @@ import jwt from "jsonwebtoken";
 import User from "../models/user.js";
 
 const router = express.Router();
-
-// 📌 Register
 router.post("/register", async (req, res) => {
   try {
     const { name, email, password } = req.body;
@@ -13,17 +11,11 @@ router.post("/register", async (req, res) => {
     if (!name || !email || !password) {
       return res.status(400).json({ message: "Thiếu thông tin" });
     }
-
-    // Kiểm tra email đã tồn tại chưa
     const existingUser = await User.findOne({ email });
     if (existingUser) {
       return res.status(400).json({ message: "Email đã tồn tại" });
     }
-
-    // Mã hóa mật khẩu
     const hashedPassword = await bcrypt.hash(password, 10);
-
-    // Tạo user mới
     const newUser = new User({
       name,
       email,

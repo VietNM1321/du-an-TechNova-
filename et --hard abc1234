@@ -1,0 +1,11 @@
+[33m9fbd84e[m[33m ([m[1;36mHEAD[m[33m -> [m[1;32mmain[m[33m, [m[1;31morigin/main[m[33m, [m[1;31morigin/HEAD[m[33m)[m HEAD@{0}: pull origin main: Fast-forward
+[33m16f7097[m HEAD@{1}: checkout: moving from tuananh to main
+[33m6feffb4[m[33m ([m[1;32mtuananh[m[33m)[m HEAD@{2}: commit: update code 8/10 gd va dm
+[33mef9c6c5[m[33m ([m[1;31morigin/tuananh[m[33m)[m HEAD@{3}: commit: code danh muc va tac gia
+[33m16f7097[m HEAD@{4}: checkout: moving from tuananh to tuananh
+[33m16f7097[m HEAD@{5}: checkout: moving from main to tuananh
+[33m16f7097[m HEAD@{6}: pull origin main: Fast-forward
+[33m6a3475e[m HEAD@{7}: commit: cap nhat dki dang nhap
+[33med05095[m HEAD@{8}: commit: cap nhat dki dang nhap
+[33m0942e69[m HEAD@{9}: commit: dang ki dang nhap
+[33m90dc9b0[m HEAD@{10}: clone: from https://github.com/VietNM1321/du-an-TechNova-.git

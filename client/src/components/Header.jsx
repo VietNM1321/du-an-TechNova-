@@ -1,149 +1,179 @@
-import logo from '../assets/logo.png'
-import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
+import { Link } from "react-router-dom";
+import { motion, AnimatePresence } from "framer-motion";
 import {
-  faCartShopping,
-  faClock,
-  faDashboard,
-  faHistory,
-  faLocationDot,
-  faMagnifyingGlass,
-  faSignIn,
-  faSignOut,
-  faUser,
-} from '@fortawesome/free-solid-svg-icons'
-import { Link } from 'react-router-dom'
+  Search,
+  ShoppingCart,
+  User,
+  Menu,
+  X,
+  LogOut,
+  LayoutDashboard,
+  History,
+} from "lucide-react";
+import { useState } from "react";
+import logo from "../assets/logo.png";
 
 const Header = () => {
+  const [menuOpen, setMenuOpen] = useState(false);
+  const [searchOpen, setSearchOpen] = useState(false);
+
   return (
-    <header className="w-full shadow-md bg-white">
-      {/* Top bar */}
-      <div className="container mx-auto flex justify-between items-center py-3 px-4">
+    <header className="fixed top-0 w-full z-50 bg-white text-gray-800 shadow-sm border-b border-gray-200">
+      <div className="container mx-auto flex items-center justify-between px-6 py-3">
         {/* Logo */}
-        <div className="w-32 cursor-pointer">
-          <Link to="/">
-            <img src={logo} alt="logo" className="w-full object-contain" />
+        <Link to="/" className="flex items-center gap-2">
+          <img src={logo} alt="logo" className="h-10 w-auto" />
+        </Link>
+
+        {/* Navigation */}
+        <nav className="hidden md:flex gap-8 text-sm font-medium">
+          {[
+            { label: "Trang Chủ", path: "/" },
+            { label: "Giới thiệu", path: "/about" },
+            { label: "Tác giả", path: "/authors" },
+            { label: "Tin tức", path: "/news"},
+            { label: "Chính sách", path: "/policies" },
+            { label: "Liên hệ", path: "/contact"}
+          ].map((item) => (
+            <Link
+              key={item.path}
+              to={item.path}
+              className="flex items-center gap-2 text-gray-700 hover:text-blue-600 transition-colors duration-200"
+            >
+              {item.label}
+            </Link>
+          ))}
+        </nav>
+
+        {/* Right icons */}
+        <div className="flex items-center gap-5">
+          {/* Search */}
+          <div className="relative">
+            <motion.button
+              whileHover={{ scale: 1.1 }}
+              onClick={() => setSearchOpen(!searchOpen)}
+              className="text-gray-700 hover:text-blue-600"
+            >
+              <Search size={20} />
+            </motion.button>
+
+            <AnimatePresence>
+              {searchOpen && (
+                <motion.div
+                  initial={{ opacity: 0, y: -10 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  exit={{ opacity: 0, y: -10 }}
+                  transition={{ duration: 0.2 }}
+                  className="absolute right-0 mt-3 bg-white border border-gray-200 rounded-full shadow-lg overflow-hidden"
+                >
+                  <input
+                    type="text"
+                    placeholder="Tìm kiếm sách..."
+                    className="px-4 py-2 w-60 outline-none text-sm text-gray-800"
+                    autoFocus
+                  />
+                </motion.div>
+              )}
+            </AnimatePresence>
+          </div>
+
+          {/* Cart */}
+          <Link to="/user/carts" className="relative text-gray-700 hover:text-blue-600">
+            <ShoppingCart size={22} />
+            <span className="absolute -top-2 -right-2 bg-blue-600 text-white text-xs w-4 h-4 rounded-full flex items-center justify-center">
+              3
+            </span>
           </Link>
-        </div>
 
-        {/* Search */}
-        <form
-          action=""
-          className="relative w-72 max-w-md hidden md:block"
-        >
-          <input
-            type="text"
-            placeholder="Tìm sách..."
-            className="w-full border border-gray-300 rounded-full py-2 pl-4 pr-10 text-sm focus:ring-2 focus:ring-blue-500 focus:outline-none"
-          />
-          <button
-            type="submit"
-            className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-500 hover:text-blue-600"
-          >
-            <FontAwesomeIcon icon={faMagnifyingGlass} />
-          </button>
-        </form>
-
-        {/* Info */}
-        <div className="flex items-center gap-6 text-gray-700">
-          <div className="flex items-center gap-1 text-sm hover:text-blue-600 cursor-pointer">
-            <FontAwesomeIcon icon={faLocationDot} /> Nam Định
-          </div>
-          <div className="flex items-center gap-1 text-sm hover:text-blue-600 cursor-pointer">
-            <FontAwesomeIcon icon={faClock} /> 24H
-          </div>
-
-          {/* User dropdown */}
-          <div className="relative group cursor-pointer">
-            <div className="p-2 hover:text-blue-600">
-              <FontAwesomeIcon icon={faUser} /> User Name
-            </div>
-            <ul className="absolute right-0 mt-2 hidden group-hover:block bg-white rounded-lg shadow-lg z-20 min-w-[200px] border">
+          {/* User menu */}
+          <div className="relative group">
+            <button className="text-gray-700 hover:text-blue-600">
+              <User size={20} />
+            </button>
+            <ul className="absolute right-0 mt-3 hidden group-hover:block bg-white text-gray-800 rounded-xl overflow-hidden shadow-xl w-48 border border-gray-100">
               <li>
                 <Link
                   to="/admin"
-                  className="block px-4 py-2 text-gray-700 hover:bg-blue-100"
+                  className="flex items-center gap-2 px-4 py-2 hover:bg-gray-100"
                 >
-                  <FontAwesomeIcon icon={faDashboard} /> Admin dashboard
+                  <LayoutDashboard size={16} /> Quản trị
                 </Link>
               </li>
               <li>
                 <Link
                   to="/user/profile"
-                  className="block px-4 py-2 text-gray-700 hover:bg-blue-100"
+                  className="flex items-center gap-2 px-4 py-2 hover:bg-gray-100"
                 >
-                  <FontAwesomeIcon icon={faUser} /> Tài khoản
-                </Link>
-              </li>
-              <li>
-                <Link
-                  to="/user/carts"
-                  className="block px-4 py-2 text-gray-700 hover:bg-blue-100"
-                >
-                  <FontAwesomeIcon icon={faCartShopping} /> Giỏ hàng
+                  <User size={16} /> Hồ sơ
                 </Link>
               </li>
               <li>
                 <Link
                   to="/books/history"
-                  className="block px-4 py-2 text-gray-700 hover:bg-blue-100"
+                  className="flex items-center gap-2 px-4 py-2 hover:bg-gray-100"
                 >
-                  <FontAwesomeIcon icon={faHistory} /> Lịch sử
+                  <History size={16} /> Lịch sử
                 </Link>
               </li>
               <li>
-                <p className="block px-4 py-2 text-gray-700 hover:bg-blue-100 cursor-pointer">
-                  <FontAwesomeIcon icon={faSignOut} /> Đăng xuất
-                </p>
+                <button className="w-full text-left flex items-center gap-2 px-4 py-2 hover:bg-gray-100">
+                  <LogOut size={16} /> Đăng xuất
+                </button>
               </li>
             </ul>
           </div>
 
-          {/* Nếu chưa login thì show Login */}
-          {/* <Link to="/login" className="hover:text-blue-600">
-            <FontAwesomeIcon icon={faSignIn} /> Login
-          </Link> */}
+          {/* Login Button */}
+          <Link
+            to="/login"
+            className="bg-blue-600 hover:bg-blue-700 text-white font-medium px-4 py-2 rounded-lg transition-colors duration-200"
+          >
+            Đăng nhập
+          </Link>
+
+          {/* Mobile button */}
+          <button
+            className="md:hidden text-gray-700 hover:text-blue-600"
+            onClick={() => setMenuOpen(!menuOpen)}
+          >
+            {menuOpen ? <X size={24} /> : <Menu size={24} />}
+          </button>
         </div>
       </div>
 
-      {/* Navigation */}
-      <nav className="bg-blue-700">
-        <ul className="container mx-auto flex gap-6 items-center px-4">
-          <li>
-            <Link
-              to="/"
-              className="text-white px-4 py-3 block hover:bg-blue-800 rounded transition"
-            >
-              Trang chủ
-            </Link>
-          </li>
-          <li>
-            <Link
-              to="/about"
-              className="text-white px-4 py-3 block hover:bg-blue-800 rounded transition"
-            >
-              Giới thiệu
-            </Link>
-          </li>
-          <li>
-            <Link
-              to="/news"
-              className="text-white px-4 py-3 block hover:bg-blue-800 rounded transition"
-            >
-              Tin tức
-            </Link>
-          </li>
-          <li>
-            <Link
-              to="/policies"
-              className="text-white px-4 py-3 block hover:bg-blue-800 rounded transition"
-            >
-              Chính sách bảo mật
-            </Link>
-          </li>
-        </ul>
-      </nav>
+      {/* Mobile Menu */}
+      <AnimatePresence>
+        {menuOpen && (
+          <motion.div
+            initial={{ height: 0 }}
+            animate={{ height: "auto" }}
+            exit={{ height: 0 }}
+            transition={{ duration: 0.3 }}
+            className="md:hidden bg-white border-t border-gray-200 overflow-hidden"
+          >
+            <ul className="flex flex-col py-2 text-gray-800 text-sm">
+              {[
+                { label: "Tìm kiếm", path: "/" },
+                { label: "Học liệu số", path: "/hoclieu" },
+                { label: "Thư viện cá nhân", path: "/thuvien" },
+                { label: "Giới thiệu", path: "/about" },
+              ].map((item) => (
+                <li key={item.path}>
+                  <Link
+                    to={item.path}
+                    onClick={() => setMenuOpen(false)}
+                    className="block px-6 py-3 hover:bg-gray-100"
+                  >
+                    {item.label}
+                  </Link>
+                </li>
+              ))}
+            </ul>
+          </motion.div>
+        )}
+      </AnimatePresence>
     </header>
-  )
-}
+  );
+};
 
-export default Header
+export default Header;
