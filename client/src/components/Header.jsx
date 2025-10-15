@@ -1,4 +1,4 @@
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
 import {
   Search,
@@ -10,12 +10,31 @@ import {
   LayoutDashboard,
   History,
 } from "lucide-react";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import logo from "../assets/logo.png";
 
 const Header = () => {
   const [menuOpen, setMenuOpen] = useState(false);
   const [searchOpen, setSearchOpen] = useState(false);
+  const [studentCode, setStudentCode] = useState(""); // 🔹 mã sinh viên
+  const navigate = useNavigate();
+
+  // 🔹 Lấy thông tin sinh viên từ localStorage
+  useEffect(() => {
+    const user = localStorage.getItem("user");
+    if (user) {
+      const parsedUser = JSON.parse(user);
+      setStudentCode(parsedUser.studentCode);
+    }
+  }, []);
+
+  // 🔹 Xử lý đăng xuất
+  const handleLogout = () => {
+    localStorage.removeItem("token");
+    localStorage.removeItem("user");
+    setStudentCode("");
+    navigate("/login");
+  };
 
   return (
     <header className="fixed top-0 w-full z-50 bg-white text-gray-800 shadow-sm border-b border-gray-200">
@@ -31,9 +50,9 @@ const Header = () => {
             { label: "Trang Chủ", path: "/" },
             { label: "Giới thiệu", path: "/about" },
             { label: "Tác giả", path: "/authors" },
-            { label: "Tin tức", path: "/news"},
+            { label: "Tin tức", path: "/news" },
             { label: "Chính sách", path: "/policies" },
-            { label: "Liên hệ", path: "/contact"}
+            { label: "Liên hệ", path: "/contact" },
           ].map((item) => (
             <Link
               key={item.path}
@@ -78,7 +97,10 @@ const Header = () => {
           </div>
 
           {/* Cart */}
-          <Link to="/user/carts" className="relative text-gray-700 hover:text-blue-600">
+          <Link
+            to="/user/carts"
+            className="relative text-gray-700 hover:text-blue-600"
+          >
             <ShoppingCart size={22} />
             <span className="absolute -top-2 -right-2 bg-blue-600 text-white text-xs w-4 h-4 rounded-full flex items-center justify-center">
               3
@@ -86,50 +108,54 @@ const Header = () => {
           </Link>
 
           {/* User menu */}
-          <div className="relative group">
-            <button className="text-gray-700 hover:text-blue-600">
-              <User size={20} />
-            </button>
-            <ul className="absolute right-0 mt-3 hidden group-hover:block bg-white text-gray-800 rounded-xl overflow-hidden shadow-xl w-48 border border-gray-100">
-              <li>
-                <Link
-                  to="/admin"
-                  className="flex items-center gap-2 px-4 py-2 hover:bg-gray-100"
-                >
-                  <LayoutDashboard size={16} /> Quản trị
-                </Link>
-              </li>
-              <li>
-                <Link
-                  to="/user/profile"
-                  className="flex items-center gap-2 px-4 py-2 hover:bg-gray-100"
-                >
-                  <User size={16} /> Hồ sơ
-                </Link>
-              </li>
-              <li>
-                <Link
-                  to="/books/history"
-                  className="flex items-center gap-2 px-4 py-2 hover:bg-gray-100"
-                >
-                  <History size={16} /> Lịch sử
-                </Link>
-              </li>
-              <li>
-                <button className="w-full text-left flex items-center gap-2 px-4 py-2 hover:bg-gray-100">
-                  <LogOut size={16} /> Đăng xuất
-                </button>
-              </li>
-            </ul>
-          </div>
-
-          {/* Login Button */}
-          <Link
-            to="/login"
-            className="bg-blue-600 hover:bg-blue-700 text-white font-medium px-4 py-2 rounded-lg transition-colors duration-200"
-          >
-            Đăng nhập
-          </Link>
+          {studentCode ? (
+            <div className="relative group">
+              <button className="text-gray-700 hover:text-blue-600 font-medium">
+                {studentCode}
+              </button>
+              <ul className="absolute right-0 mt-3 hidden group-hover:block bg-white text-gray-800 rounded-xl overflow-hidden shadow-xl w-48 border border-gray-100">
+                <li>
+                  <Link
+                    to="/admin"
+                    className="flex items-center gap-2 px-4 py-2 hover:bg-gray-100"
+                  >
+                    <LayoutDashboard size={16} /> Quản trị
+                  </Link>
+                </li>
+                <li>
+                  <Link
+                    to="/user/profile"
+                    className="flex items-center gap-2 px-4 py-2 hover:bg-gray-100"
+                  >
+                    <User size={16} /> Hồ sơ
+                  </Link>
+                </li>
+                <li>
+                  <Link
+                    to="/books/history"
+                    className="flex items-center gap-2 px-4 py-2 hover:bg-gray-100"
+                  >
+                    <History size={16} /> Lịch sử
+                  </Link>
+                </li>
+                <li>
+                  <button
+                    onClick={handleLogout}
+                    className="w-full text-left flex items-center gap-2 px-4 py-2 hover:bg-gray-100"
+                  >
+                    <LogOut size={16} /> Đăng xuất
+                  </button>
+                </li>
+              </ul>
+            </div>
+          ) : (
+            <Link
+              to="/login"
+              className="bg-blue-600 hover:bg-blue-700 text-white font-medium px-4 py-2 rounded-lg transition-colors duration-200"
+            >
+              Đăng nhập
+            </Link>
+          )}
 
           {/* Mobile button */}
           <button

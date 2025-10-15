@@ -10,11 +10,12 @@ import BookList from "./pages/BookList";
 import BookDetail from "./pages/bookdetail";
 
 // Admin pages
-import AdminLayout from "./layout/AdminLayout";
+import AdminLayout from "./layout/adminLayout";
 import AdminHome from "./pages/admin/AdminHome";
 import BookManager from "./pages/admin/Bookmanager";
 import AuthorManager from "./pages/admin/AuthorManager";
 import CategoryManager from "./pages/admin/CategoryManager";
+import SetPassword from "./pages/admin/SetPassword";
 
 // Layouts
 import ClientLayout from "./layout/ClientLayout";
@@ -42,6 +43,7 @@ function App() {
           <Route path="bookmanager" element={<BookManager />} />
           <Route path="author" element={<AuthorManager />} />
           <Route path="category" element={<CategoryManager />} />
+            <Route path="setpassword" element={<SetPassword />} />
         </Route>
       </Routes>
     </Router>

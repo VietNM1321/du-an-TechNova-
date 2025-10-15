@@ -7,6 +7,7 @@ import {
   Users,
   FileText,
   PenTool,
+  KeyRound,
   LogOut,
 } from "lucide-react";
 import AdminHeader from "../components/AdminHeader";
@@ -19,6 +20,9 @@ const sidebarLinks = [
   { to: "/admin/author", label: "Quản lý tác giả", icon: <PenTool size={18} /> },
   { to: "/admin/users", label: "Quản lý người dùng", icon: <Users size={18} /> },
   { to: "/admin/orders", label: "Quản lý đơn hàng", icon: <FileText size={18} /> },
+
+  // 🆕 Thêm mục Cấp mật khẩu
+  { to: "/admin/setpassword", label: "Cấp mật khẩu", icon: <KeyRound size={18} /> },
 ];
 
 const AdminLayout = () => {
@@ -29,9 +33,12 @@ const AdminLayout = () => {
       <AdminHeader />
 
       <div className="flex flex-1">
+        {/* Sidebar */}
         <aside className="w-64 bg-white shadow-xl border-r border-gray-200">
           <div className="p-6 border-b border-gray-100">
-            <h3 className="text-xl font-semibold text-blue-600 tracking-wide">📘 Quản trị viên</h3>
+            <h3 className="text-xl font-semibold text-blue-600 tracking-wide">
+              📘 Quản trị viên
+            </h3>
           </div>
 
           <nav className="mt-4 space-y-2 px-4">
@@ -57,6 +64,7 @@ const AdminLayout = () => {
           </nav>
         </aside>
 
+        {/* Main content */}
         <main className="flex-1 p-8 bg-gray-50 overflow-y-auto">
           <motion.div
             initial={{ opacity: 0, y: 10 }}

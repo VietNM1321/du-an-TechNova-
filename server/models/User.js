@@ -2,21 +2,21 @@ import mongoose from "mongoose";
 
 const userSchema = new mongoose.Schema(
   {
-    name: { type: String, required: true },
+    name: { type: String, default: "Chưa cập nhật" }, // ✅ bỏ required
     email: { type: String, required: true, unique: true },
-    password: { type: String, required: true },
+    password: { type: String, default: null }, // ✅ bỏ required
     passwordChangedAt: Date,
 
     role: {
       type: String,
-      enum: ["client", "admin"],
+      enum: ["client", "admin", "student"], // ✅ thêm student nếu cần
       default: "client",
     },
 
     phone: {
       type: String,
       validate: {
-        validator: (v) => /^\d{10}$/.test(v),
+        validator: (v) => !v || /^\d{10}$/.test(v),
         message: (props) => `${props.value} không hợp lệ, vui lòng kiểm tra lại!`,
       },
     },
@@ -34,7 +34,7 @@ const userSchema = new mongoose.Schema(
     active: {
       type: Boolean,
       default: true,
-      select: false,
+      select: true, // ✅ cho phép select ra
     },
   },
   {
