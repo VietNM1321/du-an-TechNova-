@@ -7,6 +7,7 @@ import News from "./pages/News";
 import Contact from "./pages/Contact";
 import Policies from "./pages/Policies";
 import BookList from "./pages/BookList";
+import BookDetail from "./pages/bookdetail";
 
 // Admin pages
 import AdminLayout from "./layout/AdminLayout";
@@ -26,6 +27,7 @@ function App() {
           <Route path="login" element={<Login />} />
           <Route path="register" element={<Register />} />
           <Route path="books" element={<BookList />} />
+          <Route path="/book/:id" element={<BookDetail />} />
           <Route path="about" element={<About />} />
           <Route path="news" element={<News />} />
           <Route path="contact" element={<Contact />} />

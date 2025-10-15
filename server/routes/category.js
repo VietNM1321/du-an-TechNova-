@@ -20,7 +20,6 @@ router.get("/:id", async (req, res) => {
     res.status(500).json({ message: "Lỗi server", error });
   }
 });
-
 router.post("/", async (req, res) => {
   try {
     const { name, description } = req.body;
