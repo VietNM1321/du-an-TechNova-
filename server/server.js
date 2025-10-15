@@ -18,15 +18,15 @@ const app = express();
 app.use(cors());
 app.use(express.json());
 
-// Kết nối MongoDB
+
 connectDB();
 
-// Đăng ký routes
+
 app.use("/auth", authRoutes);
 app.use("/authors", authorRoutes);
 app.use("/categories", categoryRoutes);
 app.use("/genres", genreRoutes);
-app.use("/users", userRoutes); // 🔹 thêm dòng này
+app.use("/users", userRoutes); 
 
 app.get("/", (req, res) => {
   res.send("✅ Server đang chạy tốt!");

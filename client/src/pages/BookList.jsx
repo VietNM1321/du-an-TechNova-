@@ -4,16 +4,16 @@ const BookList = () => {
   const [categories, setCategories] = useState([]);
   const [authors, setAuthors] = useState([]);
 
-  // Lấy dữ liệu từ backend
+
   useEffect(() => {
-    // Lấy thể loại
-    fetch("http://localhost:5000/api/categories")
+
+    fetch("http://localhost:5000/categories")
       .then((res) => res.json())
       .then((data) => setCategories(data))
       .catch((err) => console.error("Lỗi lấy danh mục:", err));
 
-    // Lấy tác giả
-    fetch("http://localhost:5000/api/authors")
+
+    fetch("http://localhost:5000/authors")
       .then((res) => res.json())
       .then((data) => setAuthors(data))
       .catch((err) => console.error("Lỗi lấy tác giả:", err));
@@ -21,10 +21,25 @@ const BookList = () => {
 
   return (
     <div className="container mx-auto py-6 px-4 flex gap-6">
-      {/* Cột bên trái: Danh mục */}
+
       <aside className="w-1/4 bg-white rounded-lg shadow p-4">
         <h2 className="text-lg font-semibold mb-3 border-b pb-2">
           Thể loại sách
+        </h2>
+        <ul className="space-y-2">
+          {categories.map((cat) => (
+            <li
+              key={cat._id}
+              className="cursor-pointer text-gray-700 hover:text-blue-600"
+            >
+              {cat.name}
+            </li>
+          ))}
+        </ul>
+         </aside>
+      <aside className="w-1/4 bg-white rounded-lg shadow p-4">
+        <h2 className="text-lg font-semibold mb-3 border-b pb-2">
+          tác giả
         </h2>
         <ul className="space-y-2">
           {categories.map((cat) => (

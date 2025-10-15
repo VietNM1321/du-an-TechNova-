@@ -9,7 +9,7 @@ const CategoryManager = () => {
   // 🧠 Lấy danh sách thể loại
   const fetchCategories = async () => {
     try {
-      const res = await axios.get("http://localhost:5000/api/categories");
+      const res = await axios.get("http://localhost:5000/categories");
       setCategories(res.data);
     } catch (err) {
       console.error("Lỗi lấy thể loại:", err);
@@ -25,10 +25,10 @@ const CategoryManager = () => {
     e.preventDefault();
     try {
       if (editId) {
-        await axios.put(`http://localhost:5000/api/categories/${editId}`, form);
+        await axios.put(`http://localhost:5000/categories/${editId}`, form);
         alert("✅ Cập nhật thể loại thành công!");
       } else {
-        await axios.post("http://localhost:5000/api/categories", form);
+        await axios.post("http://localhost:5000/categories", form);
         alert("✅ Thêm thể loại thành công!");
       }
       setForm({ name: "", description: "" });
