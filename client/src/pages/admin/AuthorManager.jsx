@@ -24,17 +24,17 @@ const AuthorManager = () => {
     try {
       if (editId) {
         await axios.put(`http://localhost:5000/api/authors/${editId}`, form);
-        alert("Cập nhật tác giả thành công!");
+        alert("✅ Cập nhật tác giả thành công!");
       } else {
         await axios.post("http://localhost:5000/api/authors", form);
-        alert("Thêm tác giả thành công!");
+        alert("✅ Thêm tác giả thành công!");
       }
       setForm({ name: "", bio: "" });
       setEditId(null);
       fetchAuthors();
     } catch (err) {
       console.error(err);
-      alert("Lỗi khi lưu tác giả!");
+      alert("❌ Lỗi khi lưu tác giả!");
     }
   };
 
@@ -55,55 +55,88 @@ const AuthorManager = () => {
   };
 
   return (
-    <div style={{ maxWidth: "800px", margin: "50px auto" }}>
-      <h2>👨‍💼 Quản lý tác giả</h2>
+    <div className="max-w-5xl mx-auto bg-white p-8 rounded-2xl shadow-lg mt-10">
+      <h2 className="text-3xl font-bold text-blue-700 text-center mb-8">
+        ✍️ Quản lý Tác giả
+      </h2>
 
-      <form onSubmit={handleSubmit} style={{ marginBottom: "30px" }}>
+      <form
+        onSubmit={handleSubmit}
+        className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-10"
+      >
         <input
           type="text"
           placeholder="Tên tác giả"
           value={form.name}
           onChange={(e) => setForm({ ...form, name: e.target.value })}
           required
-          style={{ padding: "8px", width: "60%", marginRight: "10px" }}
+          className="border border-gray-300 rounded-lg p-2 focus:ring-2 focus:ring-blue-400 outline-none"
         />
         <input
           type="text"
-          placeholder="Tiểu sử tác giả"
+          placeholder="Tiểu sử / mô tả ngắn"
           value={form.bio}
           onChange={(e) => setForm({ ...form, bio: e.target.value })}
-          style={{ padding: "8px", width: "60%", marginTop: "10px" }}
+          className="border border-gray-300 rounded-lg p-2 focus:ring-2 focus:ring-blue-400 outline-none"
         />
-        <button type="submit" style={{ backgroundColor: "#007bff", color: "white", marginLeft: "10px", padding: "8px 16px", border: "none", borderRadius: "4px" }}>
-          {editId ? "Cập nhật" : "Thêm mới"}
-        </button>
+      <button
+        type="submit"
+        className="col-span-1 md:col-span-2 bg-gradient-to-r from-blue-500 to-blue-700 hover:from-blue-600 hover:to-blue-800 text-white py-2 rounded-lg shadow-md transition-all"
+        >
+        {editId ? "Cập nhật tác giả" : "Thêm tác giả mới"}
+      </button>
       </form>
 
-      <table border="1" width="100%" style={{ borderCollapse: "collapse" }}>
-        <thead>
-          <tr style={{ backgroundColor: "#f0f0f0" }}>
-            <th>Tên tác giả</th>
-            <th>Tiểu sử</th>
-            <th>Hành động</th>
-          </tr>
-        </thead>
-        <tbody>
-          {authors.map((a) => (
-            <tr key={a._id}>
-              <td>{a.name}</td>
-              <td>{a.bio}</td>
-              <td>
-                <button onClick={() => handleEdit(a)} style={{ backgroundColor: "orange", color: "white", marginRight: "10px" }}>
-                  Sửa
-                </button>
-                <button onClick={() => handleDelete(a._id)} style={{ backgroundColor: "red", color: "white" }}>
-                  Xóa
-                </button>
-              </td>
+      <div className="overflow-x-auto">
+        <table className="min-w-full border border-gray-200 rounded-lg overflow-hidden">
+          <thead className="bg-blue-100 text-blue-800">
+            <tr>
+              <th className="p-3 border">Tên tác giả</th>
+              <th className="p-3 border">Tiểu sử</th>
+              <th className="p-3 border text-center">Hành động</th>
             </tr>
-          ))}
-        </tbody>
-      </table>
+          </thead>
+          <tbody>
+            {authors.map((a, index) => (
+              <tr
+                key={a._id}
+                className={`hover:bg-gray-50 ${
+                  index % 2 === 0 ? "bg-white" : "bg-gray-50"
+                }`}
+              >
+                <td className="p-3 border text-gray-800 font-medium">
+                  👤 {a.name}
+                </td>
+                <td className="p-3 border text-gray-600 italic">{a.bio}</td>
+                <td className="p-3 border text-center">
+                  <button
+                    onClick={() => handleEdit(a)}
+                    className="bg-yellow-400 hover:bg-yellow-500 text-white px-3 py-1 rounded mr-2 transition"
+                  >
+                    ✏️ Sửa
+                  </button>
+                  <button
+                    onClick={() => handleDelete(a._id)}
+                    className="bg-red-500 hover:bg-red-600 text-white px-3 py-1 rounded transition"
+                  >
+                    🗑️ Xóa
+                  </button>
+                </td>
+              </tr>
+            ))}
+            {authors.length === 0 && (
+              <tr>
+                <td
+                  colSpan="3"
+                  className="text-center py-6 text-gray-500 italic"
+                >
+                  📭 Chưa có tác giả nào.
+                </td>
+              </tr>
+            )}
+          </tbody>
+        </table>
+      </div>
     </div>
   );
 };

@@ -5,21 +5,23 @@ const router = express.Router();
 
 router.get("/", async (req, res) => {
   try {
-    const categories = await Category.find();
-    res.json(categories);
+    const category = await Category.find();
+    res.json(category);
   } catch (error) {
     res.status(500).json({ message: "Lỗi server", error });
   }
 });
+
 router.get("/:id", async (req, res) => {
   try {
-    const {id} = req.params;
-    const categories = await Category.findById(id);
-    res.json(categories);
+    const { id } = req.params;
+    const category = await Category.findById(id);
+    res.json(category);
   } catch (error) {
     res.status(500).json({ message: "Lỗi server", error });
   }
 });
+
 router.post("/", async (req, res) => {
   try {
     const { name, description } = req.body;

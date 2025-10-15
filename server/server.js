@@ -9,6 +9,7 @@ import Reviews from "./routes/review.js";
 import getPort from "get-port";
 import authRoutes from "./routes/auth.js";
 import corsMiddleware from './middleware/cors.js';
+import authors from "./routes/author.js"
 
 dotenv.config();
 const app = express();
@@ -18,6 +19,7 @@ app.use(express.json());
 app.use(corsMiddleware);
 
 app.use("/api/auth", authRoutes);
+app.use("/api/authors",authors)
 app.use("/api/books", bookRoutes);
 app.use("/api/reviews", Reviews)
 app.use("/api/author", Author);

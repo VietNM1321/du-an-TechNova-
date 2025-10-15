@@ -1,55 +1,77 @@
-import AdminHeader from '../components/AdminHeader'
-import AdminFooter from '../components/AdminFooter'
-import { Outlet, Link, useLocation } from 'react-router-dom'
+import { Outlet, Link, useLocation } from "react-router-dom";
+import { motion } from "framer-motion";
+import {
+  LayoutDashboard,
+  BookOpen,
+  Package,
+  Users,
+  FileText,
+  PenTool,
+  LogOut,
+} from "lucide-react";
+import AdminHeader from "../components/AdminHeader";
+import AdminFooter from "../components/AdminFooter";
 
 const sidebarLinks = [
-  { to: '/admin', label: 'Bảng điều khiển', icon: '🏠' },
-  { to: '/admin/categories', label: 'Quản lý danh mục', icon: '📚' },
-  { to: '/admin/users', label: 'Quản lý người dùng', icon: '👤' },
-  { to: '/admin/products', label: 'Quản lý sản phẩm', icon: '📦' },
-  { to: '/admin/orders', label: 'Quản lý đơn hàng', icon: '🧾' },
-]
+  { to: "/admin", label: "Bảng điều khiển", icon: <LayoutDashboard size={18} /> },
+  { to: "/admin/category", label: "Quản lý danh mục", icon: <BookOpen size={18} /> },
+  { to: "/admin/bookManager", label: "Quản lý sản phẩm", icon: <Package size={18} /> },
+  { to: "/admin/author", label: "Quản lý tác giả", icon: <PenTool size={18} /> },
+  { to: "/admin/users", label: "Quản lý người dùng", icon: <Users size={18} /> },
+  { to: "/admin/orders", label: "Quản lý đơn hàng", icon: <FileText size={18} /> },
+];
 
 const AdminLayout = () => {
-  const location = useLocation()
+  const location = useLocation();
 
   return (
-    <div className="min-h-screen flex flex-col bg-gray-100">
-      {/* Header */}
+    <div className="min-h-screen flex flex-col bg-gray-50 text-gray-800">
       <AdminHeader />
 
       <div className="flex flex-1">
-        {/* Sidebar */}
-        <aside className="w-64 bg-white shadow-md p-6">
-          <h3 className="text-xl font-semibold mb-4">Thủ thư</h3>
-          <nav className="space-y-2">
-            {sidebarLinks.map(link => (
-              <Link
+        <aside className="w-64 bg-white shadow-xl border-r border-gray-200">
+          <div className="p-6 border-b border-gray-100">
+            <h3 className="text-xl font-semibold text-blue-600 tracking-wide">📘 Quản trị viên</h3>
+          </div>
+
+          <nav className="mt-4 space-y-2 px-4">
+            {sidebarLinks.map((link) => (
+              <motion.div
                 key={link.to}
-                to={link.to}
-                className={`flex items-center px-3 py-2 rounded-lg font-medium transition ${
-                  location.pathname === link.to
-                    ? 'bg-blue-600 text-white'
-                    : 'text-gray-700 hover:bg-blue-100'
-                }`}
+                whileHover={{ scale: 1.03 }}
+                transition={{ type: "spring", stiffness: 300 }}
               >
-                <span className="mr-2">{link.icon}</span>
-                {link.label}
-              </Link>
+                <Link
+                  to={link.to}
+                  className={`flex items-center gap-3 px-4 py-2 rounded-lg font-medium transition-all duration-200 ${
+                    location.pathname === link.to
+                      ? "bg-blue-600 text-white shadow-md"
+                      : "text-gray-700 hover:bg-blue-50 hover:text-blue-600"
+                  }`}
+                >
+                  {link.icon}
+                  <span>{link.label}</span>
+                </Link>
+              </motion.div>
             ))}
           </nav>
         </aside>
 
-        {/* Nội dung chính */}
-        <main className="flex-1 p-8 bg-gray-50 rounded-lg shadow-inner">
-          <Outlet />
+        <main className="flex-1 p-8 bg-gray-50 overflow-y-auto">
+          <motion.div
+            initial={{ opacity: 0, y: 10 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.3 }}
+            className="bg-white p-6 rounded-2xl shadow-sm border border-gray-100"
+          >
+            <Outlet />
+          </motion.div>
         </main>
       </div>
 
-      {/* Footer */}
       <AdminFooter />
     </div>
-  )
-}
+  );
+};
 
-export default AdminLayout
+export default AdminLayout;

@@ -12,6 +12,8 @@ import BookDetail from "./pages/bookdetail";
 // Admin pages
 import AdminLayout from "./layout/AdminLayout";
 import AdminHome from "./pages/admin/AdminHome";
+import BookManager from "./pages/admin/Bookmanager";
+import AuthorManager from "./pages/admin/AuthorManager";
 import CategoryManager from "./pages/admin/CategoryManager";
 
 // Layouts
@@ -37,7 +39,9 @@ function App() {
         {/* Layout cho admin */}
         <Route path="/admin/*" element={<AdminLayout />}>
           <Route index element={<AdminHome />} />
-          <Route path="categories" element={<CategoryManager />} />
+          <Route path="bookmanager" element={<BookManager />} />
+          <Route path="author" element={<AuthorManager />} />
+          <Route path="category" element={<CategoryManager />} />
         </Route>
       </Routes>
     </Router>
