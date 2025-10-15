@@ -16,7 +16,6 @@ import CategoryManager from "./pages/admin/CategoryManager";
 
 // Layouts
 import ClientLayout from "./layout/ClientLayout";
-import AdminHome from "./pages/AdminHome";
 
 function App() {
   return (
