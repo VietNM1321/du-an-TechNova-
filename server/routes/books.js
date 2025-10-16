@@ -10,10 +10,14 @@ router.get("/", async (req, res) => {
     const filter = {};
 
     if (req.query.category) {
-      const { default: Category } = await import("../models/category.js");
-      const categoryDoc = await Category.findOne({ name: req.query.category });
-      if (categoryDoc) filter.category = categoryDoc._id;
-      else return res.status(404).json({ message: "Không tìm thấy thể loại" });
+      if (mongoose.Types.ObjectId.isValid(req.query.category)) {
+        filter.category = req.query.category;
+      } else {
+        const { default: Category } = await import("../models/category.js");
+        const categoryDoc = await Category.findOne({ name: req.query.category });
+        if (categoryDoc) filter.category = categoryDoc._id;
+        else return res.status(404).json({ message: "Không tìm thấy thể loại" });
+      }
     }
 
     const books = await Book.find(filter)
@@ -22,7 +26,8 @@ router.get("/", async (req, res) => {
 
     const booksWithReviews = await Promise.all(
       books.map(async (book) => {
-        const reviews = await Reviews.find({ bookId: book._id }).populate("userId", "name email");
+        const reviews = await Reviews.find({ bookId: book._id })
+          .populate("userId", "name email");
         return { ...book.toObject(), reviews };
       })
     );

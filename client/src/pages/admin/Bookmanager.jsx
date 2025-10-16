@@ -4,6 +4,10 @@ import { BookOpen, PlusCircle, Edit, Trash2 } from "lucide-react";
 
 const BookManager = () => {
   const [books, setBooks] = useState([]);
+  const [categories, setCategories] = useState([]);
+  const [authors, setAuthors] = useState([]);
+  const [editId, setEditId] = useState(null);
+
   const [form, setForm] = useState({
     title: "",
     description: "",
@@ -15,9 +19,8 @@ const BookManager = () => {
     quantity: "",
     available: "",
   });
-  const [editId, setEditId] = useState(null);
-  const [categories, setCategories] = useState([]);
 
+  // Goi API 
   const fetchBooks = async () => {
     try {
       const res = await axios.get("http://localhost:5000/api/books");
@@ -36,60 +39,79 @@ const BookManager = () => {
     }
   };
 
+  const fetchAuthors = async () => {
+    try {
+      const res = await axios.get("http://localhost:5000/api/author");
+      setAuthors(res.data);
+    } catch (err) {
+      console.error("Lỗi lấy tác giả:", err);
+    }
+  };
+
   useEffect(() => {
     fetchBooks();
     fetchCategories();
+    fetchAuthors();
   }, []);
-
+  // day la phan validate yeu cau nhap thong tin
   const handleSubmit = async (e) => {
-    e.preventDefault();
-    const imagesArr = form.images.split(",").map(i => i.trim()).filter(Boolean);
-    if (!form.title || imagesArr.length === 0 || !form.publishedYear || !form.category) {
-      alert("Vui lòng nhập đầy đủ thông tin!");
-      return;
-    }
+  e.preventDefault();
+  const imagesArr = form.images.split(",").map(i => i.trim()).filter(Boolean);
+  if (!form.title || imagesArr.length === 0 || !form.publishedYear || !form.category) {
+    alert("Vui lòng nhập đầy đủ thông tin!");
+    return;
+  }
 
-    const data = {
-      ...form,
-      images: imagesArr,
-      publishedYear: Number(form.publishedYear),
-      quantity: Number(form.quantity) || 0,
-      available: Number(form.available) || 0,
-    };
-
-    try {
-      if (editId) {
-        await axios.put(`http://localhost:5000/api/books/${editId}`, data);
-        alert("✅ Cập nhật thành công!");
-      } else {
-        await axios.post("http://localhost:5000/api/books", data);
-        alert("✅ Thêm thành công!");
-      }
-      setForm({
-        title: "",
-        description: "",
-        images: "",
-        category: "",
-        author: "",
-        publisher: "",
-        publishedYear: "",
-        quantity: "",
-        available: "",
-      });
-      setEditId(null);
-      fetchBooks();
-    } catch (err) {
-      console.error("Lỗi khi gửi lên server:", err.response?.data || err);
-      alert("❌ Thất bại khi lưu!");
-    }
+  const data = {
+    ...form,
+    images: imagesArr,
+    publishedYear: Number(form.publishedYear),
+    quantity: Number(form.quantity) || 0,
+    available: Number(form.available) || 0,
   };
+
+  if (!form.publisher) {
+    delete data.publisher;
+  }
+
+  if (!form.author) {
+    delete data.author;
+  }
+
+  try {
+    if (editId) {
+      await axios.put(`http://localhost:5000/api/books/${editId}`, data);
+      alert("✅ Cập nhật thành công!");
+    } else {
+      await axios.post("http://localhost:5000/api/books", data);
+      alert("✅ Thêm thành công!");
+    }
+
+    setForm({
+      title: "",
+      description: "",
+      images: "",
+      category: "",
+      author: "",
+      publisher: "",
+      publishedYear: "",
+      quantity: "",
+      available: "",
+    });
+    setEditId(null);
+    fetchBooks();
+  } catch (err) {
+    console.error("Lỗi khi gửi lên server:", err.response?.data || err);
+    alert("❌ Thất bại khi lưu!");
+  }
+};
 
   const handleDelete = async (id) => {
     if (window.confirm("Bạn có chắc muốn xóa sách này không?")) {
       try {
         await axios.delete(`http://localhost:5000/api/books/${id}`);
         fetchBooks();
-      } catch (err) {
+      } catch {
         alert("❌ Xóa thất bại!");
       }
     }
@@ -114,9 +136,7 @@ const BookManager = () => {
     <div className="max-w-6xl mx-auto bg-gradient-to-b from-gray-50 to-white p-8 rounded-2xl shadow-lg mt-12 border border-gray-200">
       <div className="flex items-center justify-center gap-3 mb-8">
         <BookOpen className="text-blue-700 w-8 h-8" />
-        <h2 className="text-3xl font-semibold text-gray-800">
-          Quản lý Sách
-        </h2>
+        <h2 className="text-3xl font-semibold text-gray-800">Quản lý Sách</h2>
       </div>
 
       <form
@@ -137,12 +157,20 @@ const BookManager = () => {
           onChange={(e) => setForm({ ...form, images: e.target.value })}
           required
         />
-        <input
+
+        <select
           className="border border-gray-300 p-3 rounded-lg focus:ring-2 focus:ring-blue-400 outline-none"
-          placeholder="Tác giả (ID)"
           value={form.author}
           onChange={(e) => setForm({ ...form, author: e.target.value })}
-        />
+        >
+          <option value="">-- Chọn tác giả --</option>
+          {authors.map((a) => (
+            <option key={a._id} value={a._id}>
+              {a.name}
+            </option>
+          ))}
+        </select>
+
         <select
           className="border border-gray-300 p-3 rounded-lg focus:ring-2 focus:ring-blue-400 outline-none"
           value={form.category}
@@ -155,6 +183,7 @@ const BookManager = () => {
             </option>
           ))}
         </select>
+
         <input
           className="border border-gray-300 p-3 rounded-lg focus:ring-2 focus:ring-blue-400 outline-none"
           placeholder="Năm xuất bản"
@@ -173,6 +202,7 @@ const BookManager = () => {
           value={form.available}
           onChange={(e) => setForm({ ...form, available: e.target.value })}
         />
+
         <textarea
           className="border border-gray-300 p-3 rounded-lg md:col-span-2 focus:ring-2 focus:ring-blue-400 outline-none"
           placeholder="Mô tả"
@@ -188,7 +218,6 @@ const BookManager = () => {
         </button>
       </form>
 
-      {/* Bảng sách */}
       <div className="overflow-x-auto border border-gray-200 rounded-xl shadow-sm">
         <table className="min-w-full">
           <thead className="bg-blue-50 text-blue-800">
@@ -196,6 +225,7 @@ const BookManager = () => {
               <th className="p-3 text-left">Ảnh</th>
               <th className="p-3 text-left">Tên sách</th>
               <th className="p-3 text-left">Thể loại</th>
+              <th className="p-3 text-left">Tác giả</th>
               <th className="p-3 text-center">Năm</th>
               <th className="p-3 text-center">SL</th>
               <th className="p-3 text-center">Còn</th>
@@ -219,6 +249,7 @@ const BookManager = () => {
                 </td>
                 <td className="p-3">{b.title}</td>
                 <td className="p-3">{b.category?.name || "—"}</td>
+                <td className="p-3">{b.author?.name || "—"}</td>
                 <td className="p-3 text-center">{b.publishedYear}</td>
                 <td className="p-3 text-center">{b.quantity}</td>
                 <td className="p-3 text-center">{b.available}</td>
@@ -240,10 +271,7 @@ const BookManager = () => {
             ))}
             {books.length === 0 && (
               <tr>
-                <td
-                  colSpan="7"
-                  className="text-center py-6 text-gray-500 italic"
-                >
+                <td colSpan="8" className="text-center py-6 text-gray-500 italic">
                   📭 Chưa có sách nào trong danh sách.
                 </td>
               </tr>

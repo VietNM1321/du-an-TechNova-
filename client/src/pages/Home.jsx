@@ -54,76 +54,120 @@ function Home() {
         </div>
       </section>
       {categories.map((cat, index) => (
-        <section
-          key={cat._id}
-          className="container mx-auto px-4 mb-20 relative"
-        >
-          <div className="flex justify-between items-center mb-6">
-            <SectionTitle
-              icon="📘"
-              title={cat.name}
-              color={index % 2 === 0 ? "text-blue-600" : "text-pink-500"}
-            />
-          </div>
+      <section
+      key={cat._id}
+      className="container mx-auto px-4 mb-20 relative"
+      >
+      <div className="flex justify-between items-center mb-6">
+      <SectionTitle
+        icon="📘"
+        title={cat.name}
+        color={index % 2 === 0 ? "text-blue-600" : "text-pink-500"}
+      />
+    </div>
 
-          {cat.name.toLowerCase().includes("thiếu nhi") ? (
-            <div className="relative">
-              <Slider // cấu hình slideshow 
-                ref={(el) => (sliderRefs.current[cat._id] = el)}
-                {...{
-                  infinite: true,
-                  speed: 600,
-                  slidesToShow: 3,
-                  slidesToScroll: 1,
-                  arrows: false,
-                  autoplay: false,
-                  responsive: [
-                    { breakpoint: 1024, settings: { slidesToShow: 2 } },
-                    { breakpoint: 768, settings: { slidesToShow: 1 } },
-                  ],
+    {cat.name.toLowerCase().includes("thiếu nhi") ? (
+      <div className="relative">
+        <Slider
+          ref={(el) => (sliderRefs.current[cat._id] = el)}
+          {...{
+            infinite: true,
+            speed: 600,
+            slidesToShow: 3,
+            slidesToScroll: 1,
+            arrows: false,
+            autoplay: false,
+            responsive: [
+              { breakpoint: 1024, settings: { slidesToShow: 2 } },
+              { breakpoint: 768, settings: { slidesToShow: 1 } },
+            ],
+          }}
+        >
+          {cat.books.map((book) => (
+            <div key={book._id} className="px-4">
+              <div className="transition-transform duration-300 hover:-translate-y-2">
+                <BookCard
+                  book={book}
+                  btnColor="bg-pink-500 hover:bg-pink-600"
+                />
+              </div>
+            </div>
+          ))}
+        </Slider>
+        <button
+          onClick={() => prevSlide(cat._id)}
+          className="absolute left-0 top-1/2 -translate-y-1/2 bg-pink-500 text-white p-3 rounded-full shadow-lg hover:bg-pink-600 transition z-10"
+        >
+          <ChevronLeft size={26} />
+        </button>
+        <button
+          onClick={() => nextSlide(cat._id)}
+          className="absolute right-0 top-1/2 -translate-y-1/2 bg-pink-500 text-white p-3 rounded-full shadow-lg hover:bg-pink-600 transition z-10"
+        >
+          <ChevronRight size={26} />
+        </button>
+      </div>
+    ) : cat.name.toLowerCase().includes("kinh tế") ? (
+      <div className="relative">
+        <Slider
+          ref={(el) => (sliderRefs.current[cat._id] = el)}
+          {...{
+            infinite: true,
+            speed: 600,
+            slidesToShow: 4,
+            slidesToScroll: 1,
+            arrows: false,
+            autoplay: true,
+            autoplaySpeed: 4000,
+            dots: true,
+            appendDots: (dots) => (
+              <div
+                style={{
+                  marginTop: "20px",
                 }}
               >
-                {cat.books.map((book) => (
-                  <div key={book._id} className="px-4">
-                    <div className="transition-transform duration-300 hover:-translate-y-2">
-                      <BookCard
-                        book={book}
-                        btnColor="bg-pink-500 hover:bg-pink-600"
-                      />
-                    </div>
-                  </div>
-                ))}
-              </Slider>
-              <button
-                onClick={() => prevSlide(cat._id)}
-                className="absolute left-0 top-1/2 -translate-y-1/2 bg-pink-500 text-white p-3 rounded-full shadow-lg hover:bg-pink-600 transition z-10"
-              >
-                <ChevronLeft size={26} />
-              </button>
-              <button
-                onClick={() => nextSlide(cat._id)}
-                className="absolute right-0 top-1/2 -translate-y-1/2 bg-pink-500 text-white p-3 rounded-full shadow-lg hover:bg-pink-600 transition z-10"
-              >
-                <ChevronRight size={26} />
-              </button>
+                <ul className="flex justify-center gap-2">{dots}</ul>
+              </div>
+            ),
+            customPaging: () => (
+              <div className="w-3 h-3 bg-gray-400 rounded-full hover:bg-blue-500 transition"></div>
+            ),
+            responsive: [
+              { breakpoint: 1024, settings: { slidesToShow: 2 } },
+              { breakpoint: 768, settings: { slidesToShow: 1 } },
+            ],
+          }}
+        >
+          {cat.books.map((book) => (
+            <div key={book._id} className="px-4">
+              <div className="transition-transform duration-300 hover:-translate-y-2">
+                <BookCard
+                  book={book}
+                  btnColor="bg-blue-500 hover:bg-blue-600"
+                />
+              </div>
             </div>
-          ) : (
-            <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-8">
-              {cat.books.map((book) => (
-                <div
-                  key={book._id}
-                  className="transition-transform duration-300 hover:-translate-y-2"
-                >
-                  <BookCard
-                    book={book}
-                    btnColor="bg-yellow-400 hover:bg-yellow-500"
-                  />
-                </div>
-              ))}
-            </div>
-          )}
-        </section>
-      ))}
+          ))}
+        </Slider>
+      </div>
+    ) : (
+      <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-8">
+        {cat.books.map((book) => (
+          <div
+            key={book._id}
+            className="transition-transform duration-300 hover:-translate-y-2"
+          >
+            <BookCard
+              book={book}
+              btnColor="bg-yellow-400 hover:bg-yellow-500"
+            />
+          </div>
+        ))}
+      </div>
+    )}
+  </section>
+))}
+
     </div>
   );
 }
