@@ -8,6 +8,7 @@ import Contact from "./pages/Contact";
 import Policies from "./pages/Policies";
 import BookList from "./pages/BookList";
 import BookDetail from "./pages/bookdetail";
+import SearchResults from "./pages/SearchResults";
 
 // Admin pages
 import AdminLayout from "./layout/adminLayout";
@@ -35,6 +36,7 @@ function App() {
           <Route path="news" element={<News />} />
           <Route path="contact" element={<Contact />} />
           <Route path="policies" element={<Policies />} />
+          <Route path="/search" element={<SearchResults />} />
         </Route>
 
         {/* Layout cho admin */}

@@ -10,7 +10,7 @@ import getPort from "get-port";
 import authRoutes from "./routes/auth.js";
 import corsMiddleware from './middleware/cors.js';
 import authors from "./routes/author.js"
-
+// import seach from "./routes/bookRoutes.js";
 dotenv.config();
 const app = express();
 
@@ -24,6 +24,7 @@ app.use("/api/books", bookRoutes);
 app.use("/api/reviews", Reviews)
 app.use("/api/author", Author);
 app.use("/api/category", category);
+
 
 const startServer = async () => {
   try {

@@ -2,14 +2,23 @@ import mongoose from "mongoose";
 
 const userSchema = new mongoose.Schema(
   {
-    name: { type: String, default: "Chưa cập nhật" }, // ✅ bỏ required
+    studentCode: {
+      type: String,
+      unique: true,
+      sparse: true, // ✅ tránh lỗi nếu có user không có studentCode
+    },
+
+    name: { type: String, default: "Chưa cập nhật" },
+
     email: { type: String, required: true, unique: true },
-    password: { type: String, default: null }, // ✅ bỏ required
+
+    password: { type: String, default: null },
+
     passwordChangedAt: Date,
 
     role: {
       type: String,
-      enum: ["client", "admin", "student"], // ✅ thêm student nếu cần
+      enum: ["client", "admin", "student"],
       default: "client",
     },
 
@@ -17,7 +26,8 @@ const userSchema = new mongoose.Schema(
       type: String,
       validate: {
         validator: (v) => !v || /^\d{10}$/.test(v),
-        message: (props) => `${props.value} không hợp lệ, vui lòng kiểm tra lại!`,
+        message: (props) =>
+          `${props.value} không hợp lệ, vui lòng kiểm tra lại!`,
       },
     },
 
@@ -34,7 +44,7 @@ const userSchema = new mongoose.Schema(
     active: {
       type: Boolean,
       default: true,
-      select: true, // ✅ cho phép select ra
+      select: true,
     },
   },
   {

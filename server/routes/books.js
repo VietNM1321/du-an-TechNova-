@@ -5,6 +5,9 @@ import Reviews from "../models/review.js";
 
 const router = express.Router();
 
+/* =========================================================
+   🟢 LẤY DANH SÁCH SÁCH
+   ========================================================= */
 router.get("/", async (req, res) => {
   try {
     const filter = {};
@@ -26,8 +29,7 @@ router.get("/", async (req, res) => {
 
     const booksWithReviews = await Promise.all(
       books.map(async (book) => {
-        const reviews = await Reviews.find({ bookId: book._id })
-          .populate("userId", "name email");
+        const reviews = await Reviews.find({ bookId: book._id }).populate("userId", "name email");
         return { ...book.toObject(), reviews };
       })
     );
@@ -39,6 +41,36 @@ router.get("/", async (req, res) => {
   }
 });
 
+/* =========================================================
+   🔎 TÌM KIẾM SÁCH (theo tên hoặc mô tả)
+   ========================================================= */
+router.get("/search", async (req, res) => {
+  try {
+    const { q } = req.query;
+    if (!q || q.trim() === "") {
+      return res.status(400).json({ message: "Vui lòng nhập từ khóa tìm kiếm" });
+    }
+
+    // Tìm kiếm tương đối theo tiêu đề hoặc mô tả
+    const books = await Book.find({
+      $or: [
+        { title: { $regex: q, $options: "i" } },
+        { description: { $regex: q, $options: "i" } },
+      ],
+    })
+      .populate("author", "name")
+      .populate("category", "name");
+
+    res.json(books);
+  } catch (error) {
+    console.error("❌ Lỗi khi tìm kiếm sách:", error);
+    res.status(500).json({ message: "Lỗi server khi tìm kiếm", error });
+  }
+});
+
+/* =========================================================
+   🟡 LẤY CHI TIẾT SÁCH
+   ========================================================= */
 router.get("/:id", async (req, res) => {
   try {
     if (!mongoose.Types.ObjectId.isValid(req.params.id)) {
@@ -63,9 +95,22 @@ router.get("/:id", async (req, res) => {
   }
 });
 
+/* =========================================================
+   🟢 THÊM SÁCH
+   ========================================================= */
 router.post("/", async (req, res) => {
   try {
-    const { title, description, images, category, author, publisher, publishedYear, quantity, available } = req.body;
+    const {
+      title,
+      description,
+      images,
+      category,
+      author,
+      publisher,
+      publishedYear,
+      quantity,
+      available,
+    } = req.body;
 
     if (!title || !images || images.length === 0 || !publishedYear) {
       return res.status(400).json({ message: "Vui lòng cung cấp đầy đủ thông tin bắt buộc" });
@@ -94,13 +139,14 @@ router.post("/", async (req, res) => {
   }
 });
 
+/* =========================================================
+   🟠 CẬP NHẬT SÁCH
+   ========================================================= */
 router.put("/:id", async (req, res) => {
   try {
     if (!mongoose.Types.ObjectId.isValid(req.params.id)) {
       return res.status(400).json({ message: "ID không hợp lệ" });
     }
-
-    console.log("📘 Cập nhật sách:", req.body);
 
     const updatedData = { ...req.body };
     if (updatedData.images && typeof updatedData.images === "string") {
@@ -108,10 +154,7 @@ router.put("/:id", async (req, res) => {
     }
 
     const updatedBook = await Book.findByIdAndUpdate(req.params.id, updatedData, { new: true });
-
-    if (!updatedBook) {
-      return res.status(404).json({ message: "Không tìm thấy sách để cập nhật" });
-    }
+    if (!updatedBook) return res.status(404).json({ message: "Không tìm thấy sách để cập nhật" });
 
     res.json(updatedBook);
   } catch (error) {
@@ -120,6 +163,9 @@ router.put("/:id", async (req, res) => {
   }
 });
 
+/* =========================================================
+   🔴 XÓA SÁCH
+   ========================================================= */
 router.delete("/:id", async (req, res) => {
   try {
     if (!mongoose.Types.ObjectId.isValid(req.params.id)) {
@@ -130,7 +176,6 @@ router.delete("/:id", async (req, res) => {
     if (!deletedBook) return res.status(404).json({ message: "Không tìm thấy sách để xóa" });
 
     await Reviews.deleteMany({ bookId: deletedBook._id });
-
     res.json({ message: "Sách đã được xóa cùng reviews" });
   } catch (error) {
     console.error("❌ Lỗi xóa sách:", error);
