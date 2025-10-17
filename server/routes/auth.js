@@ -44,7 +44,8 @@ router.post("/register", async (req, res) => {
 router.put("/setpassword/:id", async (req, res) => {
   try {
     const { password } = req.body;
-    if (!password) return res.status(400).json({ message: "Vui lòng nhập mật khẩu!" });
+    if (!password)
+      return res.status(400).json({ message: "Vui lòng nhập mật khẩu!" });
 
     const hashedPassword = await bcrypt.hash(password, 10);
 
@@ -64,21 +65,49 @@ router.put("/setpassword/:id", async (req, res) => {
 });
 
 /* ============================================================
-   3️⃣  ĐĂNG NHẬP
+   3️⃣  ĐĂNG NHẬP (CÓ ADMIN CỐ ĐỊNH)
    ============================================================ */
 router.post("/login", async (req, res) => {
   try {
     const { email, password } = req.body;
 
+    // ✅ 1️⃣: ADMIN cố định (không cần có trong DB)
+    if (
+      (email === "admin" || email === "admin@gmail.com") &&
+      password === "123456789"
+    ) {
+      const token = jwt.sign(
+        { id: "admin-fixed", role: "admin" },
+        process.env.JWT_SECRET || "secret",
+        { expiresIn: "3d" }
+      );
+
+      return res.json({
+        message: "Đăng nhập admin thành công!",
+        token,
+        user: {
+          id: "admin-fixed",
+          email: "admin@gmail.com",
+          role: "admin",
+          studentCode: "ADMIN",
+        },
+      });
+    }
+
+    // ✅ 2️⃣: Tài khoản sinh viên trong DB
     const user = await User.findOne({ email });
     if (!user)
       return res.status(404).json({ message: "Không tìm thấy tài khoản!" });
 
     if (!user.active)
-      return res.status(403).json({ message: "Tài khoản của bạn đã bị khóa!" });
+      return res
+        .status(403)
+        .json({ message: "Tài khoản của bạn đã bị khóa!" });
 
     if (!user.password)
-      return res.status(400).json({ message: "Tài khoản chưa có mật khẩu, liên hệ admin!" });
+      return res
+        .status(400)
+        .json({ message: "Tài khoản chưa có mật khẩu, liên hệ admin!" });
 
     const isMatch = await bcrypt.compare(password, user.password);
     if (!isMatch)
@@ -113,7 +142,8 @@ router.put("/change-password/:id", async (req, res) => {
     const { oldPassword, newPassword } = req.body;
     const user = await User.findById(req.params.id);
 
-    if (!user) return res.status(404).json({ message: "Không tìm thấy người dùng!" });
+    if (!user)
+      return res.status(404).json({ message: "Không tìm thấy người dùng!" });
 
     const isMatch = await bcrypt.compare(oldPassword, user.password);
     if (!isMatch)
@@ -138,9 +168,9 @@ router.post("/forgot-password", async (req, res) => {
     const { studentCode, email, newPassword } = req.body;
 
     if (!studentCode || !email || !newPassword)
-      return res
-        .status(400)
-        .json({ message: "Vui lòng nhập đủ mã sinh viên, email và mật khẩu mới" });
+      return res.status(400).json({
+        message: "Vui lòng nhập đủ mã sinh viên, email và mật khẩu mới",
+      });
 
     const user = await User.findOne({ studentCode, email });
     if (!user)
