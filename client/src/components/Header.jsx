@@ -135,7 +135,7 @@ const Header = ({ selectedCategory, setSelectedCategory }) => {
           </div>
 
           {/* Cart */}
-          <Link to="/user/carts" className="relative text-gray-700 hover:text-blue-600">
+          <Link to="/cart" className="relative text-gray-700 hover:text-blue-600">
             <ShoppingCart size={22} />
             <span className="absolute -top-2 -right-2 bg-blue-600 text-white text-xs w-4 h-4 rounded-full flex items-center justify-center">3</span>
           </Link>

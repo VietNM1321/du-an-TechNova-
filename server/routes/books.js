@@ -4,10 +4,6 @@ import Book from "../models/books.js";
 import Reviews from "../models/review.js";
 
 const router = express.Router();
-
-/* =========================================================
-   🟢 LẤY DANH SÁCH SÁCH
-   ========================================================= */
 router.get("/", async (req, res) => {
   try {
     const filter = {};
@@ -40,10 +36,6 @@ router.get("/", async (req, res) => {
     res.status(500).json({ message: "Lỗi server", error });
   }
 });
-
-/* =========================================================
-   🔎 TÌM KIẾM SÁCH (theo tên hoặc mô tả)
-   ========================================================= */
 router.get("/search", async (req, res) => {
   try {
     const { q } = req.query;
@@ -51,7 +43,6 @@ router.get("/search", async (req, res) => {
       return res.status(400).json({ message: "Vui lòng nhập từ khóa tìm kiếm" });
     }
 
-    // Tìm kiếm tương đối theo tiêu đề hoặc mô tả
     const books = await Book.find({
       $or: [
         { title: { $regex: q, $options: "i" } },
@@ -67,10 +58,6 @@ router.get("/search", async (req, res) => {
     res.status(500).json({ message: "Lỗi server khi tìm kiếm", error });
   }
 });
-
-/* =========================================================
-   🟡 LẤY CHI TIẾT SÁCH
-   ========================================================= */
 router.get("/:id", async (req, res) => {
   try {
     if (!mongoose.Types.ObjectId.isValid(req.params.id)) {
@@ -95,9 +82,6 @@ router.get("/:id", async (req, res) => {
   }
 });
 
-/* =========================================================
-   🟢 THÊM SÁCH
-   ========================================================= */
 router.post("/", async (req, res) => {
   try {
     const {
@@ -139,9 +123,6 @@ router.post("/", async (req, res) => {
   }
 });
 
-/* =========================================================
-   🟠 CẬP NHẬT SÁCH
-   ========================================================= */
 router.put("/:id", async (req, res) => {
   try {
     if (!mongoose.Types.ObjectId.isValid(req.params.id)) {
@@ -163,9 +144,6 @@ router.put("/:id", async (req, res) => {
   }
 });
 
-/* =========================================================
-   🔴 XÓA SÁCH
-   ========================================================= */
 router.delete("/:id", async (req, res) => {
   try {
     if (!mongoose.Types.ObjectId.isValid(req.params.id)) {

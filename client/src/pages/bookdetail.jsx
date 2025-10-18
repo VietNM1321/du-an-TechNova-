@@ -1,12 +1,15 @@
 import React, { useEffect, useState } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import axios from "axios";
+import { useCart } from "../components/cart";
 
 function BookDetail() {
   const { id } = useParams();
   const navigate = useNavigate();
   const [book, setBook] = useState(null);
   const [relatedBooks, setRelatedBooks] = useState([]);
+  
+  const { addToCart } = useCart();
 
   useEffect(() => {
     const fetchBook = async () => {
@@ -27,7 +30,6 @@ function BookDetail() {
           const res = await axios.get(
             `http://localhost:5000/api/books?category=${book.category._id}`
           );
-          // cai ben duoi der loc bo cuan sach dang xem
           const filtered = res.data.filter((b) => b._id !== id);
           setRelatedBooks(filtered);
         } catch (err) {
@@ -46,12 +48,21 @@ function BookDetail() {
     );
   }
 
-  const defaultImage =
-    "https://cdn-icons-png.flaticon.com/512/2232/2232688.png";
+  const defaultImage = "https://cdn-icons-png.flaticon.com/512/2232/2232688.png";
+
+  const handleBorrow = async () => {
+    try {
+      await addToCart({ bookId: book._id, quantity: 1 });
+      alert("✅ Đã thêm sách vào giỏ!");
+    } catch (err) {
+      console.error("Lỗi khi thêm sách vào giỏ:", err);
+      alert("❌ Thêm sách vào giỏ thất bại.");
+    }
+  };
 
   return (
-    <div className="max-w-6xl mx-auto p-6 pt-24 grid md:grid-cols-2 gap-8 bg-white rounded-xl shadow-lg">
-      <div className="flex justify-center items-start">
+    <div className="container mx-auto px-4">
+      <div className="max-w-6xl mx-auto p-6 grid md:grid-cols-2 gap-8 bg-white rounded-xl shadow-lg">
         <img
           src={book.images?.[0] || defaultImage}
           alt={book.title}
@@ -86,11 +97,15 @@ function BookDetail() {
           >
             ⬅ Quay lại
           </button>
-          <button className="bg-green-600 text-white px-4 py-2 rounded-md hover:bg-green-700">
+          <button
+            onClick={handleBorrow}
+            className="bg-green-600 text-white px-4 py-2 rounded-md hover:bg-green-700"
+          >
             ✅ Mượn sách
           </button>
         </div>
       </div>
+
       <div className="md:col-span-2 mt-10 border-t pt-5">
         <h2 className="text-xl font-semibold text-gray-800 mb-4">
           📚 Sách cùng thể loại

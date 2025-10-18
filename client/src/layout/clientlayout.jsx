@@ -1,17 +1,18 @@
 import Footer from '../components/Footer'
 import Header from '../components/Header'
-import Home from "../pages/Home"
 import { Outlet } from 'react-router-dom'
 
 const ClientLayout = () => {
   return (
-    <>
-      <Header />
-      <main className="container mx-auto p-4">
-        <Outlet /> 
+    <div className="min-h-screen flex flex-col">
+      <Header className="h-[80px] fixed top-0 left-0 right-0 z-50 bg-white shadow-md" />
+      
+      <main className="flex-grow pt-[80px] pb-[80px]">
+        <Outlet />
       </main>
-      <Footer />
-    </>
+
+      <Footer className="h-[80px] fixed bottom-0 left-0 right-0 w-full bg-white shadow-md" />
+    </div>
   )
 }
 
