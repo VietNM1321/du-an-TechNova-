@@ -25,6 +25,7 @@ app.use("/api/books", bookRoutes);
 app.use("/api/reviews", Reviews)
 app.use("/api/author", Author);
 app.use("/api/users", userRoutes);
+app.use("/api/category", category);
 
 
 const startServer = async () => {
@@ -32,7 +33,8 @@ const startServer = async () => {
     await mongoose.connect(process.env.MONGO_URI);
     console.log("✅ Kết nối Database thành công!");
 
-    const port = process.env.PORT || 8019;
+    const port = process.env.PORT || 5000
+    ;
 
     app.listen(port, () => {
       console.log(`🚀 Server đang chạy trên cổng ${port}`);
