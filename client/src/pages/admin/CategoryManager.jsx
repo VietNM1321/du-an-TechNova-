@@ -4,7 +4,7 @@ import axios from "axios";
 const CategoryManager = () => {
   const [categories, setCategories] = useState([]);
   const [form, setForm] = useState({ name: "", description: "" });
-  const [editId, setEditId] = useState(null);
+  const [id, setid] = useState(null);
 
   const fetchCategories = async () => {
     try {
@@ -22,15 +22,15 @@ const CategoryManager = () => {
   const handleSubmit = async (e) => {
     e.preventDefault();
     try {
-      if (editId) {
-        await axios.put(`http://localhost:5000/api/category/${editId}`, form);
+      if (id) {
+        await axios.put(`http://localhost:5000/api/category/${id}`, form);
         alert("✅ Cập nhật danh mục thành công!");
       } else {
         await axios.post("http://localhost:5000/api/category", form);
         alert("✅ Thêm danh mục thành công!");
       }
       setForm({ name: "", description: "" });
-      setEditId(null);
+      setid(null);
       fetchCategories();
     } catch (err) {
       console.error(err);
@@ -52,7 +52,7 @@ const CategoryManager = () => {
 
   const handleEdit = (cat) => {
     setForm({ name: cat.name, description: cat.description });
-    setEditId(cat._id);
+    setid(cat._id);
   };
 
   return (
@@ -97,10 +97,10 @@ const CategoryManager = () => {
         <button
           type="submit"
           className={`mt-4 px-6 py-2 rounded-lg text-white font-semibold ${
-            editId ? "bg-yellow-500 hover:bg-yellow-600" : "bg-blue-600 hover:bg-blue-700"
+            id ? "bg-yellow-500 hover:bg-yellow-600" : "bg-blue-600 hover:bg-blue-700"
           }`}
         >
-          {editId ? "Cập nhật" : "Thêm mới"}
+          {id ? "Cập nhật" : "Thêm mới"}
         </button>
       </form>
 

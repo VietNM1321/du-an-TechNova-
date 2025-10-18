@@ -4,7 +4,7 @@ import axios from "axios";
 const AuthorManager = () => {
   const [authors, setAuthors] = useState([]);
   const [form, setForm] = useState({ name: "", bio: "" });
-  const [editId, setEditId] = useState(null);
+  const [id, setid] = useState(null);
 
   const fetchAuthors = async () => {
     try {
@@ -22,15 +22,16 @@ const AuthorManager = () => {
   const handleSubmit = async (e) => {
     e.preventDefault();
     try {
-      if (editId) {
-        await axios.put(`http://localhost:5000/api/authors/${editId}`, form);
+      if (id) {
+        await axios.put(`http://localhost:5000/api/authors/${id}`, form);
         alert("✅ Cập nhật tác giả thành công!");
       } else {
         await axios.post("http://localhost:5000/api/authors", form);
         alert("✅ Thêm tác giả thành công!");
       }
+      // gọi lại dữ liệu các lần render
       setForm({ name: "", bio: "" });
-      setEditId(null);
+      setid(null);
       fetchAuthors();
     } catch (err) {
       console.error(err);
@@ -51,7 +52,7 @@ const AuthorManager = () => {
 
   const handleEdit = (author) => {
     setForm({ name: author.name, bio: author.bio });
-    setEditId(author._id);
+    setid(author._id);
   };
 
   return (
@@ -83,7 +84,7 @@ const AuthorManager = () => {
         type="submit"
         className="col-span-1 md:col-span-2 bg-gradient-to-r from-blue-500 to-blue-700 hover:from-blue-600 hover:to-blue-800 text-white py-2 rounded-lg shadow-md transition-all"
         >
-        {editId ? "Cập nhật tác giả" : "Thêm tác giả mới"}
+        {id ? "Cập nhật tác giả" : "Thêm tác giả mới"}
       </button>
       </form>
 

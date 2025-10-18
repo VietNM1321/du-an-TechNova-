@@ -16,7 +16,7 @@ import AdminFooter from "../components/AdminFooter";
 const sidebarLinks = [
   { to: "/admin", label: "Bảng điều khiển", icon: <LayoutDashboard size={18} /> },
   { to: "/admin/category", label: "Quản lý danh mục", icon: <BookOpen size={18} /> },
-  { to: "/admin/bookManager", label: "Quản lý sản phẩm", icon: <Package size={18} /> },
+  { to: "/admin/bookManager", label: "Quản lý sách", icon: <Package size={18} /> },
   { to: "/admin/author", label: "Quản lý tác giả", icon: <PenTool size={18} /> },
   { to: "/admin/users", label: "Quản lý người dùng", icon: <Users size={18} /> },
   { to: "/admin/orders", label: "Quản lý đơn hàng", icon: <FileText size={18} /> },

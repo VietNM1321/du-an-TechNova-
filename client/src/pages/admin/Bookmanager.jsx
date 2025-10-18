@@ -6,9 +6,8 @@ const BookManager = () => {
   const [books, setBooks] = useState([]);
   const [categories, setCategories] = useState([]);
   const [authors, setAuthors] = useState([]);
-  const [editId, setEditId] = useState(null);
-
-  const [form, setForm] = useState({
+  const [id, setid] = useState(null);
+  const [form, setForm] = useState({ // hien thi du lieu da co cua form
     title: "",
     description: "",
     images: "",
@@ -19,8 +18,6 @@ const BookManager = () => {
     quantity: "",
     available: "",
   });
-
-  // Goi API 
   const fetchBooks = async () => {
     try {
       const res = await axios.get("http://localhost:5000/api/books");
@@ -29,7 +26,6 @@ const BookManager = () => {
       console.error("Lỗi lấy sách:", err);
     }
   };
-
   const fetchCategories = async () => {
     try {
       const res = await axios.get("http://localhost:5000/api/category");
@@ -41,13 +37,12 @@ const BookManager = () => {
 
   const fetchAuthors = async () => {
     try {
-      const res = await axios.get("http://localhost:5000/api/author");
+      const res = await axios.get("http://localhost:5000/api/authors");
       setAuthors(res.data);
     } catch (err) {
       console.error("Lỗi lấy tác giả:", err);
     }
   };
-
   useEffect(() => {
     fetchBooks();
     fetchCategories();
@@ -62,7 +57,7 @@ const BookManager = () => {
     return;
   }
 
-  const data = {
+  const data = { // ep kieu du lieu
     ...form,
     images: imagesArr,
     publishedYear: Number(form.publishedYear),
@@ -79,15 +74,14 @@ const BookManager = () => {
   }
 
   try {
-    if (editId) {
-      await axios.put(`http://localhost:5000/api/books/${editId}`, data);
+    if (id) {
+      await axios.put(`http://localhost:5000/api/books/${id}`, data);
       alert("✅ Cập nhật thành công!");
     } else {
       await axios.post("http://localhost:5000/api/books", data);
       alert("✅ Thêm thành công!");
     }
-
-    setForm({
+    setForm({ // in lai du lieu ra form
       title: "",
       description: "",
       images: "",
@@ -98,14 +92,13 @@ const BookManager = () => {
       quantity: "",
       available: "",
     });
-    setEditId(null);
+    setid(null);
     fetchBooks();
   } catch (err) {
     console.error("Lỗi khi gửi lên server:", err.response?.data || err);
     alert("❌ Thất bại khi lưu!");
   }
 };
-
   const handleDelete = async (id) => {
     if (window.confirm("Bạn có chắc muốn xóa sách này không?")) {
       try {
@@ -129,7 +122,7 @@ const BookManager = () => {
       quantity: book.quantity || 0,
       available: book.available || 0,
     });
-    setEditId(book._id);
+    setid(book._id);
   };
 
   return (
@@ -214,7 +207,7 @@ const BookManager = () => {
           className="md:col-span-2 bg-blue-600 hover:bg-blue-700 text-white py-3 px-4 rounded-lg flex justify-center items-center gap-2 transition"
         >
           <PlusCircle size={20} />
-          {editId ? "Cập nhật sách" : "Thêm sách mới"}
+          {id ? "Cập nhật sách" : "Thêm sách mới"}
         </button>
       </form>
 
