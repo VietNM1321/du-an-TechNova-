@@ -17,9 +17,11 @@ import BookManager from "./pages/admin/Bookmanager";
 import AuthorManager from "./pages/admin/AuthorManager";
 import CategoryManager from "./pages/admin/CategoryManager";
 import SetPassword from "./pages/admin/SetPassword";
+import Users from "./pages/admin/Users";
 
 // Layouts
 import ClientLayout from "./layout/ClientLayout";
+import { User } from "lucide-react";
 
 function App() {
   return (
@@ -46,6 +48,7 @@ function App() {
           <Route path="author" element={<AuthorManager />} />
           <Route path="category" element={<CategoryManager />} />
             <Route path="setpassword" element={<SetPassword />} />
+            <Route path="users" element={<Users />} />
         </Route>
       </Routes>
     </Router>

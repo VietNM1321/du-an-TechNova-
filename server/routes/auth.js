@@ -47,23 +47,26 @@ router.put("/setpassword/:id", async (req, res) => {
     if (!password)
       return res.status(400).json({ message: "Vui lòng nhập mật khẩu!" });
 
+    const user = await User.findById(req.params.id);
+    if (!user) return res.status(404).json({ message: "Không tìm thấy sinh viên!" });
+
+    // 🔒 Nếu user đã có mật khẩu → không cấp nữa
+    if (user.password) {
+      return res.status(400).json({
+        message:
+          "Tài khoản này đã được cấp mật khẩu. Sinh viên chỉ có thể reset mật khẩu bằng quên mật khẩu.",
+      });
+    }
+
     const hashedPassword = await bcrypt.hash(password, 10);
+    user.password = hashedPassword;
+    await user.save();
 
-    const updated = await User.findByIdAndUpdate(
-      req.params.id,
-      { password: hashedPassword },
-      { new: true }
-    );
-
-    if (!updated)
-      return res.status(404).json({ message: "Không tìm thấy sinh viên!" });
-
-    res.json({ message: "✅ Đặt mật khẩu thành công", user: updated });
+    res.json({ message: "✅ Cấp mật khẩu thành công", user });
   } catch (err) {
     res.status(500).json({ message: err.message });
   }
 });
-
 /* ============================================================
    3️⃣  ĐĂNG NHẬP (CÓ ADMIN CỐ ĐỊNH)
    ============================================================ */
