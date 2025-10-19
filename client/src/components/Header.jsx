@@ -155,14 +155,12 @@ const Header = ({ selectedCategory, setSelectedCategory }) => {
             <Link to="/login" className="bg-blue-600 hover:bg-blue-700 text-white font-medium px-4 py-2 rounded-lg">Đăng nhập</Link>
           )}
 
-          {/* Mobile button */}
           <button className="md:hidden text-gray-700 hover:text-blue-600" onClick={() => setMenuOpen(!menuOpen)}>
             {menuOpen ? <X size={24} /> : <Menu size={24} />}
           </button>
         </div>
       </div>
 
-      {/* Mobile Menu */}
       <AnimatePresence>
         {menuOpen && (
           <motion.div initial={{ height: 0 }} animate={{ height: "auto" }} exit={{ height: 0 }} transition={{ duration: 0.3 }} className="md:hidden bg-white border-t border-gray-200 overflow-hidden">
