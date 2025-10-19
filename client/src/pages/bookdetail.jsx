@@ -8,7 +8,6 @@ function BookDetail() {
   const navigate = useNavigate();
   const [book, setBook] = useState(null);
   const [relatedBooks, setRelatedBooks] = useState([]);
-  
   const { addToCart } = useCart();
 
   useEffect(() => {
@@ -63,50 +62,52 @@ function BookDetail() {
   return (
     <div className="container mx-auto px-4">
       <div className="max-w-6xl mx-auto p-6 grid md:grid-cols-2 gap-8 bg-white rounded-xl shadow-lg">
-        <img
-          src={book.images?.[0] || defaultImage}
-          alt={book.title}
-          className="rounded-lg shadow-md w-full max-w-sm object-cover"
-        />
-      </div>
+        <div className="flex justify-center items-start">
+          <img
+            src={book.images?.[0] || defaultImage}
+            alt={book.title}
+            className="rounded-lg shadow-md w-full max-w-sm object-cover"
+          />
+        </div>
 
-      <div className="flex flex-col gap-2 text-gray-800">
-        <h1 className="text-2xl font-bold text-blue-700 uppercase">
-          {book.title}
-        </h1>
-        <p>
-          <strong>Tác giả:</strong>{" "}
-          <span className="text-blue-600">
-            {book.author?.name || "Không rõ"}
-          </span>
-        </p>
-        <p>
-          <strong>Thể loại:</strong> {book.category?.name || "—"}
-        </p>
-        <p>
-          <strong>Số lượng còn:</strong> {book.available ?? "—"}
-        </p>
-        <p>
-          <strong>Mô tả:</strong> {book.description || "Chưa có mô tả"}
-        </p>
+        <div className="flex flex-col gap-3 text-gray-800">
+          <h1 className="text-2xl font-bold text-blue-700 uppercase">
+            {book.title}
+          </h1>
+          <p>
+            <strong>Tác giả:</strong>{" "}
+            <span className="text-blue-600">
+              {book.author?.name || "Không rõ"}
+            </span>
+          </p>
+          <p>
+            <strong>Thể loại:</strong> {book.category?.name || "—"}
+          </p>
+          <p>
+            <strong>Số lượng còn:</strong> {book.available ?? "—"}
+          </p>
+          <p>
+            <strong>Mô tả:</strong> {book.description || "Chưa có mô tả"}
+          </p>
 
-        <div className="mt-4 flex gap-3">
-          <button
-            onClick={() => navigate(-1)}
-            className="border border-gray-400 px-4 py-2 rounded-md hover:bg-gray-100"
-          >
-            ⬅ Quay lại
-          </button>
-          <button
-            onClick={handleBorrow}
-            className="bg-green-600 text-white px-4 py-2 rounded-md hover:bg-green-700"
-          >
-            ✅ Mượn sách
-          </button>
+          <div className="mt-4 flex gap-3">
+            <button
+              onClick={() => navigate(-1)}
+              className="border border-gray-400 px-4 py-2 rounded-md hover:bg-gray-100"
+            >
+              ⬅ Quay lại
+            </button>
+            <button
+              onClick={handleBorrow}
+              className="bg-green-600 text-white px-4 py-2 rounded-md hover:bg-green-700"
+            >
+              ✅ Mượn sách
+            </button>
+          </div>
         </div>
       </div>
 
-      <div className="md:col-span-2 mt-10 border-t pt-5">
+      <div className="max-w-6xl mx-auto mt-10 border-t pt-5">
         <h2 className="text-xl font-semibold text-gray-800 mb-4">
           📚 Sách cùng thể loại
         </h2>
