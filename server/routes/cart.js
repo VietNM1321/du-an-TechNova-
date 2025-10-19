@@ -28,18 +28,41 @@ router.get("/", async (req, res) => {
 
 router.post("/add", async (req, res) => {
   try {
-    const { userId, bookId, quantity = 1 } = req.body;
+    const {
+      userId,
+      bookId,
+      quantity = 1,
+      fullName,
+      studentId,
+      email,
+      borrowDate,
+      returnDate,
+    } = req.body;
+
     if (!userId || !bookId) return res.status(400).json({ message: "Thiếu userId hoặc bookId" });
 
-    const book = await Book.findById(bookId);
-    if (!book) return res.status(404).json({ message: "Không tìm thấy sách" });
+    let cart = await Cart.findOne({ userId }) || new Cart({ userId, items: [] });
 
-    let cart = await Cart.findOne({ userId });
-    if (!cart) cart = new Cart({ userId, items: [] });
+    const existingItem = cart.items.find(i => i.bookId.toString() === bookId);
 
-    const item = cart.items.find(i => i.bookId && i.bookId.toString() === bookId);
-    if (item) item.quantity += Number(quantity);
-    else cart.items.push({ bookId, quantity: Number(quantity), price: book.price });
+    if (existingItem) {
+      existingItem.quantity += Number(quantity);
+      existingItem.fullName = fullName;
+      existingItem.studentId = studentId;
+      existingItem.email = email;
+      existingItem.borrowDate = borrowDate;
+      existingItem.returnDate = returnDate;
+    } else {
+      cart.items.push({
+        bookId,
+        quantity: Number(quantity),
+        fullName,
+        studentId,
+        email,
+        borrowDate,
+        returnDate,
+      });
+    }
 
     await cart.save();
     const populated = await Cart.findById(cart._id).populate("items.bookId", "title images price");
