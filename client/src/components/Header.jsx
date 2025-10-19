@@ -3,7 +3,7 @@ import { motion, AnimatePresence } from "framer-motion";
 import { Search, ShoppingCart, User, Menu, X, LogOut, LayoutDashboard, History } from "lucide-react";
 import { Link, useNavigate } from "react-router-dom";
 import logo from "../assets/logo.png";
-
+import { useCart } from "../components/cart";
 const Header = ({ selectedCategory, setSelectedCategory }) => {
   const [menuOpen, setMenuOpen] = useState(false);
   const [searchOpen, setSearchOpen] = useState(false);
@@ -12,14 +12,14 @@ const Header = ({ selectedCategory, setSelectedCategory }) => {
   const [categories, setCategories] = useState([]);
   const [showCategories, setShowCategories] = useState(false);
   const navigate = useNavigate();
+  const { cart } = useCart();
 
-  // 🔹 Lấy thông tin sinh viên
+  const totalItems = cart?.items?.reduce((sum, item) => sum + item.quantity, 0) || 0;
   useEffect(() => {
     const user = localStorage.getItem("user");
     if (user) setStudentCode(JSON.parse(user).studentCode);
   }, []);
 
-  // 🔹 Lấy danh mục sách
   useEffect(() => {
     fetch("http://localhost:5000/api/category")
       .then(res => res.json())
@@ -37,10 +37,10 @@ const Header = ({ selectedCategory, setSelectedCategory }) => {
   const handleSearch = (e) => {
     e.preventDefault();
     if (searchTerm.trim()) {
-      setSelectedCategory(searchTerm); // filter sách ngay
+      setSelectedCategory(searchTerm);
       setSearchOpen(false);
       setSearchTerm("");
-      navigate("/"); // optional
+      navigate("/");
     }
   };
 
@@ -72,7 +72,6 @@ const Header = ({ selectedCategory, setSelectedCategory }) => {
                   exit={{ opacity: 0, y: -10 }}
                   className="absolute bg-white shadow-lg rounded-xl mt-2 border border-gray-200 w-44 overflow-hidden z-50"
                 >
-                  {/* Toàn bộ sách */}
                   <li>
                     <button
                       onClick={() => { setSelectedCategory(""); setShowCategories(false); }}
@@ -134,10 +133,13 @@ const Header = ({ selectedCategory, setSelectedCategory }) => {
             </AnimatePresence>
           </div>
 
-          {/* Cart */}
           <Link to="/cart" className="relative text-gray-700 hover:text-blue-600">
             <ShoppingCart size={22} />
-            <span className="absolute -top-2 -right-2 bg-blue-600 text-white text-xs w-4 h-4 rounded-full flex items-center justify-center">3</span>
+            {totalItems > 0 && (
+              <span className="absolute -top-2 -right-2 bg-blue-600 text-white text-xs w-5 h-5 rounded-full flex items-center justify-center font-semibold">
+                {totalItems}
+              </span>
+            )}
           </Link>
 
           {/* User menu */}
@@ -160,43 +162,6 @@ const Header = ({ selectedCategory, setSelectedCategory }) => {
           </button>
         </div>
       </div>
-
-      <AnimatePresence>
-        {menuOpen && (
-          <motion.div initial={{ height: 0 }} animate={{ height: "auto" }} exit={{ height: 0 }} transition={{ duration: 0.3 }} className="md:hidden bg-white border-t border-gray-200 overflow-hidden">
-            <ul className="flex flex-col py-2 text-gray-800 text-sm">
-              <li><Link to="/" onClick={() => setMenuOpen(false)} className="block px-6 py-3 hover:bg-gray-100">Trang Chủ</Link></li>
-              <li><Link to="/about" onClick={() => setMenuOpen(false)} className="block px-6 py-3 hover:bg-gray-100">Giới thiệu</Link></li>
-
-              {/* Mobile dropdown Sách */}
-              <li>
-                <button onClick={() => setShowCategories(!showCategories)} className="w-full text-left px-6 py-3 hover:bg-gray-100">Sách</button>
-                {showCategories && (
-                  <ul className="pl-6">
-                    {/* Toàn bộ sách */}
-                    <li>
-                      <button onClick={() => { setSelectedCategory(""); setMenuOpen(false); setShowCategories(false); }} className="block px-6 py-2 hover:bg-gray-100 w-full text-left">
-                        Toàn bộ sách
-                      </button>
-                    </li>
-                    {categories.map(cat => (
-                      <li key={cat._id}>
-                        <button onClick={() => { setSelectedCategory(cat.name); setMenuOpen(false); setShowCategories(false); }} className="block px-6 py-2 hover:bg-gray-100 w-full text-left">
-                          {cat.name}
-                        </button>
-                      </li>
-                    ))}
-                  </ul>
-                )}
-              </li>
-
-              <li><Link to="/news" onClick={() => setMenuOpen(false)} className="block px-6 py-3 hover:bg-gray-100">Tin tức</Link></li>
-              <li><Link to="/policies" onClick={() => setMenuOpen(false)} className="block px-6 py-3 hover:bg-gray-100">Chính sách</Link></li>
-              <li><Link to="/contact" onClick={() => setMenuOpen(false)} className="block px-6 py-3 hover:bg-gray-100">Liên hệ</Link></li>
-            </ul>
-          </motion.div>
-        )}
-      </AnimatePresence>
     </header>
   );
 };
