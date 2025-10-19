@@ -10,6 +10,7 @@ import BookList from "./pages/BookList";
 import BookDetail from "./pages/bookdetail";
 import SearchResults from "./pages/SearchResults";
 import Cart from "./pages/Cart"
+import AllBook from "./components/allBook"; 
 
 // Admin pages
 import AdminLayout from "./layout/adminLayout";
@@ -41,6 +42,7 @@ function App() {
           <Route path="contact" element={<Contact />} />
           <Route path="policies" element={<Policies />} />
           <Route path="/search" element={<SearchResults />} />
+          <Route path="/allbooks" element={<AllBook />} />
         </Route>
 
         {/* Layout cho admin */}

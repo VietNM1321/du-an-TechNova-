@@ -36,12 +36,13 @@ const Header = ({ selectedCategory, setSelectedCategory }) => {
 
   const handleSearch = (e) => {
     e.preventDefault();
-    if (searchTerm.trim()) {
-      setSelectedCategory(searchTerm); // filter sách ngay
-      setSearchOpen(false);
-      setSearchTerm("");
-      navigate("/"); // optional
-    }
+    const term = searchTerm.trim();
+    if (!term) return;
+    // điều hướng đến trang kết quả tìm kiếm với query param
+    setSearchOpen(false);
+    setSearchTerm("");
+    setMenuOpen(false);
+    navigate(`/search?q=${encodeURIComponent(term)}`);
   };
 
   return (
@@ -74,12 +75,13 @@ const Header = ({ selectedCategory, setSelectedCategory }) => {
                 >
                   {/* Toàn bộ sách */}
                   <li>
-                    <button
+                    <Link
+                      to="/allbooks"
                       onClick={() => { setSelectedCategory(""); setShowCategories(false); }}
                       className="block px-4 py-2 hover:bg-gray-100 text-sm text-gray-800 w-full text-left"
                     >
                       Toàn bộ sách
-                    </button>
+                    </Link>
                   </li>
                   {categories.map(cat => (
                     <li key={cat._id}>
