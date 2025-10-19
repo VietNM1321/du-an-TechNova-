@@ -1,17 +1,16 @@
 import React, { useEffect, useState } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import axios from "axios";
-import { useCart } from "../components/cart";
+import BorrowForm from "../components/BorrowForm";
 
 function BookDetail() {
   const { id } = useParams();
   const navigate = useNavigate();
   const [book, setBook] = useState(null);
   const [relatedBooks, setRelatedBooks] = useState([]);
-  const { addToCart } = useCart();
+  const [showBorrowForm, setShowBorrowForm] = useState(false);
 
   const defaultImage = "https://cdn-icons-png.flaticon.com/512/2232/2232688.png";
-
   useEffect(() => {
     const fetchBook = async () => {
       try {
@@ -22,7 +21,7 @@ function BookDetail() {
       }
     };
     fetchBook();
-    window.scrollTo({ top: 0, behavior: "smooth" }); // cái này để cuận trang
+    window.scrollTo({ top: 0, behavior: "smooth" });
   }, [id]);
   useEffect(() => {
     if (book?.category?._id) {
@@ -41,15 +40,6 @@ function BookDetail() {
     }
   }, [book, id]);
 
-  const handleBorrow = async () => {
-    try {
-      await addToCart({ bookId: book._id, quantity: 1 });
-      alert("✅ Đã thêm sách vào giỏ!");
-    } catch (err) {
-      console.error("Lỗi khi thêm sách vào giỏ:", err);
-      alert("❌ Thêm sách vào giỏ thất bại.");
-    }
-  };
   const handleViewRelated = (relatedId) => {
     navigate(`/book/${relatedId}`);
   };
@@ -72,11 +62,14 @@ function BookDetail() {
             className="rounded-lg shadow-md w-full max-w-sm object-cover"
           />
         </div>
+
         <div className="flex flex-col gap-3 text-gray-800">
           <h1 className="text-3xl font-bold text-blue-700">{book.title}</h1>
           <p>
             <strong>Tác giả:</strong>{" "}
-            <span className="text-blue-600">{book.author?.name || "Không rõ"}</span>
+            <span className="text-blue-600">
+              {book.author?.name || "Không rõ"}
+            </span>
           </p>
           <p>
             <strong>Thể loại:</strong> {book.category?.name || "—"}
@@ -89,19 +82,20 @@ function BookDetail() {
           </p>
           <p>
             <strong>Mô tả:</strong>{" "}
-            <span className="text-gray-700">{book.description || "Chưa có mô tả"}</span>
+            <span className="text-gray-700">
+              {book.description || "Chưa có mô tả"}
+            </span>
           </p>
-
-          <div className="mt-4 flex gap-3">
+          <div className="flex gap-3 mt-4">
             <button
               onClick={() => navigate(-1)}
-              className="border border-gray-400 px-5 py-2 rounded-md hover:bg-gray-100 transition"
+              className="w-1/2 border border-gray-400 px-5 py-2 rounded-md hover:bg-gray-100 transition"
             >
               ⬅ Quay lại
             </button>
             <button
-              onClick={handleBorrow}
-              className="bg-green-600 text-white px-5 py-2 rounded-md hover:bg-green-700 transition"
+              onClick={() => setShowBorrowForm(true)}
+              className="w-1/2 bg-green-600 text-white px-5 py-2 rounded-md hover:bg-green-700 transition"
             >
               ✅ Mượn sách
             </button>
@@ -122,40 +116,35 @@ function BookDetail() {
             {relatedBooks.map((item) => (
               <div
                 key={item._id}
-                className="bg-white rounded-xl shadow-md hover:shadow-lg transition-all duration-300 overflow-hidden group"
+                onClick={() => handleViewRelated(item._id)}
+                className="bg-white rounded-xl shadow-md hover:shadow-lg transition-all duration-300 overflow-hidden group cursor-pointer"
               >
-                <div
-                  onClick={() => handleViewRelated(item._id)}
-                  className="cursor-pointer"
-                >
-                  <img
-                    src={item.images?.[0] || defaultImage}
-                    alt={item.title}
-                    className="w-full h-52 object-cover group-hover:scale-105 transition-transform duration-300"
-                  />
-                  <div className="p-4">
-                    <h3 className="text-base font-semibold text-gray-800 line-clamp-2">
-                      {item.title}
-                    </h3>
-                    <p className="text-sm text-gray-500 mt-1">
-                      {item.author?.name || "Không rõ"}
-                    </p>
-                    <button
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        handleViewRelated(item._id);
-                      }}
-                      className="mt-3 w-full bg-blue-600 text-white text-sm py-2 rounded-md hover:bg-blue-700 transition"
-                    >
-                      🔍 Xem chi tiết
-                    </button>
-                  </div>
+                <img
+                  src={item.images?.[0] || defaultImage}
+                  alt={item.title}
+                  className="w-full h-52 object-cover group-hover:scale-105 transition-transform duration-300"
+                />
+                <div className="p-4">
+                  <h3 className="text-base font-semibold text-gray-800 line-clamp-2">
+                    {item.title}
+                  </h3>
+                  <p className="text-sm text-gray-500 mt-1">
+                    {item.author?.name || "Không rõ"}
+                  </p>
+                  <button className="mt-3 w-full bg-blue-600 text-white text-sm py-2 rounded-md hover:bg-blue-700 transition">
+                    🔍 Xem chi tiết
+                  </button>
                 </div>
               </div>
             ))}
           </div>
         )}
       </div>
+
+      {/* gọi lại form borrowForm*/}
+      {showBorrowForm && (
+        <BorrowForm book={book} onClose={() => setShowBorrowForm(false)} />
+      )}
     </div>
   );
 }
