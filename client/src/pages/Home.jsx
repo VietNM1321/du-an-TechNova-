@@ -11,16 +11,13 @@ import Header from "../components/Header";
 
 function Home() {
   const [categories, setCategories] = useState([]);
-  const [selectedCategory, setSelectedCategory] = useState(""); // filter từ Header
+  const [selectedCategory, setSelectedCategory] = useState("");
   const sliderRefs = useRef({});
-
-  // Fetch categories + books
   useEffect(() => {
     const fetchData = async () => {
       try {
         const resCat = await axios.get("http://localhost:5000/api/category");
         const cats = resCat.data;
-
         const dataWithBooks = await Promise.all(
           cats.map(async (cat) => {
             const resBooks = await axios.get(
@@ -29,7 +26,6 @@ function Home() {
             return { ...cat, books: resBooks.data };
           })
         );
-
         setCategories(dataWithBooks);
       } catch (err) {
         console.error("Lỗi khi tải dữ liệu:", err);
@@ -38,24 +34,20 @@ function Home() {
     fetchData();
   }, []);
 
-  // Slider next/prev
   const nextSlide = (id) => sliderRefs.current[id]?.slickNext();
   const prevSlide = (id) => sliderRefs.current[id]?.slickPrev();
 
-  // Lọc category nếu selectedCategory có giá trị
   const displayedCategories = selectedCategory
     ? categories.filter((cat) => cat.name === selectedCategory)
     : categories;
 
   return (
     <div className="p-5 bg-gradient-to-b from-gray-50 to-white min-h-screen">
-      {/* Header với prop filter */}
       <Header
         selectedCategory={selectedCategory}
         setSelectedCategory={setSelectedCategory}
       />
 
-      {/* Banner */}
       <section className="relative rounded-2xl overflow-hidden shadow-xl mb-16 h-64 md:h-96">
         <img
           src={bannerImg}

@@ -9,6 +9,7 @@ import Policies from "./pages/Policies";
 import BookList from "./pages/BookList";
 import BookDetail from "./pages/bookdetail";
 import SearchResults from "./pages/SearchResults";
+import Cart from "./pages/Cart"
 
 // Admin pages
 import AdminLayout from "./layout/adminLayout";
@@ -34,6 +35,7 @@ function App() {
           <Route path="register" element={<Register />} />
           <Route path="books" element={<BookList />} />
           <Route path="/book/:id" element={<BookDetail />} />
+          <Route path="cart" element={<Cart />} />
           <Route path="about" element={<About />} />
           <Route path="news" element={<News />} />
           <Route path="contact" element={<Contact />} />

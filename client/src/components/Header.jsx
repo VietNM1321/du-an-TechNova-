@@ -3,6 +3,7 @@ import { motion, AnimatePresence } from "framer-motion";
 import { Search, ShoppingCart, User, Menu, X, LogOut, LayoutDashboard, History } from "lucide-react";
 import { Link, useNavigate } from "react-router-dom";
 import logo from "../assets/logo.png";
+import { useCart } from "../components/cart";
 
 const Header = ({ selectedCategory, setSelectedCategory, selectedAuthor, setSelectedAuthor }) => {
   const [menuOpen, setMenuOpen] = useState(false);
@@ -13,14 +14,15 @@ const Header = ({ selectedCategory, setSelectedCategory, selectedAuthor, setSele
   const [authors, setAuthors] = useState([]);
   const [showBooksMenu, setShowBooksMenu] = useState(false);
   const navigate = useNavigate();
+  const { cart } = useCart();
 
-  // 🔹 Lấy thông tin sinh viên
+  const totalItems = cart?.items?.reduce((sum, item) => sum + item.quantity, 0) || 0;
+
   useEffect(() => {
     const user = localStorage.getItem("user");
     if (user) setStudentCode(JSON.parse(user).studentCode);
   }, []);
 
-  // 🔹 Lấy danh mục sách
   useEffect(() => {
     fetch("http://localhost:5000/api/category")
       .then(res => res.json())
@@ -28,7 +30,6 @@ const Header = ({ selectedCategory, setSelectedCategory, selectedAuthor, setSele
       .catch(err => console.log(err));
   }, []);
 
-  // 🔹 Lấy danh sách tác giả
   useEffect(() => {
     fetch("http://localhost:5000/api/author")
       .then(res => res.json())
@@ -82,7 +83,6 @@ const Header = ({ selectedCategory, setSelectedCategory, selectedAuthor, setSele
                   exit={{ opacity: 0, y: -10 }}
                   className="absolute bg-white shadow-lg rounded-xl mt-2 border border-gray-200 w-56 overflow-hidden z-50"
                 >
-                  {/* Toàn bộ sách */}
                   <li>
                     <button
                       onClick={() => { setSelectedCategory(""); setSelectedAuthor(""); setShowBooksMenu(false); }}
@@ -92,7 +92,6 @@ const Header = ({ selectedCategory, setSelectedCategory, selectedAuthor, setSele
                     </button>
                   </li>
 
-                  {/* Danh mục */}
                   <li className="border-t border-gray-200">
                     <p className="px-4 py-2 text-sm font-semibold text-gray-500">Theo danh mục</p>
                   </li>
@@ -107,7 +106,6 @@ const Header = ({ selectedCategory, setSelectedCategory, selectedAuthor, setSele
                     </li>
                   ))}
 
-                  {/* Tác giả */}
                   <li className="border-t border-gray-200">
                     <p className="px-4 py-2 text-sm font-semibold text-gray-500">Theo tác giả</p>
                   </li>
@@ -164,10 +162,13 @@ const Header = ({ selectedCategory, setSelectedCategory, selectedAuthor, setSele
             </AnimatePresence>
           </div>
 
-          {/* Cart */}
-          <Link to="/user/carts" className="relative text-gray-700 hover:text-blue-600">
+          <Link to="/cart" className="relative text-gray-700 hover:text-blue-600">
             <ShoppingCart size={22} />
-            <span className="absolute -top-2 -right-2 bg-blue-600 text-white text-xs w-4 h-4 rounded-full flex items-center justify-center">3</span>
+            {totalItems > 0 && (
+              <span className="absolute -top-2 -right-2 bg-blue-600 text-white text-xs w-5 h-5 rounded-full flex items-center justify-center font-semibold">
+                {totalItems}
+              </span>
+            )}
           </Link>
 
           {/* User menu */}
@@ -185,7 +186,6 @@ const Header = ({ selectedCategory, setSelectedCategory, selectedAuthor, setSele
             <Link to="/login" className="bg-blue-600 hover:bg-blue-700 text-white font-medium px-4 py-2 rounded-lg">Đăng nhập</Link>
           )}
 
-          {/* Mobile button */}
           <button className="md:hidden text-gray-700 hover:text-blue-600" onClick={() => setMenuOpen(!menuOpen)}>
             {menuOpen ? <X size={24} /> : <Menu size={24} />}
           </button>
@@ -199,8 +199,6 @@ const Header = ({ selectedCategory, setSelectedCategory, selectedAuthor, setSele
             <ul className="flex flex-col py-2 text-gray-800 text-sm">
               <li><Link to="/" onClick={() => setMenuOpen(false)} className="block px-6 py-3 hover:bg-gray-100">Trang Chủ</Link></li>
               <li><Link to="/about" onClick={() => setMenuOpen(false)} className="block px-6 py-3 hover:bg-gray-100">Giới thiệu</Link></li>
-
-              {/* Mobile dropdown Sách */}
               <li>
                 <button onClick={() => setShowBooksMenu(!showBooksMenu)} className="w-full text-left px-6 py-3 hover:bg-gray-100">Sách</button>
                 {showBooksMenu && (
@@ -227,7 +225,6 @@ const Header = ({ selectedCategory, setSelectedCategory, selectedAuthor, setSele
                   </ul>
                 )}
               </li>
-
               <li><Link to="/news" onClick={() => setMenuOpen(false)} className="block px-6 py-3 hover:bg-gray-100">Tin tức</Link></li>
               <li><Link to="/policies" onClick={() => setMenuOpen(false)} className="block px-6 py-3 hover:bg-gray-100">Chính sách</Link></li>
               <li><Link to="/contact" onClick={() => setMenuOpen(false)} className="block px-6 py-3 hover:bg-gray-100">Liên hệ</Link></li>
