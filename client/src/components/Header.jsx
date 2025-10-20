@@ -4,13 +4,14 @@ import { Search, ShoppingCart, User, Menu, X, LogOut, LayoutDashboard, History }
 import { Link, useNavigate } from "react-router-dom";
 import logo from "../assets/logo.png";
 
-const Header = ({ selectedCategory, setSelectedCategory }) => {
+const Header = ({ selectedCategory, setSelectedCategory, selectedAuthor, setSelectedAuthor }) => {
   const [menuOpen, setMenuOpen] = useState(false);
   const [searchOpen, setSearchOpen] = useState(false);
   const [searchTerm, setSearchTerm] = useState("");
   const [studentCode, setStudentCode] = useState("");
   const [categories, setCategories] = useState([]);
-  const [showCategories, setShowCategories] = useState(false);
+  const [authors, setAuthors] = useState([]);
+  const [showBooksMenu, setShowBooksMenu] = useState(false);
   const navigate = useNavigate();
 
   // 🔹 Lấy thông tin sinh viên
@@ -27,6 +28,14 @@ const Header = ({ selectedCategory, setSelectedCategory }) => {
       .catch(err => console.log(err));
   }, []);
 
+  // 🔹 Lấy danh sách tác giả
+  useEffect(() => {
+    fetch("http://localhost:5000/api/author")
+      .then(res => res.json())
+      .then(data => setAuthors(data))
+      .catch(err => console.log(err));
+  }, []);
+
   const handleLogout = () => {
     localStorage.removeItem("token");
     localStorage.removeItem("user");
@@ -37,10 +46,11 @@ const Header = ({ selectedCategory, setSelectedCategory }) => {
   const handleSearch = (e) => {
     e.preventDefault();
     if (searchTerm.trim()) {
-      setSelectedCategory(searchTerm); // filter sách ngay
+      setSelectedCategory(searchTerm);
+      setSelectedAuthor(""); // reset author khi search
       setSearchOpen(false);
       setSearchTerm("");
-      navigate("/"); // optional
+      navigate("/");
     }
   };
 
@@ -59,35 +69,55 @@ const Header = ({ selectedCategory, setSelectedCategory }) => {
           {/* Menu Sách */}
           <div className="relative">
             <button
-              onClick={() => setShowCategories(!showCategories)}
+              onClick={() => setShowBooksMenu(!showBooksMenu)}
               className="flex items-center gap-1 text-gray-700 hover:text-blue-600"
             >
-              Sách
+              Danh mục
             </button>
             <AnimatePresence>
-              {showCategories && (
+              {showBooksMenu && (
                 <motion.ul
                   initial={{ opacity: 0, y: -10 }}
                   animate={{ opacity: 1, y: 0 }}
                   exit={{ opacity: 0, y: -10 }}
-                  className="absolute bg-white shadow-lg rounded-xl mt-2 border border-gray-200 w-44 overflow-hidden z-50"
+                  className="absolute bg-white shadow-lg rounded-xl mt-2 border border-gray-200 w-56 overflow-hidden z-50"
                 >
                   {/* Toàn bộ sách */}
                   <li>
                     <button
-                      onClick={() => { setSelectedCategory(""); setShowCategories(false); }}
+                      onClick={() => { setSelectedCategory(""); setSelectedAuthor(""); setShowBooksMenu(false); }}
                       className="block px-4 py-2 hover:bg-gray-100 text-sm text-gray-800 w-full text-left"
                     >
                       Toàn bộ sách
                     </button>
                   </li>
+
+                  {/* Danh mục */}
+                  <li className="border-t border-gray-200">
+                    <p className="px-4 py-2 text-sm font-semibold text-gray-500">Theo danh mục</p>
+                  </li>
                   {categories.map(cat => (
                     <li key={cat._id}>
                       <button
-                        onClick={() => { setSelectedCategory(cat.name); setShowCategories(false); }}
+                        onClick={() => { setSelectedCategory(cat.name); setSelectedAuthor(""); setShowBooksMenu(false); }}
                         className="block px-4 py-2 hover:bg-gray-100 text-sm text-gray-800 w-full text-left"
                       >
                         {cat.name}
+                      </button>
+                    </li>
+                  ))}
+
+                  {/* Tác giả */}
+                  <li className="border-t border-gray-200">
+                    <p className="px-4 py-2 text-sm font-semibold text-gray-500">Theo tác giả</p>
+                  </li>
+                  {authors.map(author => (
+                    <li key={author._id}>
+                      <button
+                        onClick={() => { setSelectedAuthor(author.name); setSelectedCategory(""); setShowBooksMenu(false); }}
+                        className="block px-4 py-2 hover:bg-gray-100 text-sm text-gray-800 w-full text-left"
+                      >
+                        {author.name}
                       </button>
                     </li>
                   ))}
@@ -172,19 +202,25 @@ const Header = ({ selectedCategory, setSelectedCategory }) => {
 
               {/* Mobile dropdown Sách */}
               <li>
-                <button onClick={() => setShowCategories(!showCategories)} className="w-full text-left px-6 py-3 hover:bg-gray-100">Sách</button>
-                {showCategories && (
+                <button onClick={() => setShowBooksMenu(!showBooksMenu)} className="w-full text-left px-6 py-3 hover:bg-gray-100">Sách</button>
+                {showBooksMenu && (
                   <ul className="pl-6">
-                    {/* Toàn bộ sách */}
                     <li>
-                      <button onClick={() => { setSelectedCategory(""); setMenuOpen(false); setShowCategories(false); }} className="block px-6 py-2 hover:bg-gray-100 w-full text-left">
-                        Toàn bộ sách
-                      </button>
+                      <button onClick={() => { setSelectedCategory(""); setSelectedAuthor(""); setMenuOpen(false); setShowBooksMenu(false); }} className="block px-6 py-2 hover:bg-gray-100 w-full text-left">Toàn bộ sách</button>
                     </li>
+                    <li className="pt-2 font-semibold text-gray-500">Theo danh mục</li>
                     {categories.map(cat => (
                       <li key={cat._id}>
-                        <button onClick={() => { setSelectedCategory(cat.name); setMenuOpen(false); setShowCategories(false); }} className="block px-6 py-2 hover:bg-gray-100 w-full text-left">
+                        <button onClick={() => { setSelectedCategory(cat.name); setSelectedAuthor(""); setMenuOpen(false); setShowBooksMenu(false); }} className="block px-6 py-2 hover:bg-gray-100 w-full text-left">
                           {cat.name}
+                        </button>
+                      </li>
+                    ))}
+                    <li className="pt-2 font-semibold text-gray-500">Theo tác giả</li>
+                    {authors.map(author => (
+                      <li key={author._id}>
+                        <button onClick={() => { setSelectedAuthor(author.name); setSelectedCategory(""); setMenuOpen(false); setShowBooksMenu(false); }} className="block px-6 py-2 hover:bg-gray-100 w-full text-left">
+                          {author.name}
                         </button>
                       </li>
                     ))}
