@@ -11,9 +11,8 @@ const router = express.Router();
 router.post("/register", async (req, res) => {
   try {
     const { studentCode, email } = req.body;
-
     if (!studentCode || !email)
-      return res.status(400).json({ message: "Vui lòng nhập đủ thông tin" });
+      return res.status(400).json({ message: "Vui lòng nhập đủ thông tin!" });
 
     const existUser = await User.findOne({
       $or: [{ studentCode }, { email }],
@@ -30,7 +29,7 @@ router.post("/register", async (req, res) => {
     });
 
     res.status(201).json({
-      message: "Đăng ký thành công. Kiểm tra email để biết mật khẩu",
+      message: "Đăng ký thành công. Kiểm tra email để biết mật khẩu!",
       user: newUser,
     });
   } catch (err) {
@@ -48,18 +47,16 @@ router.put("/setpassword/:id", async (req, res) => {
       return res.status(400).json({ message: "Vui lòng nhập mật khẩu!" });
 
     const user = await User.findById(req.params.id);
-    if (!user) return res.status(404).json({ message: "Không tìm thấy sinh viên!" });
+    if (!user)
+      return res.status(404).json({ message: "Không tìm thấy sinh viên!" });
 
-    // 🔒 Nếu user đã có mật khẩu → không cấp nữa
-    if (user.password) {
+    if (user.password)
       return res.status(400).json({
-        message:
-          "Tài khoản này đã được cấp mật khẩu. Sinh viên chỉ có thể reset mật khẩu bằng quên mật khẩu.",
+        message: "Tài khoản đã có mật khẩu!",
       });
-    }
 
-    const hashedPassword = await bcrypt.hash(password, 10);
-    user.password = hashedPassword;
+    const hashed = await bcrypt.hash(password, 10);
+    user.password = hashed;
     await user.save();
 
     res.json({ message: "✅ Cấp mật khẩu thành công", user });
@@ -67,29 +64,28 @@ router.put("/setpassword/:id", async (req, res) => {
     res.status(500).json({ message: err.message });
   }
 });
+
 /* ============================================================
-   3️⃣  ĐĂNG NHẬP (CÓ ADMIN CỐ ĐỊNH)
+   3️⃣  ĐĂNG NHẬP
    ============================================================ */
 router.post("/login", async (req, res) => {
   try {
     const { email, password } = req.body;
 
-    // ✅ 1️⃣: ADMIN cố định (không cần có trong DB)
+    // ADMIN cố định
     if (
       (email === "admin" || email === "admin@gmail.com") &&
       password === "123456789"
     ) {
-      const token = jwt.sign(
-        { id: "admin-fixed", role: "admin" },
-        process.env.JWT_SECRET || "secret",
-        { expiresIn: "3d" }
-      );
+      const token = jwt.sign({ id: "admin", role: "admin" }, "secret", {
+        expiresIn: "3d",
+      });
 
       return res.json({
         message: "Đăng nhập admin thành công!",
         token,
         user: {
-          id: "admin-fixed",
+          _id: "admin",
           email: "admin@gmail.com",
           role: "admin",
           studentCode: "ADMIN",
@@ -97,40 +93,26 @@ router.post("/login", async (req, res) => {
       });
     }
 
-    // ✅ 2️⃣: Tài khoản sinh viên trong DB
     const user = await User.findOne({ email });
     if (!user)
       return res.status(404).json({ message: "Không tìm thấy tài khoản!" });
 
-    if (!user.active)
-      return res
-        .status(403)
-        .json({ message: "Tài khoản của bạn đã bị khóa!" });
-
     if (!user.password)
       return res
         .status(400)
-        .json({ message: "Tài khoản chưa có mật khẩu, liên hệ admin!" });
+        .json({ message: "Tài khoản chưa được cấp mật khẩu!" });
 
     const isMatch = await bcrypt.compare(password, user.password);
-    if (!isMatch)
-      return res.status(400).json({ message: "Sai mật khẩu!" });
+    if (!isMatch) return res.status(400).json({ message: "Sai mật khẩu!" });
 
-    const token = jwt.sign(
-      { id: user._id, role: user.role },
-      process.env.JWT_SECRET || "secret",
-      { expiresIn: "3d" }
-    );
+    const token = jwt.sign({ id: user._id, role: user.role }, "secret", {
+      expiresIn: "3d",
+    });
 
     res.json({
       message: "Đăng nhập thành công!",
       token,
-      user: {
-        id: user._id,
-        email: user.email,
-        role: user.role,
-        studentCode: user.studentCode,
-      },
+      user,
     });
   } catch (err) {
     res.status(500).json({ message: err.message });
@@ -138,64 +120,7 @@ router.post("/login", async (req, res) => {
 });
 
 /* ============================================================
-   4️⃣  ĐỔI MẬT KHẨU
-   ============================================================ */
-router.put("/change-password/:id", async (req, res) => {
-  try {
-    const { oldPassword, newPassword } = req.body;
-    const user = await User.findById(req.params.id);
-
-    if (!user)
-      return res.status(404).json({ message: "Không tìm thấy người dùng!" });
-
-    const isMatch = await bcrypt.compare(oldPassword, user.password);
-    if (!isMatch)
-      return res.status(400).json({ message: "Mật khẩu cũ không đúng!" });
-
-    const hashed = await bcrypt.hash(newPassword, 10);
-    user.password = hashed;
-    user.passwordChangedAt = new Date();
-    await user.save();
-
-    res.json({ message: "Đổi mật khẩu thành công!" });
-  } catch (err) {
-    res.status(500).json({ message: err.message });
-  }
-});
-
-/* ============================================================
-   5️⃣  QUÊN MẬT KHẨU
-   ============================================================ */
-router.post("/forgot-password", async (req, res) => {
-  try {
-    const { studentCode, email, newPassword } = req.body;
-
-    if (!studentCode || !email || !newPassword)
-      return res.status(400).json({
-        message: "Vui lòng nhập đủ mã sinh viên, email và mật khẩu mới",
-      });
-
-    const user = await User.findOne({ studentCode, email });
-    if (!user)
-      return res
-        .status(404)
-        .json({ message: "Không tìm thấy sinh viên với thông tin này" });
-
-    const hashed = await bcrypt.hash(newPassword, 10);
-    user.password = hashed;
-    user.passwordChangedAt = new Date();
-    await user.save();
-
-    res.json({
-      message: "Cấp lại mật khẩu thành công! Vui lòng kiểm tra gmail",
-    });
-  } catch (err) {
-    res.status(500).json({ message: err.message });
-  }
-});
-
-/* ============================================================
-   6️⃣  LẤY DANH SÁCH SINH VIÊN (ĐỂ ADMIN CẤP MẬT KHẨU)
+   4️⃣  LẤY DANH SÁCH USER
    ============================================================ */
 router.get("/users", async (req, res) => {
   try {

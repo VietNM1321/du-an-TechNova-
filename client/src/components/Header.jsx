@@ -1,54 +1,84 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { Search, ShoppingCart, User, Menu, X, LogOut, LayoutDashboard, History } from "lucide-react";
+import {
+  Search,
+  ShoppingCart,
+  User,
+  Menu,
+  X,
+  LogOut,
+  LayoutDashboard,
+  History,
+} from "lucide-react";
 import { Link, useNavigate } from "react-router-dom";
 import logo from "../assets/logo.png";
 import { useCart } from "../components/cart";
 
-const Header = ({ selectedCategory, setSelectedCategory, selectedAuthor, setSelectedAuthor }) => {
+const Header = ({
+  selectedCategory,
+  setSelectedCategory,
+  selectedAuthor,
+  setSelectedAuthor,
+}) => {
   const [menuOpen, setMenuOpen] = useState(false);
   const [searchOpen, setSearchOpen] = useState(false);
   const [searchTerm, setSearchTerm] = useState("");
-  const [studentCode, setStudentCode] = useState("");
+  const [user, setUser] = useState(null);
   const [categories, setCategories] = useState([]);
   const [authors, setAuthors] = useState([]);
   const [showBooksMenu, setShowBooksMenu] = useState(false);
+  const [userMenuOpen, setUserMenuOpen] = useState(false);
+  const userMenuRef = useRef(null);
+
   const navigate = useNavigate();
   const { cart } = useCart();
+  const totalItems =
+    cart?.items?.reduce((sum, item) => sum + item.quantity, 0) || 0;
 
-  const totalItems = cart?.items?.reduce((sum, item) => sum + item.quantity, 0) || 0;
-
+  /* 🟢 Lấy thông tin user từ localStorage */
   useEffect(() => {
-    const user = localStorage.getItem("user");
-    if (user) setStudentCode(JSON.parse(user).studentCode);
+    const stored = localStorage.getItem("user");
+    if (stored) setUser(JSON.parse(stored));
   }, []);
 
+  /* 🟢 Lấy danh mục và tác giả */
   useEffect(() => {
     fetch("http://localhost:5000/api/category")
-      .then(res => res.json())
-      .then(data => setCategories(data))
-      .catch(err => console.log(err));
-  }, []);
+      .then((res) => res.json())
+      .then((data) => setCategories(data))
+      .catch((err) => console.log(err));
 
-  useEffect(() => {
     fetch("http://localhost:5000/api/author")
-      .then(res => res.json())
-      .then(data => setAuthors(data))
-      .catch(err => console.log(err));
+      .then((res) => res.json())
+      .then((data) => setAuthors(data))
+      .catch((err) => console.log(err));
   }, []);
 
+  /* 🟢 Đóng menu user khi click ra ngoài */
+  useEffect(() => {
+    const handleClickOutside = (event) => {
+      if (userMenuRef.current && !userMenuRef.current.contains(event.target)) {
+        setUserMenuOpen(false);
+      }
+    };
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => document.removeEventListener("mousedown", handleClickOutside);
+  }, []);
+
+  /* 🟢 Đăng xuất */
   const handleLogout = () => {
     localStorage.removeItem("token");
     localStorage.removeItem("user");
-    setStudentCode("");
+    setUser(null);
     navigate("/login");
   };
 
+  /* 🟢 Xử lý tìm kiếm */
   const handleSearch = (e) => {
     e.preventDefault();
     if (searchTerm.trim()) {
       setSelectedCategory(searchTerm);
-      setSelectedAuthor(""); // reset author khi search
+      setSelectedAuthor("");
       setSearchOpen(false);
       setSearchTerm("");
       navigate("/");
@@ -58,14 +88,19 @@ const Header = ({ selectedCategory, setSelectedCategory, selectedAuthor, setSele
   return (
     <header className="fixed top-0 w-full z-50 bg-white text-gray-800 shadow-sm border-b border-gray-200">
       <div className="container mx-auto flex items-center justify-between px-6 py-3">
+        {/* Logo */}
         <Link to="/" className="flex items-center gap-2">
           <img src={logo} alt="logo" className="h-10 w-auto" />
         </Link>
 
         {/* Navigation desktop */}
         <nav className="hidden md:flex gap-8 text-sm font-medium items-center">
-          <Link to="/" className="text-gray-700 hover:text-blue-600">Trang Chủ</Link>
-          <Link to="/about" className="text-gray-700 hover:text-blue-600">Giới thiệu</Link>
+          <Link to="/" className="text-gray-700 hover:text-blue-600">
+            Trang Chủ
+          </Link>
+          <Link to="/about" className="text-gray-700 hover:text-blue-600">
+            Giới thiệu
+          </Link>
 
           {/* Menu Sách */}
           <div className="relative">
@@ -85,34 +120,48 @@ const Header = ({ selectedCategory, setSelectedCategory, selectedAuthor, setSele
                 >
                   <li>
                     <button
-                      onClick={() => { setSelectedCategory(""); setSelectedAuthor(""); setShowBooksMenu(false); }}
+                      onClick={() => {
+                        setSelectedCategory("");
+                        setSelectedAuthor("");
+                        setShowBooksMenu(false);
+                      }}
                       className="block px-4 py-2 hover:bg-gray-100 text-sm text-gray-800 w-full text-left"
                     >
                       Toàn bộ sách
                     </button>
                   </li>
-
                   <li className="border-t border-gray-200">
-                    <p className="px-4 py-2 text-sm font-semibold text-gray-500">Theo danh mục</p>
+                    <p className="px-4 py-2 text-sm font-semibold text-gray-500">
+                      Theo danh mục
+                    </p>
                   </li>
-                  {categories.map(cat => (
+                  {categories.map((cat) => (
                     <li key={cat._id}>
                       <button
-                        onClick={() => { setSelectedCategory(cat.name); setSelectedAuthor(""); setShowBooksMenu(false); }}
+                        onClick={() => {
+                          setSelectedCategory(cat.name);
+                          setSelectedAuthor("");
+                          setShowBooksMenu(false);
+                        }}
                         className="block px-4 py-2 hover:bg-gray-100 text-sm text-gray-800 w-full text-left"
                       >
                         {cat.name}
                       </button>
                     </li>
                   ))}
-
                   <li className="border-t border-gray-200">
-                    <p className="px-4 py-2 text-sm font-semibold text-gray-500">Theo tác giả</p>
+                    <p className="px-4 py-2 text-sm font-semibold text-gray-500">
+                      Theo tác giả
+                    </p>
                   </li>
-                  {authors.map(author => (
+                  {authors.map((author) => (
                     <li key={author._id}>
                       <button
-                        onClick={() => { setSelectedAuthor(author.name); setSelectedCategory(""); setShowBooksMenu(false); }}
+                        onClick={() => {
+                          setSelectedAuthor(author.name);
+                          setSelectedCategory("");
+                          setShowBooksMenu(false);
+                        }}
                         className="block px-4 py-2 hover:bg-gray-100 text-sm text-gray-800 w-full text-left"
                       >
                         {author.name}
@@ -124,16 +173,26 @@ const Header = ({ selectedCategory, setSelectedCategory, selectedAuthor, setSele
             </AnimatePresence>
           </div>
 
-          <Link to="/news" className="text-gray-700 hover:text-blue-600">Tin tức</Link>
-          <Link to="/policies" className="text-gray-700 hover:text-blue-600">Chính sách</Link>
-          <Link to="/contact" className="text-gray-700 hover:text-blue-600">Liên hệ</Link>
+          <Link to="/news" className="text-gray-700 hover:text-blue-600">
+            Tin tức
+          </Link>
+          <Link to="/policies" className="text-gray-700 hover:text-blue-600">
+            Chính sách
+          </Link>
+          <Link to="/contact" className="text-gray-700 hover:text-blue-600">
+            Liên hệ
+          </Link>
         </nav>
 
         {/* Right icons */}
         <div className="flex items-center gap-5">
           {/* Search */}
           <div className="relative">
-            <motion.button whileHover={{ scale: 1.1 }} onClick={() => setSearchOpen(!searchOpen)} className="text-gray-700 hover:text-blue-600">
+            <motion.button
+              whileHover={{ scale: 1.1 }}
+              onClick={() => setSearchOpen(!searchOpen)}
+              className="text-gray-700 hover:text-blue-600"
+            >
               <Search size={20} />
             </motion.button>
             <AnimatePresence>
@@ -154,7 +213,10 @@ const Header = ({ selectedCategory, setSelectedCategory, selectedAuthor, setSele
                     className="px-4 py-2 w-60 outline-none text-sm text-gray-800"
                     autoFocus
                   />
-                  <button type="submit" className="px-3 py-2 text-blue-600 hover:text-blue-700">
+                  <button
+                    type="submit"
+                    className="px-3 py-2 text-blue-600 hover:text-blue-700"
+                  >
                     <Search size={18} />
                   </button>
                 </motion.form>
@@ -162,6 +224,7 @@ const Header = ({ selectedCategory, setSelectedCategory, selectedAuthor, setSele
             </AnimatePresence>
           </div>
 
+          {/* Cart */}
           <Link to="/cart" className="relative text-gray-700 hover:text-blue-600">
             <ShoppingCart size={22} />
             {totalItems > 0 && (
@@ -172,66 +235,80 @@ const Header = ({ selectedCategory, setSelectedCategory, selectedAuthor, setSele
           </Link>
 
           {/* User menu */}
-          {studentCode ? (
-            <div className="relative group">
-              <button className="text-gray-700 hover:text-blue-600 font-medium">{studentCode}</button>
-              <ul className="absolute right-0 mt-3 hidden group-hover:block bg-white text-gray-800 rounded-xl overflow-hidden shadow-xl w-48 border border-gray-100">
-                <li><Link to="/admin" className="flex items-center gap-2 px-4 py-2 hover:bg-gray-100"><LayoutDashboard size={16}/> Quản trị</Link></li>
-                <li><Link to="/user/profile" className="flex items-center gap-2 px-4 py-2 hover:bg-gray-100"><User size={16}/> Hồ sơ</Link></li>
-                <li><Link to="/books/history" className="flex items-center gap-2 px-4 py-2 hover:bg-gray-100"><History size={16}/> Lịch sử</Link></li>
-                <li><button onClick={handleLogout} className="w-full text-left flex items-center gap-2 px-4 py-2 hover:bg-gray-100"><LogOut size={16}/> Đăng xuất</button></li>
-              </ul>
+          {user ? (
+            <div ref={userMenuRef} className="relative">
+              <button
+                onClick={() => setUserMenuOpen((prev) => !prev)}
+                className="text-gray-700 hover:text-blue-600 font-medium"
+              >
+                {user.studentCode}
+              </button>
+
+              <AnimatePresence>
+                {userMenuOpen && (
+                  <motion.ul
+                    initial={{ opacity: 0, y: -10 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    exit={{ opacity: 0, y: -10 }}
+                    transition={{ duration: 0.2 }}
+                    className="absolute right-0 mt-3 bg-white text-gray-800 rounded-xl overflow-hidden shadow-xl w-48 border border-gray-100 z-50"
+                  >
+                    {user.role === "admin" && (
+                      <li>
+                        <Link
+                          to="/admin"
+                          className="flex items-center gap-2 px-4 py-2 hover:bg-gray-100"
+                        >
+                          <LayoutDashboard size={16} /> Quản trị
+                        </Link>
+                      </li>
+                    )}
+                    <li>
+                      <Link
+                        to={`/profile/${user.id}`} // 👈 dùng user.id thay vì undefined
+                        className="flex items-center gap-2 px-4 py-2 hover:bg-gray-100"
+                      >
+                        <User size={16} /> Hồ sơ
+                      </Link>
+                    </li>
+                    <li>
+                      <Link
+                        to="/history"
+                        className="flex items-center gap-2 px-4 py-2 hover:bg-gray-100"
+                      >
+                        <History size={16} /> Lịch sử
+                      </Link>
+                    </li>
+                    <li>
+                      <button
+                        onClick={handleLogout}
+                        className="w-full text-left flex items-center gap-2 px-4 py-2 hover:bg-gray-100"
+                      >
+                        <LogOut size={16} /> Đăng xuất
+                      </button>
+                    </li>
+                  </motion.ul>
+                )}
+              </AnimatePresence>
             </div>
           ) : (
-            <Link to="/login" className="bg-blue-600 hover:bg-blue-700 text-white font-medium px-4 py-2 rounded-lg">Đăng nhập</Link>
+            <Link
+              to="/login"
+              className="bg-blue-600 hover:bg-blue-700 text-white font-medium px-4 py-2 rounded-lg"
+            >
+              Đăng nhập
+            </Link>
           )}
 
-          <button className="md:hidden text-gray-700 hover:text-blue-600" onClick={() => setMenuOpen(!menuOpen)}>
+          {/* Menu mobile */}
+          <button
+            className="md:hidden text-gray-700 hover:text-blue-600"
+            onClick={() => setMenuOpen(!menuOpen)}
+          >
             {menuOpen ? <X size={24} /> : <Menu size={24} />}
           </button>
         </div>
       </div>
-
-      {/* Mobile Menu */}
-      <AnimatePresence>
-        {menuOpen && (
-          <motion.div initial={{ height: 0 }} animate={{ height: "auto" }} exit={{ height: 0 }} transition={{ duration: 0.3 }} className="md:hidden bg-white border-t border-gray-200 overflow-hidden">
-            <ul className="flex flex-col py-2 text-gray-800 text-sm">
-              <li><Link to="/" onClick={() => setMenuOpen(false)} className="block px-6 py-3 hover:bg-gray-100">Trang Chủ</Link></li>
-              <li><Link to="/about" onClick={() => setMenuOpen(false)} className="block px-6 py-3 hover:bg-gray-100">Giới thiệu</Link></li>
-              <li>
-                <button onClick={() => setShowBooksMenu(!showBooksMenu)} className="w-full text-left px-6 py-3 hover:bg-gray-100">Sách</button>
-                {showBooksMenu && (
-                  <ul className="pl-6">
-                    <li>
-                      <button onClick={() => { setSelectedCategory(""); setSelectedAuthor(""); setMenuOpen(false); setShowBooksMenu(false); }} className="block px-6 py-2 hover:bg-gray-100 w-full text-left">Toàn bộ sách</button>
-                    </li>
-                    <li className="pt-2 font-semibold text-gray-500">Theo danh mục</li>
-                    {categories.map(cat => (
-                      <li key={cat._id}>
-                        <button onClick={() => { setSelectedCategory(cat.name); setSelectedAuthor(""); setMenuOpen(false); setShowBooksMenu(false); }} className="block px-6 py-2 hover:bg-gray-100 w-full text-left">
-                          {cat.name}
-                        </button>
-                      </li>
-                    ))}
-                    <li className="pt-2 font-semibold text-gray-500">Theo tác giả</li>
-                    {authors.map(author => (
-                      <li key={author._id}>
-                        <button onClick={() => { setSelectedAuthor(author.name); setSelectedCategory(""); setMenuOpen(false); setShowBooksMenu(false); }} className="block px-6 py-2 hover:bg-gray-100 w-full text-left">
-                          {author.name}
-                        </button>
-                      </li>
-                    ))}
-                  </ul>
-                )}
-              </li>
-              <li><Link to="/news" onClick={() => setMenuOpen(false)} className="block px-6 py-3 hover:bg-gray-100">Tin tức</Link></li>
-              <li><Link to="/policies" onClick={() => setMenuOpen(false)} className="block px-6 py-3 hover:bg-gray-100">Chính sách</Link></li>
-              <li><Link to="/contact" onClick={() => setMenuOpen(false)} className="block px-6 py-3 hover:bg-gray-100">Liên hệ</Link></li>
-            </ul>
-          </motion.div>
-        )}
-      </AnimatePresence>
     </header>
   );
 };
