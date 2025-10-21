@@ -76,13 +76,13 @@ const Header = ({
   /* 🟢 Xử lý tìm kiếm */
   const handleSearch = (e) => {
     e.preventDefault();
-    if (searchTerm.trim()) {
-      setSelectedCategory(searchTerm);
-      setSelectedAuthor("");
-      setSearchOpen(false);
-      setSearchTerm("");
-      navigate("/");
-    }
+    const term = searchTerm.trim();
+    if (!term) return;
+    // điều hướng đến trang kết quả tìm kiếm với query param
+    setSearchOpen(false);
+    setSearchTerm("");
+    setMenuOpen(false);
+    navigate(`/search?q=${encodeURIComponent(term)}`);
   };
 
   return (
