@@ -11,7 +11,6 @@ import BookDetail from "./pages/bookdetail";
 import SearchResults from "./pages/SearchResults";
 import Cart from "./pages/Cart";
 import Profile from "./pages/Profile";
-
 import AdminLayout from "./layout/adminLayout";
 import AdminHome from "./pages/admin/AdminHome";
 import BookManager from "./pages/admin/Bookmanager";
@@ -19,14 +18,18 @@ import AuthorManager from "./pages/admin/AuthorManager";
 import AuthorAdd from "./pages/admin/AuthorAdd";
 import AuthorEdit from "./pages/admin/AuthorEdit";
 import CategoryManager from "./pages/admin/CategoryManager";
+import AddCategory from "./pages/admin/Addcategory";
+import EditCategory from "./pages/admin/Editcategory";
 import SetPassword from "./pages/admin/SetPassword";
 import Users from "./pages/admin/Users";
+
 import ClientLayout from "./layout/ClientLayout";
 
 function App() {
   return (
     <Router>
       <Routes>
+        {/* Client routes */}
         <Route path="/" element={<ClientLayout />}>
           <Route index element={<Home />} />
           <Route path="login" element={<Login />} />
@@ -41,6 +44,8 @@ function App() {
           <Route path="search" element={<SearchResults />} />
           <Route path="profile/:id" element={<Profile />} />
         </Route>
+
+        {/* Admin routes */}
         <Route path="/admin/*" element={<AdminLayout />}>
           <Route index element={<AdminHome />} />
           <Route path="bookmanager" element={<BookManager />} />
@@ -48,6 +53,8 @@ function App() {
           <Route path="authoradd" element={<AuthorAdd />} />
           <Route path="authoredit/:id" element={<AuthorEdit />} />
           <Route path="category" element={<CategoryManager />} />
+          <Route path="category/add" element={<AddCategory />} />
+          <Route path="category/edit/:id" element={<EditCategory />} />
           <Route path="setpassword" element={<SetPassword />} />
           <Route path="users" element={<Users />} />
         </Route>

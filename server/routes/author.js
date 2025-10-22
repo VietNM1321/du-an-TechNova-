@@ -25,7 +25,7 @@ router.get("/", async (req, res) => {
     const authors = await Author.find().skip(skip).limit(limit);
 
     res.json({
-      data: authors,
+      authors,
       currentPage: page,
       totalPages: Math.ceil(total / limit),
       totalItems: total,

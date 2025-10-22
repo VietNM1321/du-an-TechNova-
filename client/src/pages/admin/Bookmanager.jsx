@@ -36,13 +36,16 @@ const BookManager = () => {
   };
 
   const fetchAuthors = async () => {
-    try {
-      const res = await axios.get("http://localhost:5000/api/authors");
-      setAuthors(res.data);
-    } catch (err) {
-      console.error("Lỗi lấy tác giả:", err);
-    }
-  };
+  try {
+    const res = await axios.get("http://localhost:5000/api/authors");
+    console.log("📚 Dữ liệu tác giả từ server:", res.data);
+    const data = Array.isArray(res.data.author) ? res.data.author : [];
+    setAuthors(data);
+  } catch (err) {
+    console.error("❌ Lỗi lấy tác giả:", err);
+    setAuthors([]);
+  }
+};
   useEffect(() => {
     fetchBooks();
     fetchCategories();

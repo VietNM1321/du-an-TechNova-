@@ -11,15 +11,16 @@ const AuthorManager = () => {
 
   // lấy danh sách tác giả theo mảng và phân trang đây
   const fetchAuthors = async (pageNum = 1) => {
-    try {
-      const res = await axios.get(`${API}?page=${pageNum}&limit=5`);
-      setAuthors(res.data.data || res.data || []);
-      setTotalPages(res.data.totalPages || 1);
-      setPage(res.data.currentPage || 1);
-    } catch (error) {
-      console.error("Lỗi tải danh sách tác giả:", error);
-    }
-  };
+  try {
+    const res = await axios.get(`${API}?page=${pageNum}&limit=5`);
+    setAuthors(res.data.authors || []);
+    setTotalPages(res.data.totalPages || 1);
+    setPage(res.data.currentPage || 1);
+  } catch (error) {
+    console.error("Lỗi tải danh sách tác giả:", error);
+    setAuthors([]);
+  }
+};
 
   useEffect(() => {
     fetchAuthors(page);
@@ -76,7 +77,7 @@ const AuthorManager = () => {
           {authors.map((a) => (
             <tr
               key={a._id}
-              className="hover:bg-gray-50 h-20 align-middle" // 👈 cố định chiều cao và căn giữa
+              className="hover:bg-gray-50 h-20 align-middle"
             >
               <td className="p-3 border text-center align-middle">
                 {a.image ? (
