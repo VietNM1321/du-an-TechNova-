@@ -27,7 +27,7 @@ import AddCategory from "./pages/admin/Addcategory";
 import EditCategory from "./pages/admin/Editcategory";
 import SetPassword from "./pages/admin/SetPassword";
 import Users from "./pages/admin/Users";
-
+import History from "./pages/History";
 import ClientLayout from "./layout/ClientLayout";
 
 function App() {
@@ -48,6 +48,7 @@ function App() {
           <Route path="policies" element={<Policies />} />
           <Route path="search" element={<SearchResults />} />
           <Route path="profile/:id" element={<Profile />} />
+          <Route path="/history" element={<History />} />
         </Route>
 
         {/* Admin routes */}
