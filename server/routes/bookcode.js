@@ -60,11 +60,19 @@ router.put("/:id", async (req, res) => {
 });
 router.delete("/:id", async (req, res) => {
   try {
-    const deleted = await BookCode.findByIdAndDelete(req.params.id);
-    if (!deleted) return res.status(404).json({ message: "Không tìm thấy BookCode" });
-    res.json({ message: "Xóa BookCode thành công" });
+    const id = req.params.id;
+    const count = await Book.countDocuments({ bookCode: id });
+    if (count > 0) {
+      return res.status(400).json({
+        message: "Không thể xóa BookCode vì đang có sách sử dụng",
+      });
+    }
+
+    await BookCode.findByIdAndDelete(id);
+    res.json({ message: "✅ Xóa BookCode thành công" });
   } catch (err) {
-    res.status(500).json({ message: "Lỗi server", error: err.message });
+    console.error(err);
+    res.status(500).json({ message: "Lỗi server" });
   }
 });
 
