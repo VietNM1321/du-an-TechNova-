@@ -8,6 +8,8 @@ import {
   LogOut,
   LayoutDashboard,
   History,
+  BookOpen,
+  PenTool,
 } from "lucide-react";
 import { Link, useNavigate } from "react-router-dom";
 import logo from "../assets/logo.png";
@@ -23,12 +25,14 @@ const Header = ({
   const [searchTerm, setSearchTerm] = useState("");
   const [user, setUser] = useState(null);
   const [userMenuOpen, setUserMenuOpen] = useState(false);
+  const [menuOpen, setMenuOpen] = useState(false);
   const [categories, setCategories] = useState([]);
-  const [categoryMenuOpen, setCategoryMenuOpen] = useState(false);
+  const [authors, setAuthors] = useState([]);
   const userMenuRef = useRef(null);
-  const categoryMenuRef = useRef(null);
+  const menuRef = useRef(null);
   const navigate = useNavigate();
   const { cart } = useCart();
+
   const totalItems =
     cart?.items?.reduce((sum, item) => sum + item.quantity, 0) || 0;
 
@@ -38,7 +42,7 @@ const Header = ({
     if (stored) setUser(JSON.parse(stored));
   }, []);
 
-  // 🟢 Đóng menu user hoặc danh mục khi click ra ngoài
+  // 🟢 Đóng menu khi click ra ngoài
   useEffect(() => {
     const handleClickOutside = (e) => {
       if (
@@ -47,28 +51,29 @@ const Header = ({
       ) {
         setUserMenuOpen(false);
       }
-      if (
-        categoryMenuRef.current &&
-        !categoryMenuRef.current.contains(e.target)
-      ) {
-        setCategoryMenuOpen(false);
+      if (menuRef.current && !menuRef.current.contains(e.target)) {
+        setMenuOpen(false);
       }
     };
     document.addEventListener("mousedown", handleClickOutside);
     return () => document.removeEventListener("mousedown", handleClickOutside);
   }, []);
 
-  // 🟢 Lấy danh mục từ API
+  // 🟢 Gọi API danh mục & tác giả
   useEffect(() => {
-    const fetchCategories = async () => {
+    const fetchData = async () => {
       try {
-        const res = await axios.get("http://localhost:5000/api/category");
-        setCategories(res.data.categories || []);
-      } catch (error) {
-        console.error("Lỗi tải danh mục:", error);
+        const [catRes, authRes] = await Promise.all([
+          axios.get("http://localhost:5000/api/category"),
+          axios.get("http://localhost:5000/api/author"),
+        ]);
+        setCategories(catRes.data);
+        setAuthors(authRes.data);
+      } catch (err) {
+        console.error("Lỗi khi tải dữ liệu:", err);
       }
     };
-    fetchCategories();
+    fetchData();
   }, []);
 
   // 🟢 Đăng xuất
@@ -88,11 +93,19 @@ const Header = ({
     setSearchTerm("");
   };
 
-  // 🟢 Chọn danh mục
-  const handleSelectCategory = (name) => {
-    setSelectedCategory(name);
-    setCategoryMenuOpen(false);
-    navigate("/"); // quay lại trang chủ để lọc theo danh mục
+  // 🟢 Chọn danh mục hoặc tác giả
+  const handleSelectCategory = (category) => {
+    setSelectedCategory(category);
+    setSelectedAuthor(null);
+    navigate(`/category/${category._id}`);
+    setMenuOpen(false);
+  };
+
+  const handleSelectAuthor = (author) => {
+    setSelectedAuthor(author);
+    setSelectedCategory(null);
+    navigate(`/author/${author._id}`);
+    setMenuOpen(false);
   };
 
   return (
@@ -105,7 +118,7 @@ const Header = ({
       </div>
 
       {/* 🔹 Logo + Tìm kiếm + Giỏ hàng + User */}
-      <div className="flex flex-wrap items-center justify-between px-6 py-3">
+      <div className="flex items-center justify-between px-6 py-3 space-x-6">
         {/* Logo */}
         <Link to="/" className="flex items-center gap-2">
           <img src={logo} alt="logo" className="h-12 w-auto" />
@@ -115,7 +128,7 @@ const Header = ({
         {/* Ô tìm kiếm */}
         <form
           onSubmit={handleSearch}
-          className="flex flex-1 max-w-xl border border-gray-300 rounded-full items-center px-4 py-2 mx-4"
+          className="flex flex-1 max-w-xl border border-gray-300 rounded-full items-center px-4 py-2"
         >
           <Search className="text-gray-500 mr-2" size={20} />
           <input
@@ -135,6 +148,7 @@ const Header = ({
 
         {/* Giỏ hàng + User */}
         <div className="flex items-center gap-5">
+          {/* 🛒 Giỏ hàng */}
           <Link
             to="/cart"
             className="relative text-gray-700 hover:text-red-700 transition"
@@ -147,13 +161,14 @@ const Header = ({
             )}
           </Link>
 
+          {/* 👤 Người dùng */}
           {user ? (
             <div ref={userMenuRef} className="relative">
               <button
                 onClick={() => setUserMenuOpen((prev) => !prev)}
                 className="text-gray-700 hover:text-red-700 font-medium"
               >
-                {user.studentCode}
+            {user.role === "admin" ? "Admin" : user.studentCode}
               </button>
               <AnimatePresence>
                 {userMenuOpen && (
@@ -212,46 +227,65 @@ const Header = ({
         </div>
       </div>
 
-      {/* 🔹 Thanh menu chính */}
-      <nav
-        ref={categoryMenuRef}
-        className="relative flex items-center bg-gray-100 py-3 px-6 text-gray-800 font-medium border-t border-gray-200"
-      >
-        {/* Nút Danh mục */}
-        <button
-          onClick={() => setCategoryMenuOpen((prev) => !prev)}
-          className="flex items-center gap-2 text-red-600 font-semibold hover:opacity-80 transition"
-        >
-          <Menu size={22} />
-          <span>Danh mục</span>
-        </button>
+      {/* 🔹 Thanh menu Danh mục + Trang chủ + Tin tức + Chính sách + Liên hệ */}
+      <nav className="relative flex items-center bg-gray-100 py-3 px-6 text-gray-800 font-medium border-t border-gray-200">
+        {/* Danh mục bên trái */}
+        <div ref={menuRef} className="relative">
+          <button
+            onClick={() => setMenuOpen((prev) => !prev)}
+            className="flex items-center gap-2 text-red-600 font-semibold hover:opacity-80 transition"
+          >
+            <Menu size={22} />
+            <span>Danh mục</span>
+          </button>
 
-        {/* Menu Danh mục xổ xuống */}
-        <AnimatePresence>
-          {categoryMenuOpen && (
-            <motion.ul
-              initial={{ opacity: 0, y: -10 }}
-              animate={{ opacity: 1, y: 0 }}
-              exit={{ opacity: 0, y: -10 }}
-              className="absolute left-6 top-12 bg-white shadow-xl border border-gray-200 rounded-lg z-50 w-56 overflow-hidden"
-            >
-              {categories.map((cat) => (
-                <li
-                  key={cat._id}
-                  onClick={() => handleSelectCategory(cat.name)}
-                  className="px-4 py-2 hover:bg-red-100 cursor-pointer"
-                >
-                  {cat.name}
-                </li>
-              ))}
-              {categories.length === 0 && (
-                <li className="px-4 py-2 text-gray-400 text-sm">
-                  (Chưa có danh mục)
-                </li>
-              )}
-            </motion.ul>
-          )}
-        </AnimatePresence>
+          <AnimatePresence>
+            {menuOpen && (
+              <motion.div
+                initial={{ opacity: 0, y: -10 }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={{ opacity: 0, y: -10 }}
+                className="absolute left-0 mt-3 bg-white shadow-xl border border-gray-200 rounded-lg z-50 grid grid-cols-1 divide-y divide-gray-200"
+              >
+                {/* Danh mục sách */}
+                <div className="p-3">
+                  <h3 className="font-semibold text-red-600 flex items-center gap-2 mb-2">
+                    <BookOpen size={18} /> Danh mục sách
+                  </h3>
+                  <ul>
+                    {categories.map((cat) => (
+                      <li
+                        key={cat._id}
+                        className="px-3 py-1 hover:bg-gray-100 cursor-pointer rounded-md"
+                        onClick={() => handleSelectCategory(cat)}
+                      >
+                        {cat.name}
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+
+                {/* Danh mục tác giả */}
+                <div className="p-3">
+                  <h3 className="font-semibold text-red-600 flex items-center gap-2 mb-2">
+                    <PenTool size={18} /> Danh mục tác giả
+                  </h3>
+                  <ul>
+                    {authors.map((author) => (
+                      <li
+                        key={author._id}
+                        className="px-3 py-1 hover:bg-gray-100 cursor-pointer rounded-md"
+                        onClick={() => handleSelectAuthor(author)}
+                      >
+                        {author.name}
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+              </motion.div>
+            )}
+          </AnimatePresence>
+        </div>
 
         {/* Các mục menu bên cạnh */}
         <div className="flex items-center gap-6 ml-8">
