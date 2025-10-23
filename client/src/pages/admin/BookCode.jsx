@@ -77,7 +77,7 @@ const BookCodeManager = () => {
               <td className="p-3 border text-center">
                 <div className="flex justify-center gap-2">
                   <button
-                    onClick={() => navigate(`/admin/bookcodeedit/${b._id}`)}
+                    onClick={() => navigate(`/admin/bookcode/edit/${b._id}`)}
                     className="bg-yellow-400 hover:bg-yellow-500 text-white px-3 py-1 rounded"
                   >
                     ✏️ Sửa

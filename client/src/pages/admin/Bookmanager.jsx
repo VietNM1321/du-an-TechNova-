@@ -77,7 +77,7 @@ const BookLManager = () => {
                     className="w-14 h-14 object-cover rounded-lg shadow-sm mx-auto"
                   />
                 </td>
-                <td className="p-3 font-mono">{b.code || "—"}</td>
+                <td className="p-3 font-mono">{b.bookCode?.prefix || "—"}</td>
                 <td className="p-3">{b.title}</td>
                 <td className="p-3">{b.category?.name || "—"}</td>
                 <td className="p-3">{b.author?.name || "—"}</td>
