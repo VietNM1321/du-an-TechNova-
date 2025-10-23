@@ -1,97 +1,138 @@
 import React, { useEffect, useState } from "react";
 import axios from "axios";
+import { useNavigate } from "react-router-dom";
 
-const BookCode = () => {
+const BookCodeManager = () => {
   const [bookCodes, setBookCodes] = useState([]);
-  const fetchBookCodes = async () => {
+  const [page, setPage] = useState(1);
+  const [totalPages, setTotalPages] = useState(1);
+  const navigate = useNavigate();
+  const API = "http://localhost:5000/api/bookcode";
+  const fetchBookCodes = async (pageNum = 1) => {
     try {
-      const res = await axios.get("http://localhost:5000/api/bookcode");
-      setBookCodes(res.data.bookcodes || res.data);
+      const res = await axios.get(`${API}?page=${pageNum}&limit=5`);
+      setBookCodes(res.data.bookcodes || []);
+      setTotalPages(res.data.pages || 1);
+      setPage(res.data.page || 1);
     } catch (err) {
-      console.error("Lỗi lấy BookCode:", err);
+      console.error("Lỗi tải danh sách BookCode:", err);
       setBookCodes([]);
     }
   };
+
+  useEffect(() => {
+    fetchBookCodes(page);
+  }, [page]);
   const handleDelete = async (id) => {
     if (window.confirm("Bạn có chắc muốn xóa BookCode này?")) {
       try {
-        const res = await axios.delete(`http://localhost:5000/api/bookcode/${id}`);
+        const res = await axios.delete(`${API}/${id}`);
         alert(res.data.message || "✅ Xóa thành công!");
-        fetchBookCodes();
+        fetchBookCodes(page);
       } catch (err) {
         alert(
           err.response?.data?.message ||
-          "❌ Không thể xóa BookCode. Do BookCode đang có sách!"
+          "❌ Không thể xóa BookCode. Do đang có sách sử dụng!"
         );
       }
     }
   };
 
-  useEffect(() => {
-    fetchBookCodes();
-  }, []);
+  const handlePrev = () => {
+    if (page > 1) setPage(page - 1);
+  };
+
+  const handleNext = () => {
+    if (page < totalPages) setPage(page + 1);
+  };
 
   return (
-    <div className="max-w-5xl mx-auto mt-12 p-6 bg-white rounded-xl shadow-lg border border-gray-200">
+    <div className="max-w-6xl mx-auto bg-white p-8 rounded-2xl shadow-lg mt-10">
       <div className="flex justify-between items-center mb-6">
-        <h2 className="text-2xl font-semibold">Danh sách BookCode</h2>
+        <h2 className="text-3xl font-bold text-blue-700">📚 Quản lý BookCode</h2>
         <button
-          onClick={() => window.location.href = "/admin/bookcodeadd"}
-          className="bg-blue-600 hover:bg-blue-700 text-white py-2 px-4 rounded-lg"
+          onClick={() => navigate("/admin/bookcodeadd")}
+          className="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700"
         >
           ➕ Thêm BookCode
         </button>
       </div>
 
-      <div className="overflow-x-auto border border-gray-200 rounded-xl shadow-sm">
-        <table className="min-w-full">
-          <thead className="bg-blue-50 text-blue-800">
-            <tr>
-              <th className="p-3 text-left">Category</th>
-              <th className="p-3 text-left">Code</th>
-              <th className="p-3 text-left">Last Number</th>
-              <th className="p-3 text-center">Hành động</th>
-            </tr> 
-          </thead>
-          <tbody>
-            {bookCodes.map((b, i) => (
-              <tr
-                key={b._id}
-                className={`border-t border-gray-100 ${
-                  i % 2 === 0 ? "bg-white" : "bg-gray-50"
-                } hover:bg-blue-50 transition`}
-              >
-                <td className="p-3">{b.category?.name || "—"}</td>
-                <td className="p-3 font-mono">{b.prefix}</td>
-                <td className="p-3">{b.lastNumber}</td>
-                <td className="p-3 text-center flex justify-center gap-2">
+      <table className="min-w-full border border-gray-200 rounded-lg overflow-hidden">
+        <thead className="bg-blue-100 text-blue-800">
+          <tr>
+            <th className="p-3 border text-left">Category</th>
+            <th className="p-3 border text-left">Code</th>
+            <th className="p-3 border text-left">Last Number</th>
+            <th className="p-3 border text-center">Hành động</th>
+          </tr>
+        </thead>
+
+        <tbody>
+          {bookCodes.map((b) => (
+            <tr key={b._id} className="hover:bg-gray-50 h-16 align-middle">
+              <td className="p-3 border">{b.category?.name || "—"}</td>
+              <td className="p-3 border font-mono">{b.prefix}</td>
+              <td className="p-3 border">{b.lastNumber}</td>
+              <td className="p-3 border text-center">
+                <div className="flex justify-center gap-2">
                   <button
-                    onClick={() => window.location.href = `/admin/bookcode/edit/${b._id}`}
-                    className="bg-yellow-400 hover:bg-yellow-500 text-white px-3 py-1 rounded-lg"
+                    onClick={() => navigate(`/admin/bookcodeedit/${b._id}`)}
+                    className="bg-yellow-400 hover:bg-yellow-500 text-white px-3 py-1 rounded"
                   >
                     ✏️ Sửa
                   </button>
                   <button
                     onClick={() => handleDelete(b._id)}
-                    className="bg-red-500 hover:bg-red-600 text-white px-3 py-1 rounded-lg"
+                    className="bg-red-500 hover:bg-red-600 text-white px-3 py-1 rounded"
                   >
                     🗑️ Xóa
                   </button>
-                </td>
-              </tr>
-            ))}
-            {bookCodes.length === 0 && (
-              <tr>
-                <td colSpan="4" className="text-center py-6 text-gray-500 italic">
-                  📭 Chưa có BookCode nào.
-                </td>
-              </tr>
-            )}
-          </tbody>
-        </table>
+                </div>
+              </td>
+            </tr>
+          ))}
+
+          {bookCodes.length === 0 && (
+            <tr>
+              <td colSpan="4" className="text-center py-6 text-gray-500 italic">
+                📭 Chưa có BookCode nào.
+              </td>
+            </tr>
+          )}
+        </tbody>
+      </table>
+      <div className="flex justify-center mt-6 space-x-4">
+        <button
+          onClick={handlePrev}
+          disabled={page === 1}
+          className={`px-4 py-2 rounded-lg border ${
+            page === 1
+              ? "text-gray-400 border-gray-200 cursor-not-allowed"
+              : "text-blue-600 border-blue-400 hover:bg-blue-100"
+          }`}
+        >
+          ◀ Trước
+        </button>
+
+        <span className="px-4 py-2 text-gray-700 font-semibold">
+          Trang {page}/{totalPages}
+        </span>
+
+        <button
+          onClick={handleNext}
+          disabled={page === totalPages}
+          className={`px-4 py-2 rounded-lg border ${
+            page === totalPages
+              ? "text-gray-400 border-gray-200 cursor-not-allowed"
+              : "text-blue-600 border-blue-400 hover:bg-blue-100"
+          }`}
+        >
+          Sau ▶
+        </button>
       </div>
     </div>
   );
 };
 
-export default BookCode;
+export default BookCodeManager;
