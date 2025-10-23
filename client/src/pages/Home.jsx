@@ -7,12 +7,13 @@ import { ChevronLeft, ChevronRight } from "lucide-react";
 import bannerImg from "../assets/benner3.png";
 import BookCard from "../components/bookcard";
 import SectionTitle from "../components/sectiontitle";
-import Header from "../components/Header";
 
 function Home() {
   const [categories, setCategories] = useState([]);
   const [selectedCategory, setSelectedCategory] = useState("");
   const sliderRefs = useRef({});
+
+  // 🟢 Lấy dữ liệu category + sách
   useEffect(() => {
     const fetchData = async () => {
       try {
@@ -43,11 +44,7 @@ function Home() {
 
   return (
     <div className="p-5 bg-gradient-to-b from-gray-50 to-white min-h-screen">
-      <Header
-        selectedCategory={selectedCategory}
-        setSelectedCategory={setSelectedCategory}
-      />
-
+      {/* ✅ Banner chính */}
       <section className="relative rounded-2xl overflow-hidden shadow-xl mb-16 h-64 md:h-96">
         <img
           src={bannerImg}
@@ -65,7 +62,7 @@ function Home() {
         </div>
       </section>
 
-      {/* Categories */}
+      {/* ✅ Danh sách danh mục + sách */}
       {displayedCategories.map((cat, index) => (
         <section key={cat._id} className="container mx-auto px-4 mb-20 relative">
           <div className="flex justify-between items-center mb-6">
@@ -76,7 +73,7 @@ function Home() {
             />
           </div>
 
-          {/* Slider / Grid theo category */}
+          {/* Slider hoặc Grid theo từng danh mục */}
           {cat.name.toLowerCase().includes("thiếu nhi") ? (
             <div className="relative">
               <Slider
@@ -95,7 +92,10 @@ function Home() {
                 {cat.books.map((book) => (
                   <div key={book._id} className="px-4">
                     <div className="transition-transform duration-300 hover:-translate-y-2">
-                      <BookCard book={book} btnColor="bg-pink-500 hover:bg-pink-600" />
+                      <BookCard
+                        book={book}
+                        btnColor="bg-pink-500 hover:bg-pink-600"
+                      />
                     </div>
                   </div>
                 ))}
@@ -141,7 +141,10 @@ function Home() {
                 {cat.books.map((book) => (
                   <div key={book._id} className="px-4">
                     <div className="transition-transform duration-300 hover:-translate-y-2">
-                      <BookCard book={book} btnColor="bg-blue-500 hover:bg-blue-600" />
+                      <BookCard
+                        book={book}
+                        btnColor="bg-blue-500 hover:bg-blue-600"
+                      />
                     </div>
                   </div>
                 ))}
@@ -150,8 +153,14 @@ function Home() {
           ) : (
             <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-8">
               {cat.books.map((book) => (
-                <div key={book._id} className="transition-transform duration-300 hover:-translate-y-2">
-                  <BookCard book={book} btnColor="bg-yellow-400 hover:bg-yellow-500" />
+                <div
+                  key={book._id}
+                  className="transition-transform duration-300 hover:-translate-y-2"
+                >
+                  <BookCard
+                    book={book}
+                    btnColor="bg-yellow-400 hover:bg-yellow-500"
+                  />
                 </div>
               ))}
             </div>
