@@ -11,6 +11,7 @@ import reviews from "./routes/review.js";
 import authRoutes from "./routes/auth.js";
 import userRoutes from "./routes/userRoutes.js";
 import cartRouter from "./routes/cart.js";
+import bookcodeRoutes from "./routes/bookcode.js";
 
 dotenv.config();
 const app = express();
@@ -21,6 +22,7 @@ app.use("/uploads", express.static("uploads"));
 app.use("/api/auth", authRoutes);
 app.use("/api/authors", authors);
 app.use("/api/books", bookRoutes);
+app.use("/api/bookcode", bookcodeRoutes);
 app.use("/api/cart", cartRouter);
 app.use("/api/reviews", reviews);
 app.use("/api/users", userRoutes);

@@ -10,13 +10,13 @@ const BookList = () => {
   const navigate = useNavigate();
 
   useEffect(() => {
-    axios.get("http://localhost:5000/api/categories").then((res) => 
-      setCategories(res.data)).catch((err) => 
-      console.error("Lỗi lấy danh mục:", err));
+    axios.get("http://localhost:5000/api/authors")
+      .then((res) => setAuthors(Array.isArray(res.data) ? res.data : []))
+      .catch((err) => console.error("Lỗi lấy tác giả:", err));
 
-    axios.get("http://localhost:5000/api/authors").then((res) => 
-      setAuthors(res.data)).catch((err) => 
-        console.error("Lỗi lấy tác giả:", err));
+    axios.get("http://localhost:5000/api/category")
+      .then((res) => setCategories(Array.isArray(res.data) ? res.data : []))
+      .catch((err) => console.error("Lỗi lấy danh mục:", err));
   }, []);
 
   const handleCategoryClick = async (catId) => {
@@ -30,11 +30,22 @@ const BookList = () => {
       console.error("Lỗi lấy sách theo thể loại:", err);
     }
   };
+  useEffect(() => {
+    const fetchAllBooks = async () => {
+      try {
+        const res = await axios.get("http://localhost:5000/api/books");
+        setBooks(res.data);
+      } catch (err) {
+        console.error("Lỗi lấy sách:", err);
+      }
+    };
 
+    fetchAllBooks();  
+  }, []);
   const handleAuthorClick = async (authorId) => {
     setSelectedType({ type: "author", id: authorId });
     try {
-      const res = await axios.get(`http://localhost:5000/api/books?author=${authorId}`);
+      const res = await axios.get(`http://localhost:5000/api/books?authors=${authorId}`);
       setBooks(res.data);
     } catch (err) {
       console.error("Lỗi lấy sách theo tác giả:", err);
@@ -95,7 +106,11 @@ const BookList = () => {
                 >
                   <div className="aspect-[3/4] w-full overflow-hidden">
                     <img
-                      src={book.image || "/default-book.jpg"}
+                      src={
+                        Array.isArray(book.images) && book.images.length > 0
+                          ? `http://localhost:5000${book.images[0]}`
+                          : "/default-book.jpg"
+                      }
                       alt={book.title}
                       className="w-full h-full object-cover"
                     />

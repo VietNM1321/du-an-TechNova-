@@ -15,7 +15,9 @@ import AdminLayout from "./layout/adminLayout";
 import AdminHome from "./pages/admin/AdminHome";
 import BookManager from "./pages/admin/Bookmanager";
 import AuthorManager from "./pages/admin/AuthorManager";
+import BookEdit from "./pages/admin/BookEdit"
 import AuthorAdd from "./pages/admin/AuthorAdd";
+import BookAdd from "./pages/admin/BookAdd"
 import AuthorEdit from "./pages/admin/AuthorEdit";
 import CategoryManager from "./pages/admin/CategoryManager";
 import AddCategory from "./pages/admin/Addcategory";
@@ -49,6 +51,8 @@ function App() {
         <Route path="/admin/*" element={<AdminLayout />}>
           <Route index element={<AdminHome />} />
           <Route path="bookmanager" element={<BookManager />} />
+          <Route path="bookadd" element={<BookAdd />} />
+          <Route path="book/edit/:id" element={<BookEdit />} />
           <Route path="author" element={<AuthorManager />} />
           <Route path="authoradd" element={<AuthorAdd />} />
           <Route path="authoredit/:id" element={<AuthorEdit />} />

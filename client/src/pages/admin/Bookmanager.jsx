@@ -1,107 +1,26 @@
 import React, { useEffect, useState } from "react";
 import axios from "axios";
-import { BookOpen, PlusCircle, Edit, Trash2 } from "lucide-react";
+import { Edit, Trash2, BookOpen } from "lucide-react";
+import { useNavigate } from "react-router-dom";
 
-const BookManager = () => {
+const BookLManager = () => {
   const [books, setBooks] = useState([]);
-  const [categories, setCategories] = useState([]);
-  const [authors, setAuthors] = useState([]);
-  const [id, setid] = useState(null);
-  const [form, setForm] = useState({ // hien thi du lieu da co cua form
-    title: "",
-    description: "",
-    images: "",
-    category: "",
-    author: "",
-    publisher: "",
-    publishedYear: "",
-    quantity: "",
-    available: "",
-  });
+  const navigate = useNavigate();
+
   const fetchBooks = async () => {
     try {
       const res = await axios.get("http://localhost:5000/api/books");
-      setBooks(res.data);
+      setBooks(res.data.books || res.data);
     } catch (err) {
       console.error("Lỗi lấy sách:", err);
-    }
-  };
-  const fetchCategories = async () => {
-    try {
-      const res = await axios.get("http://localhost:5000/api/category");
-      setCategories(res.data);
-    } catch (err) {
-      console.error("Lỗi lấy danh mục:", err);
+      setBooks([]);
     }
   };
 
-  const fetchAuthors = async () => {
-  try {
-    const res = await axios.get("http://localhost:5000/api/authors");
-    console.log("📚 Dữ liệu tác giả từ server:", res.data);
-    const data = Array.isArray(res.data.author) ? res.data.author : [];
-    setAuthors(data);
-  } catch (err) {
-    console.error("❌ Lỗi lấy tác giả:", err);
-    setAuthors([]);
-  }
-};
   useEffect(() => {
     fetchBooks();
-    fetchCategories();
-    fetchAuthors();
   }, []);
-  // day la phan validate yeu cau nhap thong tin
-  const handleSubmit = async (e) => {
-  e.preventDefault();
-  const imagesArr = form.images.split(",").map(i => i.trim()).filter(Boolean);
-  if (!form.title || imagesArr.length === 0 || !form.publishedYear || !form.category) {
-    alert("Vui lòng nhập đầy đủ thông tin!");
-    return;
-  }
 
-  const data = { // ep kieu du lieu
-    ...form,
-    images: imagesArr,
-    publishedYear: Number(form.publishedYear),
-    quantity: Number(form.quantity) || 0,
-    available: Number(form.available) || 0,
-  };
-
-  if (!form.publisher) {
-    delete data.publisher;
-  }
-
-  if (!form.author) {
-    delete data.author;
-  }
-
-  try {
-    if (id) {
-      await axios.put(`http://localhost:5000/api/books/${id}`, data);
-      alert("✅ Cập nhật thành công!");
-    } else {
-      await axios.post("http://localhost:5000/api/books", data);
-      alert("✅ Thêm thành công!");
-    }
-    setForm({ // in lai du lieu ra form
-      title: "",
-      description: "",
-      images: "",
-      category: "",
-      author: "",
-      publisher: "",
-      publishedYear: "",
-      quantity: "",
-      available: "",
-    });
-    setid(null);
-    fetchBooks();
-  } catch (err) {
-    console.error("Lỗi khi gửi lên server:", err.response?.data || err);
-    alert("❌ Thất bại khi lưu!");
-  }
-};
   const handleDelete = async (id) => {
     if (window.confirm("Bạn có chắc muốn xóa sách này không?")) {
       try {
@@ -113,112 +32,27 @@ const BookManager = () => {
     }
   };
 
-  const handleEdit = (book) => {
-    setForm({
-      title: book.title,
-      description: book.description || "",
-      images: Array.isArray(book.images) ? book.images.join(", ") : "",
-      category: book.category?._id || "",
-      author: book.author?._id || "",
-      publisher: book.publisher?._id || "",
-      publishedYear: book.publishedYear || "",
-      quantity: book.quantity || 0,
-      available: book.available || 0,
-    });
-    setid(book._id);
-  };
-
   return (
     <div className="max-w-6xl mx-auto bg-gradient-to-b from-gray-50 to-white p-8 rounded-2xl shadow-lg mt-12 border border-gray-200">
-      <div className="flex items-center justify-center gap-3 mb-8">
-        <BookOpen className="text-blue-700 w-8 h-8" />
-        <h2 className="text-3xl font-semibold text-gray-800">Quản lý Sách</h2>
-      </div>
-
-      <form
-        onSubmit={handleSubmit}
-        className="grid grid-cols-1 md:grid-cols-2 gap-5 bg-white p-6 rounded-xl shadow-sm border border-gray-100 mb-10"
-      >
-        <input
-          className="border border-gray-300 p-3 rounded-lg focus:ring-2 focus:ring-blue-400 outline-none"
-          placeholder="Tên sách"
-          value={form.title}
-          onChange={(e) => setForm({ ...form, title: e.target.value })}
-          required
-        />
-        <input
-          className="border border-gray-300 p-3 rounded-lg focus:ring-2 focus:ring-blue-400 outline-none"
-          placeholder="Ảnh (ngăn cách bằng dấu ,)"
-          value={form.images}
-          onChange={(e) => setForm({ ...form, images: e.target.value })}
-          required
-        />
-
-        <select
-          className="border border-gray-300 p-3 rounded-lg focus:ring-2 focus:ring-blue-400 outline-none"
-          value={form.author}
-          onChange={(e) => setForm({ ...form, author: e.target.value })}
-        >
-          <option value="">-- Chọn tác giả --</option>
-          {authors.map((a) => (
-            <option key={a._id} value={a._id}>
-              {a.name}
-            </option>
-          ))}
-        </select>
-
-        <select
-          className="border border-gray-300 p-3 rounded-lg focus:ring-2 focus:ring-blue-400 outline-none"
-          value={form.category}
-          onChange={(e) => setForm({ ...form, category: e.target.value })}
-        >
-          <option value="">-- Chọn thể loại --</option>
-          {categories.map((c) => (
-            <option key={c._id} value={c._id}>
-              {c.name}
-            </option>
-          ))}
-        </select>
-
-        <input
-          className="border border-gray-300 p-3 rounded-lg focus:ring-2 focus:ring-blue-400 outline-none"
-          placeholder="Năm xuất bản"
-          value={form.publishedYear}
-          onChange={(e) => setForm({ ...form, publishedYear: e.target.value })}
-        />
-        <input
-          className="border border-gray-300 p-3 rounded-lg focus:ring-2 focus:ring-blue-400 outline-none"
-          placeholder="Số lượng"
-          value={form.quantity}
-          onChange={(e) => setForm({ ...form, quantity: e.target.value })}
-        />
-        <input
-          className="border border-gray-300 p-3 rounded-lg focus:ring-2 focus:ring-blue-400 outline-none"
-          placeholder="Còn lại"
-          value={form.available}
-          onChange={(e) => setForm({ ...form, available: e.target.value })}
-        />
-
-        <textarea
-          className="border border-gray-300 p-3 rounded-lg md:col-span-2 focus:ring-2 focus:ring-blue-400 outline-none"
-          placeholder="Mô tả"
-          value={form.description}
-          onChange={(e) => setForm({ ...form, description: e.target.value })}
-        />
+      <div className="flex items-center justify-between mb-8">
+        <h2 className="text-3xl font-semibold text-gray-800 flex items-center gap-3">
+          <BookOpen className="w-8 h-8 text-blue-700" />
+          Quản lý Sách
+        </h2>
         <button
-          type="submit"
-          className="md:col-span-2 bg-blue-600 hover:bg-blue-700 text-white py-3 px-4 rounded-lg flex justify-center items-center gap-2 transition"
+          onClick={() => navigate("/admin/bookadd")}
+          className="bg-blue-600 hover:bg-blue-700 text-white py-2 px-4 rounded-lg"
         >
-          <PlusCircle size={20} />
-          {id ? "Cập nhật sách" : "Thêm sách mới"}
+          Thêm sách mới
         </button>
-      </form>
+      </div>
 
       <div className="overflow-x-auto border border-gray-200 rounded-xl shadow-sm">
         <table className="min-w-full">
           <thead className="bg-blue-50 text-blue-800">
             <tr>
               <th className="p-3 text-left">Ảnh</th>
+              <th className="p-3 text-left">Mã sách</th>
               <th className="p-3 text-left">Tên sách</th>
               <th className="p-3 text-left">Thể loại</th>
               <th className="p-3 text-left">Tác giả</th>
@@ -243,24 +77,25 @@ const BookManager = () => {
                     className="w-14 h-14 object-cover rounded-lg shadow-sm mx-auto"
                   />
                 </td>
+                <td className="p-3 font-mono">{b.code || "—"}</td>
                 <td className="p-3">{b.title}</td>
                 <td className="p-3">{b.category?.name || "—"}</td>
                 <td className="p-3">{b.author?.name || "—"}</td>
-                <td className="p-3 text-center">{b.publishedYear}</td>
-                <td className="p-3 text-center">{b.quantity}</td>
-                <td className="p-3 text-center">{b.available}</td>
-                <td className="p-3 text-center">
+                <td className="p-3 text-center">{b.publishedYear || "—"}</td>
+                <td className="p-3 text-center">{b.quantity || 0}</td>
+                <td className="p-3 text-center">{b.available || 0}</td>
+                <td className="p-3 text-center flex justify-center gap-2">
                   <button
-                    onClick={() => handleEdit(b)}
-                    className="bg-yellow-400 hover:bg-yellow-500 text-white px-3 py-1 rounded-lg flex items-center gap-1 inline-flex"
+                    onClick={() => navigate(`/admin/book/edit/${b._id}`)}
+                    className="bg-yellow-400 hover:bg-yellow-500 text-white px-3 py-1 rounded-lg flex items-center gap-1"
                   >
-                    <Edit size={16} /> Sửa
+                    ✏️ Sửa
                   </button>
                   <button
                     onClick={() => handleDelete(b._id)}
-                    className="bg-red-500 hover:bg-red-600 text-white px-3 py-1 rounded-lg ml-2 flex items-center gap-1 inline-flex"
+                    className="bg-red-500 hover:bg-red-600 text-white px-3 py-1 rounded-lg flex items-center gap-1"
                   >
-                    <Trash2 size={16} /> Xóa
+                    🗑️ Xóa
                   </button>
                 </td>
               </tr>
@@ -279,4 +114,4 @@ const BookManager = () => {
   );
 };
 
-export default BookManager;
+export default BookLManager;

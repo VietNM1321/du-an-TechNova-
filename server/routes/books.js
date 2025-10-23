@@ -1,13 +1,25 @@
 import express from "express";
 import mongoose from "mongoose";
+import multer from "multer";
+import path from "path";
+import fs from "fs";
 import Book from "../models/books.js";
 import Reviews from "../models/review.js";
+import BookCode from "../models/bookcode.js";
 
 const router = express.Router();
+const uploadPath = "uploads/books";
+if (!fs.existsSync(uploadPath)) fs.mkdirSync(uploadPath, { recursive: true });
+
+const storage = multer.diskStorage({
+  destination: (req, file, cb) => cb(null, uploadPath),
+  filename: (req, file, cb) => cb(null, Date.now() + path.extname(file.originalname)),
+});
+const upload = multer({ storage });
+
 router.get("/", async (req, res) => {
   try {
     const filter = {};
-
     if (req.query.category) {
       if (mongoose.Types.ObjectId.isValid(req.query.category)) {
         filter.category = req.query.category;
@@ -33,7 +45,7 @@ router.get("/", async (req, res) => {
     res.json(booksWithReviews);
   } catch (error) {
     console.error("Lỗi lấy danh sách sách:", error);
-    res.status(500).json({ message: "Lỗi server", error });
+    res.status(500).json({ message: "Lỗi server", error: error.message });
   }
 });
 router.get("/search", async (req, res) => {
@@ -47,6 +59,7 @@ router.get("/search", async (req, res) => {
       $or: [
         { title: { $regex: q, $options: "i" } },
         { description: { $regex: q, $options: "i" } },
+        { code: { $regex: q, $options: "i" } },
       ],
     })
       .populate("author", "name")
@@ -54,8 +67,8 @@ router.get("/search", async (req, res) => {
 
     res.json(books);
   } catch (error) {
-    console.error("❌ Lỗi khi tìm kiếm sách:", error);
-    res.status(500).json({ message: "Lỗi server khi tìm kiếm", error });
+    console.error("Lỗi khi tìm kiếm sách:", error);
+    res.status(500).json({ message: "Lỗi server khi tìm kiếm", error: error.message });
   }
 });
 router.get("/:id", async (req, res) => {
@@ -78,40 +91,36 @@ router.get("/:id", async (req, res) => {
     res.json({ ...book.toObject(), reviews });
   } catch (error) {
     console.error("Lỗi lấy chi tiết sách:", error);
-    res.status(500).json({ message: "Lỗi server khi lấy sách", error });
+    res.status(500).json({ message: "Lỗi server khi lấy sách", error: error.message });
   }
 });
-
-router.post("/", async (req, res) => {
+router.post("/", upload.array("images", 10), async (req, res) => {
   try {
-    const {
+    const { title, description, category, author, publishedYear, quantity, available } = req.body;
+
+    if (!title || !req.files || req.files.length === 0 || !publishedYear || !category) {
+      return res.status(400).json({ message: "Vui lòng cung cấp đầy đủ thông tin bắt buộc" });
+    }
+    const bookCodeDoc = await BookCode.findOne({ category });
+    if (!bookCodeDoc) return res.status(400).json({ message: "Chưa có cấu hình mã sách cho thể loại này" });
+    bookCodeDoc.lastNumber += 1;
+    await bookCodeDoc.save();
+    const code = `${bookCodeDoc.prefix}-${String(bookCodeDoc.lastNumber).padStart(3, "0")}`;
+
+    const images = req.files.map(
+      (file) => `${req.protocol}://${req.get("host")}/uploads/books/${file.filename}`
+    );
+
+    const newBook = new Book({
+      code,
       title,
       description,
       images,
       category,
       author,
-      publisher,
-      publishedYear,
-      quantity,
-      available,
-    } = req.body;
-
-    if (!title || !images || images.length === 0 || !publishedYear) {
-      return res.status(400).json({ message: "Vui lòng cung cấp đầy đủ thông tin bắt buộc" });
-    }
-
-    const imageArray = typeof images === "string" ? [images] : images;
-
-    const newBook = new Book({
-      title,
-      description,
-      images: imageArray,
-      category,
-      author,
-      publisher,
-      publishedYear,
-      quantity: quantity || 0,
-      available: available || 0,
+      publishedYear: Number(publishedYear),
+      quantity: Number(quantity) || 0,
+      available: Number(available) || 0,
       views: 0,
     });
 
@@ -119,18 +128,30 @@ router.post("/", async (req, res) => {
     res.status(201).json(newBook);
   } catch (error) {
     console.error("Lỗi thêm sách:", error);
-    res.status(400).json({ message: "Thêm sách thất bại", error });
+    res.status(500).json({ message: "Thêm sách thất bại", error: error.message });
   }
 });
-
-router.put("/:id", async (req, res) => {
+router.put("/:id", upload.array("images", 10), async (req, res) => {
   try {
     if (!mongoose.Types.ObjectId.isValid(req.params.id)) {
       return res.status(400).json({ message: "ID không hợp lệ" });
     }
 
     const updatedData = { ...req.body };
-    if (updatedData.images && typeof updatedData.images === "string") {
+    if (updatedData.category) {
+      const bookCodeDoc = await BookCode.findOne({ category: updatedData.category });
+      if (!bookCodeDoc) return res.status(400).json({ message: "Chưa có cấu hình mã sách cho thể loại này" });
+
+      bookCodeDoc.lastNumber += 1;
+      await bookCodeDoc.save();
+      updatedData.code = `${bookCodeDoc.prefix}-${String(bookCodeDoc.lastNumber).padStart(3, "0")}`;
+    }
+
+    if (req.files && req.files.length > 0) {
+      updatedData.images = req.files.map(
+        (file) => `${req.protocol}://${req.get("host")}/uploads/books/${file.filename}`
+      );
+    } else if (updatedData.images && typeof updatedData.images === "string") {
       updatedData.images = [updatedData.images];
     }
 
@@ -139,8 +160,8 @@ router.put("/:id", async (req, res) => {
 
     res.json(updatedBook);
   } catch (error) {
-    console.error("❌ Lỗi cập nhật sách:", error);
-    res.status(500).json({ message: "Cập nhật thất bại", error });
+    console.error("Lỗi cập nhật sách:", error);
+    res.status(500).json({ message: "Cập nhật thất bại", error: error.message });
   }
 });
 
@@ -156,8 +177,8 @@ router.delete("/:id", async (req, res) => {
     await Reviews.deleteMany({ bookId: deletedBook._id });
     res.json({ message: "Sách đã được xóa cùng reviews" });
   } catch (error) {
-    console.error("❌ Lỗi xóa sách:", error);
-    res.status(500).json({ message: "Xóa thất bại", error });
+    console.error("Lỗi xóa sách:", error);
+    res.status(500).json({ message: "Xóa thất bại", error: error.message });
   }
 });
 

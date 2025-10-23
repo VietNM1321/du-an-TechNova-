@@ -48,7 +48,7 @@ const Header = ({
       .then((data) => setCategories(data))
       .catch((err) => console.log(err));
 
-    fetch("http://localhost:5000/api/author")
+    fetch("http://localhost:5000/api/authors")
       .then((res) => res.json())
       .then((data) => setAuthors(data))
       .catch((err) => console.log(err));

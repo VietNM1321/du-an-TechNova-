@@ -17,7 +17,7 @@ function Home() {
     const fetchData = async () => {
       try {
         const resCat = await axios.get("http://localhost:5000/api/category");
-        const cats = resCat.data;
+        const cats = resCat.data.categories || [];
         const dataWithBooks = await Promise.all(
           cats.map(async (cat) => {
             const resBooks = await axios.get(
