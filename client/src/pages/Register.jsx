@@ -1,46 +1,77 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import axios from "axios";
 import { useNavigate } from "react-router-dom";
 
 const Register = () => {
   const [studentCode, setStudentCode] = useState("");
   const [email, setEmail] = useState("");
+  const [courseId, setCourseId] = useState("");
+  const [courses, setCourses] = useState([]);
   const [message, setMessage] = useState("");
   const [error, setError] = useState("");
   const navigate = useNavigate();
 
+  // 🟢 Lấy danh sách khóa học từ backend
+  useEffect(() => {
+    const fetchCourses = async () => {
+      try {
+        const res = await axios.get("http://localhost:5000/api/courses");
+        if (Array.isArray(res.data)) {
+          setCourses(res.data);
+        } else {
+          console.error("Dữ liệu trả về không hợp lệ:", res.data);
+          setCourses([]);
+        }
+      } catch (err) {
+        console.error("❌ Lỗi khi tải danh sách khóa học:", err);
+        setCourses([]);
+      }
+    };
+    fetchCourses();
+  }, []);
+
   const handleRegister = async (e) => {
     e.preventDefault();
 
-    // Validate mã sinh viên: PH + 4 chữ số
+    // ✅ Kiểm tra hợp lệ đầu vào
     if (!/^PH\d{4}$/.test(studentCode)) {
-      setError("Mã sinh viên phải bắt đầu bằng 'PH' và theo sau là 4 chữ số!");
+      setError("⚠️ Mã sinh viên phải bắt đầu bằng 'PH' và theo sau là 4 chữ số!");
+      return;
+    }
+    if (!courseId) {
+      setError("⚠️ Vui lòng chọn khóa học!");
       return;
     }
 
-    setError(""); // reset lỗi
+    setError("");
+    setMessage("Đang xử lý...");
 
     try {
       const res = await axios.post("http://localhost:5000/api/auth/register", {
         studentCode,
         email,
+        courseId,
       });
 
-      setMessage("✅ " + res.data.message);
+      setMessage("✅ " + (res.data.message || "Đăng ký thành công!"));
       setStudentCode("");
       setEmail("");
+      setCourseId("");
 
-      // Tự động chuyển về trang đăng nhập sau 1.5s
+      // ⏳ Chuyển hướng sau 1.5s
       setTimeout(() => navigate("/login"), 1500);
     } catch (err) {
-      console.error("Register error:", err.response || err.message);
-      setMessage(err.response?.data?.message || "❌ Đăng ký thất bại!");
+      console.error("Register error:", err);
+      const errorMsg =
+        err.response?.data?.message ||
+        "❌ Đăng ký thất bại. Vui lòng thử lại sau.";
+      setMessage(errorMsg);
     }
   };
 
   return (
     <div className="flex items-center justify-center min-h-screen bg-gradient-to-br from-blue-50 to-blue-100">
-      <div className="w-full max-w-md bg-white p-8 rounded-2xl shadow-lg">
+      <div className="w-full max-w-md bg-white p-8 rounded-2xl shadow-xl border border-blue-100">
         <h2 className="text-3xl font-bold text-center text-blue-700 mb-6">
           Đăng ký tài khoản sinh viên
         </h2>
@@ -55,11 +86,10 @@ const Register = () => {
               type="text"
               placeholder="VD: PH1234"
               value={studentCode}
-              onChange={(e) => setStudentCode(e.target.value.toUpperCase())} // tự chuyển chữ hoa
+              onChange={(e) => setStudentCode(e.target.value.toUpperCase())}
               required
               className="w-full border border-gray-300 rounded-lg p-3 focus:ring-2 focus:ring-blue-400 focus:outline-none transition"
             />
-            {error && <p className="text-red-500 text-sm mt-1">{error}</p>}
           </div>
 
           {/* Email */}
@@ -73,44 +103,66 @@ const Register = () => {
               value={email}
               onChange={(e) => setEmail(e.target.value)}
               required
-              autoComplete="email"
               className="w-full border border-gray-300 rounded-lg p-3 focus:ring-2 focus:ring-blue-400 focus:outline-none transition"
             />
           </div>
 
-          {/* Nút đăng ký */}
+          {/* Khóa học */}
+          <div>
+            <label className="block text-sm font-medium text-gray-600 mb-1">
+              Chọn khóa học
+            </label>
+            <select
+              value={courseId}
+              onChange={(e) => setCourseId(e.target.value)}
+              required
+              className="w-full border border-gray-300 rounded-lg p-3 focus:ring-2 focus:ring-blue-400 focus:outline-none transition"
+            >
+              <option value="">-- Chọn khóa học --</option>
+              {courses.length > 0 ? (
+                courses.map((course) => (
+                  <option key={course._id} value={course._id}>
+                    {course.courseName} ({course.minStudentCode} -{" "}
+                    {course.maxStudentCode})
+                  </option>
+                ))
+              ) : (
+                <option disabled>Không có khóa học khả dụng</option>
+              )}
+            </select>
+          </div>
+
+          {/* Nút hành động */}
           <button
             type="submit"
-            className="w-full bg-blue-600 text-white py-3 rounded-lg font-medium hover:bg-blue-700 transition"
+            className="w-full bg-blue-600 text-white py-3 rounded-lg font-medium hover:bg-blue-700 transition-all"
           >
             Đăng ký
           </button>
 
-          {/* Nút quay lại login */}
           <button
             type="button"
             onClick={() => navigate("/login")}
-            className="w-full border border-blue-600 text-blue-600 py-3 rounded-lg font-medium hover:bg-blue-50 transition"
+            className="w-full border border-blue-600 text-blue-600 py-3 rounded-lg font-medium hover:bg-blue-50 transition-all"
           >
             Quay lại đăng nhập
           </button>
         </form>
 
-        {/* Thông báo thành công hoặc lỗi */}
-        {message && (
+        {/* Hiển thị lỗi hoặc thông báo */}
+        {(error || message) && (
           <p
             className={`mt-4 text-center text-sm ${
-              message.includes("✅") ? "text-green-600" : "text-red-500"
+              error
+                ? "text-red-600"
+                : message.includes("✅")
+                ? "text-green-600"
+                : "text-blue-600"
             }`}
           >
-            {message}
+            {error || message}
           </p>
         )}
-
-        <p className="text-center text-gray-500 text-sm mt-6">
-          © 2025 <span className="font-semibold text-blue-600">BookZone</span>.
-          All rights reserved.
-        </p>
       </div>
     </div>
   );

@@ -65,7 +65,7 @@ const Header = ({
       try {
         const [catRes, authRes] = await Promise.all([
           axios.get("http://localhost:5000/api/category"),
-          axios.get("http://localhost:5000/api/author"),
+          // axios.get("http://localhost:5000/api/author"),
         ]);
         setCategories(catRes.data);
         setAuthors(authRes.data);

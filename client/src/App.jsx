@@ -29,6 +29,7 @@ import SetPassword from "./pages/admin/SetPassword";
 import Users from "./pages/admin/Users";
 import History from "./pages/History";
 import ClientLayout from "./layout/ClientLayout";
+import CourseManager from "./pages/admin/CourseManager";
 
 function App() {
   return (
@@ -68,6 +69,7 @@ function App() {
           <Route path="category/edit/:id" element={<EditCategory />} />
           <Route path="setpassword" element={<SetPassword />} />
           <Route path="users" element={<Users />} />
+           <Route path="course" element={<CourseManager />} />
         </Route>
       </Routes>
     </Router>

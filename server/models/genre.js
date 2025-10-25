@@ -1,19 +1,19 @@
 import mongoose from "mongoose";
 
-const genreSchema = new mongoose.Schema({
-  name: {
-    type: String,
-    required: true,
-    trim: true,
-    unique: true,
+const courseSchema = new mongoose.Schema(
+  {
+    courseName: { type: String, required: true, unique: true, trim: true },
+    courseCode: { type: String, required: true, unique: true, uppercase: true },
+    students: [
+      {
+        studentCode: { type: String, required: true },
+        fullName: String,
+      },
+    ],
   },
-  description: {
-    type: String,
-    default: "",
-  },
-}, {
-  timestamps: true,
-});
+  { timestamps: true, versionKey: false }
+);
 
-const Genre = mongoose.model("Genre", genreSchema);
-export default Genre;
+const Course =
+  mongoose.models.Course || mongoose.model("Course", courseSchema);
+export default Course;

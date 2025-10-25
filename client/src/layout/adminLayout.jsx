@@ -20,6 +20,7 @@ const sidebarLinks = [
   { to: "/admin/author", label: "Quản lý tác giả", icon: <PenTool size={18} /> },
   { to: "/admin/users", label: "Quản lý người dùng", icon: <Users size={18} /> },
   { to: "/admin/orders", label: "Quản lý đơn hàng", icon: <FileText size={18} /> },
+  { to: "/admin/course", label: "Quản lý khóa học", icon: <BookOpen size={18} /> },
 
   // 🆕 Thêm mục Cấp mật khẩu
   { to: "/admin/setpassword", label: "Cấp mật khẩu", icon: <KeyRound size={18} /> },
