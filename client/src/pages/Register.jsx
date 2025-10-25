@@ -4,6 +4,7 @@ import { useNavigate } from "react-router-dom";
 
 const Register = () => {
   const [studentCode, setStudentCode] = useState("");
+  const [fullName, setFullName] = useState(""); // ✅ Thêm tên sinh viên
   const [email, setEmail] = useState("");
   const [courseId, setCourseId] = useState("");
   const [courses, setCourses] = useState([]);
@@ -38,6 +39,10 @@ const Register = () => {
       setError("⚠️ Mã sinh viên phải bắt đầu bằng 'PH' và theo sau là 4 chữ số!");
       return;
     }
+    if (!fullName.trim()) {
+      setError("⚠️ Vui lòng nhập họ và tên sinh viên!");
+      return;
+    }
     if (!courseId) {
       setError("⚠️ Vui lòng chọn khóa học!");
       return;
@@ -49,12 +54,14 @@ const Register = () => {
     try {
       const res = await axios.post("http://localhost:5000/api/auth/register", {
         studentCode,
+        fullName, // ✅ Gửi tên sinh viên
         email,
-        courseId,
+        course: courseId,
       });
 
       setMessage("✅ " + (res.data.message || "Đăng ký thành công!"));
       setStudentCode("");
+      setFullName("");
       setEmail("");
       setCourseId("");
 
@@ -87,6 +94,21 @@ const Register = () => {
               placeholder="VD: PH1234"
               value={studentCode}
               onChange={(e) => setStudentCode(e.target.value.toUpperCase())}
+              required
+              className="w-full border border-gray-300 rounded-lg p-3 focus:ring-2 focus:ring-blue-400 focus:outline-none transition"
+            />
+          </div>
+
+          {/* Họ và tên */}
+          <div>
+            <label className="block text-sm font-medium text-gray-600 mb-1">
+              Họ và tên
+            </label>
+            <input
+              type="text"
+              placeholder="Nhập họ và tên sinh viên"
+              value={fullName}
+              onChange={(e) => setFullName(e.target.value)}
               required
               className="w-full border border-gray-300 rounded-lg p-3 focus:ring-2 focus:ring-blue-400 focus:outline-none transition"
             />

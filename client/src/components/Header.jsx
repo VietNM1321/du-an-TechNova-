@@ -45,10 +45,7 @@ const Header = ({
   // 🟢 Đóng menu khi click ra ngoài
   useEffect(() => {
     const handleClickOutside = (e) => {
-      if (
-        userMenuRef.current &&
-        !userMenuRef.current.contains(e.target)
-      ) {
+      if (userMenuRef.current && !userMenuRef.current.contains(e.target)) {
         setUserMenuOpen(false);
       }
       if (menuRef.current && !menuRef.current.contains(e.target)) {
@@ -65,7 +62,7 @@ const Header = ({
       try {
         const [catRes, authRes] = await Promise.all([
           axios.get("http://localhost:5000/api/category"),
-          // axios.get("http://localhost:5000/api/author"),
+          axios.get("http://localhost:5000/api/authors"),
         ]);
         setCategories(catRes.data);
         setAuthors(authRes.data);
@@ -168,7 +165,7 @@ const Header = ({
                 onClick={() => setUserMenuOpen((prev) => !prev)}
                 className="text-gray-700 hover:text-red-700 font-medium"
               >
-            {user.role === "admin" ? "Admin" : user.studentCode}
+                {user.role === "admin" ? "Admin" : user.fullName}
               </button>
               <AnimatePresence>
                 {userMenuOpen && (
