@@ -19,11 +19,11 @@ const createDefaultAdmin = async () => {
       const admin = new User({
         studentCode: "ADMIN001",
         email,
-        fullName: "Admin TechNova",
+        fullName: "Admin ",
         course: "Admin",
         role: "admin",
         active: true,
-        password: "123456789", // không mã hóa
+        password: "123456789", 
       });
       await admin.save();
       console.log("✅ Admin mặc định đã được tạo: admin@gmail.com / 123456789");

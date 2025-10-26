@@ -23,7 +23,7 @@ app.use(express.json());
 
 // CORS chuẩn
 app.use(cors({
-  origin: "http://localhost:5174", // frontend port
+  origin: "http://localhost:5173", // frontend port
   credentials: true,
 }));
 
