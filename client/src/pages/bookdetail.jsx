@@ -24,21 +24,29 @@ function BookDetail() {
     window.scrollTo({ top: 0, behavior: "smooth" });
   }, [id]);
   useEffect(() => {
-    if (book?.category?._id) {
-      const fetchRelated = async () => {
-        try {
-          const res = await axios.get(
-            `http://localhost:5000/api/books?category=${book.category._id}`
-          );
-          const filtered = res.data.filter((b) => b._id !== id);
-          setRelatedBooks(filtered);
-        } catch (err) {
-          console.error("❌ Lỗi khi tải sách liên quan:", err);
+  if (book?.category?._id) {
+    const fetchRelated = async () => {
+      try {
+        const res = await axios.get(
+          `http://localhost:5000/api/books?category=${book.category._id}`
+        );
+        let booksArray = [];
+        if (Array.isArray(res.data)) {
+          booksArray = res.data;
+        } else if (Array.isArray(res.data.books)) {
+          booksArray = res.data.books;
+        } else {
+          console.warn("API trả về dữ liệu không phải mảng:", res.data);
         }
-      };
-      fetchRelated();
-    }
-  }, [book, id]);
+        const filtered = booksArray.filter((b) => b._id !== id);
+        setRelatedBooks(filtered);
+      } catch (err) {
+        console.error("❌ Lỗi khi tải sách liên quan:", err.response?.data || err);
+      }
+    };
+    fetchRelated();
+  }
+}, [book, id]);
 
   const handleViewRelated = (relatedId) => {
     navigate(`/book/${relatedId}`);

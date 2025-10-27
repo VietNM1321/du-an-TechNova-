@@ -1,6 +1,7 @@
 import express from "express";
 import mongoose from "mongoose";
 import BookCode from "../models/bookcode.js";
+import Book from "../models/books.js"
 import Category from "../models/category.js";
 
 const router = express.Router();
@@ -10,7 +11,7 @@ router.get("/", async (req, res) => {
     const limit = parseInt(req.query.limit) || 10;
     const skip = (page - 1) * limit;
 
-    const total = await BookCode.countDocuments(); // tổng số BookCode
+    const total = await BookCode.countDocuments();
     const bookcodes = await BookCode.find()
       .populate("category")
       .sort({ createdAt: -1 })
@@ -26,6 +27,17 @@ router.get("/", async (req, res) => {
   } catch (err) {
     console.error(err);
     res.status(500).json({ message: "Lỗi server" });
+  }
+});
+router.get("/category/:categoryId", async (req, res) => {
+  try {
+    const bookCode = await BookCode.findOne({ category: req.params.categoryId });
+    if (!bookCode) {
+      return res.status(404).json({ message: "BookCode not found for this category" });
+    }
+    res.json(bookCode);
+  } catch (err) {
+    res.status(500).json({ message: err.message });
   }
 });
 router.get("/:id", async (req, res) => {
@@ -61,17 +73,50 @@ router.put("/:id", async (req, res) => {
   try {
     const { prefix } = req.body;
     if (!prefix) return res.status(400).json({ message: "Prefix bắt buộc" });
-
-    const updated = await BookCode.findByIdAndUpdate(
-      req.params.id,
-      { prefix },
-      { new: true }
-    ).populate("category", "name");
-
-    if (!updated) return res.status(404).json({ message: "Không tìm thấy BookCode" });
-    res.json(updated);
+    const bookCode = await BookCode.findById(req.params.id);
+    if (!bookCode) return res.status(404).json({ message: "Không tìm thấy BookCode" });
+    const oldPrefix = bookCode.prefix;
+    bookCode.prefix = prefix;
+    await bookCode.save();
+    const books = await Book.find({ category: bookCode.category });
+    try {
+      const bulkOps = books.map((book, index) => {
+        const sequenceNumber = String(index + 1).padStart(3, '0');
+        return {
+          updateOne: {
+            filter: { _id: book._id },
+            update: { 
+              $set: { 
+                code: `${prefix}-${sequenceNumber}`,
+                bookCode: bookCode._id
+              }
+            }
+          }
+        };
+      });
+      if (bulkOps.length > 0) {
+        await Book.bulkWrite(bulkOps);
+      }
+      console.log(`Đã cập nhật BookCode từ ${oldPrefix} thành ${prefix} cho ${books.length} sách`);
+      
+      const updated = await BookCode.findById(req.params.id).populate("category", "name");
+      res.json({ 
+        bookCode: updated,
+        message: `✅ Đã cập nhật mã sách cho ${books.length} quyển sách`,
+        updatedBooks: books.length
+      });
+    } catch (bulkError) {
+      console.error("Lỗi khi cập nhật sách:", bulkError);
+      bookCode.prefix = oldPrefix;
+      await bookCode.save();
+      throw new Error("Lỗi khi cập nhật mã sách: " + bulkError.message);
+    }
   } catch (err) {
-    res.status(500).json({ message: "Lỗi server", error: err.message });
+    console.error("Lỗi cập nhật BookCode:", err);
+    res.status(500).json({ 
+      message: "Lỗi khi cập nhật: " + (err.message || "Không xác định"),
+      error: err.message 
+    });
   }
 });
 router.delete("/:id", async (req, res) => {

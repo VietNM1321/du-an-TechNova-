@@ -16,7 +16,6 @@ const storage = multer.diskStorage({
   filename: (req, file, cb) => cb(null, Date.now() + path.extname(file.originalname)),
 });
 const upload = multer({ storage });
-
 router.get("/", async (req, res) => {
   try {
     const filter = {};
@@ -31,18 +30,24 @@ router.get("/", async (req, res) => {
       }
     }
 
+    const page = parseInt(req.query.page) || 1;
+    const limit = parseInt(req.query.limit) || 5;
+    const skip = (page - 1) * limit;
+
+    const totalBooks = await Book.countDocuments(filter);
     const books = await Book.find(filter)
       .populate("category", "name")
-      .populate("author", "name");
+      .populate("author", "name")
+      .skip(skip)
+      .limit(limit)
+      .sort({ createdAt: -1 });
 
-    const booksWithReviews = await Promise.all(
-      books.map(async (book) => {
-        const reviews = await Reviews.find({ bookId: book._id }).populate("userId", "name email");
-        return { ...book.toObject(), reviews };
-      })
-    );
-
-    res.json(booksWithReviews);
+    res.json({
+      books,
+      currentPage: page,
+      totalPages: Math.ceil(totalBooks / limit),
+      totalItems: totalBooks,
+    });
   } catch (error) {
     console.error("Lỗi lấy danh sách sách:", error);
     res.status(500).json({ message: "Lỗi server", error: error.message });
@@ -59,7 +64,7 @@ router.get("/search", async (req, res) => {
       $or: [
         { title: { $regex: q, $options: "i" } },
         { description: { $regex: q, $options: "i" } },
-        { code: { $regex: q, $options: "i" } },
+        { bookCode: { $regex: q, $options: "i" } },
       ],
     })
       .populate("author", "name")
@@ -87,7 +92,6 @@ router.get("/:id", async (req, res) => {
     await book.save();
 
     const reviews = await Reviews.find({ bookId: book._id }).populate("userId", "name email");
-
     res.json({ ...book.toObject(), reviews });
   } catch (error) {
     console.error("Lỗi lấy chi tiết sách:", error);
@@ -98,73 +102,134 @@ router.post("/", upload.array("images", 10), async (req, res) => {
   try {
     const { title, description, category, author, publishedYear, quantity, available } = req.body;
 
-    if (!title || !req.files || req.files.length === 0 || !publishedYear || !category) {
-      return res.status(400).json({ message: "Vui lòng cung cấp đầy đủ thông tin bắt buộc" });
+    if (!title || !category || !publishedYear) {
+      return res.status(400).json({ 
+        message: "Thiếu thông tin bắt buộc",
+        details: {
+          title: !title ? "Thiếu tiêu đề" : null,
+          category: !category ? "Thiếu thể loại" : null,
+          publishedYear: !publishedYear ? "Thiếu năm xuất bản" : null
+        }
+      });
     }
-    const bookCodeDoc = await BookCode.findOne({ category });
-    if (!bookCodeDoc) return res.status(400).json({ message: "Chưa có cấu hình mã sách cho thể loại này" });
-    bookCodeDoc.lastNumber += 1;
-    await bookCodeDoc.save();
-    const code = `${bookCodeDoc.prefix}-${String(bookCodeDoc.lastNumber).padStart(3, "0")}`;
 
-    const images = req.files.map(
-      (file) => `${req.protocol}://${req.get("host")}/uploads/books/${file.filename}`
-    );
+    if (!mongoose.Types.ObjectId.isValid(category)) {
+      return res.status(400).json({ message: "ID thể loại không hợp lệ" });
+    }
+    let bookCodeDoc = await BookCode.findOne({ category });
+    if (!bookCodeDoc) {
+      bookCodeDoc = await BookCode.create({
+        category,
+        prefix: "BC",
+        lastNumber: 0
+      });
+    }
+    let isUnique = false;
+    let attempts = 0;
+    let newNumber = bookCodeDoc.lastNumber;
+    let bookCode;
 
-    const newBook = new Book({
-      code,
-      title,
-      description,
+    while (!isUnique && attempts < 100) {
+      attempts++;
+      newNumber++;
+      bookCode = `${bookCodeDoc.prefix}-${String(newNumber).padStart(3, "0")}`;
+      const existingBook = await Book.findOne({ code: bookCode });
+      if (!existingBook) {
+        isUnique = true;
+        bookCodeDoc.lastNumber = newNumber;
+        await bookCodeDoc.save();
+      }
+    }
+
+    if (!isUnique) {
+      throw new Error("Không thể tạo mã sách duy nhất sau nhiều lần thử");
+    }
+    const images = req.files?.map(file => `${req.protocol}://${req.get("host")}/uploads/books/${file.filename}`) || [];
+    const newBook = await Book.create({
+      title: title.trim(),
+      description: description?.trim() || "",
       images,
       category,
-      author,
+      author: author || null,
       publishedYear: Number(publishedYear),
       quantity: Number(quantity) || 0,
-      available: Number(available) || 0,
+      available: Number(available) || Number(quantity) || 0,
       views: 0,
+      code: bookCode,
+      bookCode: bookCodeDoc._id
     });
+    const populatedBook = await Book.findById(newBook._id)
+      .populate("category", "name")
+      .populate("author", "name");
 
-    await newBook.save();
-    res.status(201).json(newBook);
-  } catch (error) {
-    console.error("Lỗi thêm sách:", error);
-    res.status(500).json({ message: "Thêm sách thất bại", error: error.message });
+    res.status(201).json({ 
+      message: "✅ Thêm sách thành công", 
+      book: populatedBook
+    });
+  } catch (err) {
+    console.error("Lỗi khi tạo sách:", err);
+    res.status(500).json({ 
+      message: "Lỗi khi tạo sách mới",
+      error: err.message
+    });
   }
 });
+
 router.put("/:id", upload.array("images", 10), async (req, res) => {
   try {
+    console.log("Request body:", req.body);
+    console.log("Files:", req.files);
+
     if (!mongoose.Types.ObjectId.isValid(req.params.id)) {
-      return res.status(400).json({ message: "ID không hợp lệ" });
+      return res.status(400).json({ message: "ID sách không hợp lệ" });
     }
 
-    const updatedData = { ...req.body };
-    if (updatedData.category) {
-      const bookCodeDoc = await BookCode.findOne({ category: updatedData.category });
-      if (!bookCodeDoc) return res.status(400).json({ message: "Chưa có cấu hình mã sách cho thể loại này" });
-
-      bookCodeDoc.lastNumber += 1;
-      await bookCodeDoc.save();
-      updatedData.code = `${bookCodeDoc.prefix}-${String(bookCodeDoc.lastNumber).padStart(3, "0")}`;
+    const book = await Book.findById(req.params.id);
+    if (!book) {
+      return res.status(404).json({ message: "Không tìm thấy sách" });
     }
-
+    let images = [...book.images];
     if (req.files && req.files.length > 0) {
-      updatedData.images = req.files.map(
-        (file) => `${req.protocol}://${req.get("host")}/uploads/books/${file.filename}`
+      images = req.files.map(file => 
+        `${req.protocol}://${req.get("host")}/uploads/books/${file.filename}`
       );
-    } else if (updatedData.images && typeof updatedData.images === "string") {
-      updatedData.images = [updatedData.images];
+    } else if (req.body.images) {
+      try {
+        const parsedImages = typeof req.body.images === 'string' 
+          ? JSON.parse(req.body.images)
+          : req.body.images;
+        images = Array.isArray(parsedImages) ? parsedImages : [parsedImages];
+      } catch (err) {
+        console.error("Error parsing images:", err);
+        images = Array.isArray(req.body.images) ? req.body.images : [req.body.images];
+      }
     }
+    const updates = {
+      title: req.body.title || book.title,
+      description: req.body.description || book.description,
+      category: req.body.category || book.category,
+      author: req.body.author || book.author,
+      publishedYear: req.body.publishedYear ? Number(req.body.publishedYear) : book.publishedYear,
+      quantity: req.body.quantity !== undefined ? Number(req.body.quantity) : book.quantity,
+      available: req.body.available !== undefined ? Number(req.body.available) : book.available,
+      images: images
+    };
+    const result = await Book.findByIdAndUpdate(
+      req.params.id,
+      { $set: updates },
+      { new: true }
+    ).populate("category", "name")
+      .populate("author", "name");
 
-    const updatedBook = await Book.findByIdAndUpdate(req.params.id, updatedData, { new: true });
-    if (!updatedBook) return res.status(404).json({ message: "Không tìm thấy sách để cập nhật" });
-
-    res.json(updatedBook);
-  } catch (error) {
-    console.error("Lỗi cập nhật sách:", error);
-    res.status(500).json({ message: "Cập nhật thất bại", error: error.message });
+    res.json({ 
+      message: "✅ Cập nhật sách thành công",
+      book: result
+    });
+  } catch (err) {
+    console.error("Lỗi cập nhật sách:", err);
+    res.status(500).json({ message: "Cập nhật thất bại", error: err.message });
   }
 });
-
 router.delete("/:id", async (req, res) => {
   try {
     if (!mongoose.Types.ObjectId.isValid(req.params.id)) {

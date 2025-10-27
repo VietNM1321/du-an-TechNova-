@@ -2,6 +2,13 @@ import mongoose from "mongoose";
 
 const BookSchema = new mongoose.Schema(
   {
+    code: { 
+      type: String,
+      required: true,
+      unique: true 
+    },
+    bookCode: { 
+      type: mongoose.Schema.Types.ObjectId, ref: "BookCode" },
     title: { 
       type: String,
       required: [true, "Vui lòng cung cấp tên sách"],

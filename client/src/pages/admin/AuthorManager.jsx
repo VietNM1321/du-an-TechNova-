@@ -50,7 +50,7 @@ const AuthorManager = () => {
   };
 
   return (
-    <div className="max-w-6xl mx-auto bg-white p-8 rounded-2xl shadow-lg mt-10">
+    <div className="max-w-6xl mx-auto bg-white p-8 rounded-2xl shadow-lg mt-3">
       <div className="flex justify-between items-center mb-6">
         <h2 className="text-3xl font-bold text-blue-700">📚 Quản lý Tác giả</h2>
         <button

@@ -17,36 +17,25 @@ import courseRoutes from "./routes/courseRoutes.js";
 
 dotenv.config();
 const app = express();
-
-// Middleware
 app.use(express.json());
-
-// CORS chuẩn
 app.use(cors({
-  origin: "http://localhost:5173", // frontend port
+  origin: "http://localhost:5173",
   credentials: true,
 }));
-
-// Static folder
 app.use("/uploads", express.static("uploads"));
-
-// Routes
 app.use("/api/auth", authRoutes);
 app.use("/api/authors", authorRoutes);
 app.use("/api/books", bookRoutes);
-app.use("/api/bookcode", bookcodeRoutes);
+app.use("/api/bookcodes", bookcodeRoutes);
 app.use("/api/cart", cartRoutes);
 app.use("/api/reviews", reviewRoutes);
 app.use("/api/users", userRoutes);
 app.use("/api/category", categoryRoutes);
 app.use("/api/courses", courseRoutes);
 
-// 404
 app.use((req, res) => {
   res.status(404).json({ message: `Không tìm thấy đường dẫn: ${req.originalUrl}` });
 });
-
-// Start server
 const startServer = async () => {
   try {
     await mongoose.connect(process.env.MONGO_URI);

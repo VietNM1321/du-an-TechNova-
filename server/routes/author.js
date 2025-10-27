@@ -6,28 +6,20 @@ import path from "path";
 import fs from "fs";
 
 const router = express.Router();
-
-/* ============================================================
-   ⚙️ CẤU HÌNH MULTER - Upload ảnh tác giả
-============================================================ */
 const storage = multer.diskStorage({
   destination: function (req, file, cb) {
     const uploadPath = "uploads/authors/";
     if (!fs.existsSync(uploadPath)) {
-      fs.mkdirSync(uploadPath, { recursive: true }); // tự tạo thư mục nếu chưa có
+      fs.mkdirSync(uploadPath, { recursive: true });
     }
     cb(null, uploadPath);
   },
   filename: function (req, file, cb) {
-    cb(null, Date.now() + path.extname(file.originalname)); // VD: 173xxx.jpg
+    cb(null, Date.now() + path.extname(file.originalname));
   },
 });
 
 const upload = multer({ storage });
-
-/* ============================================================
-   🟢 LẤY DANH SÁCH TÁC GIẢ (CÓ PHÂN TRANG)
-============================================================ */
 router.get("/", async (req, res) => {
   try {
     const page = parseInt(req.query.page) || 1;
@@ -48,10 +40,6 @@ router.get("/", async (req, res) => {
     res.status(500).json({ message: "Lỗi server", error });
   }
 });
-
-/* ============================================================
-   🟢 LẤY CHI TIẾT 1 TÁC GIẢ
-============================================================ */
 router.get("/:id", async (req, res) => {
   try {
     const author = await Author.findById(req.params.id);
@@ -64,10 +52,6 @@ router.get("/:id", async (req, res) => {
     res.status(500).json({ message: "Lỗi server", error });
   }
 });
-
-/* ============================================================
-   🟢 THÊM MỚI TÁC GIẢ
-============================================================ */
 router.post("/", upload.single("image"), async (req, res) => {
   try {
     const { name, bio, dateOfBirth, dateOfDeath } = req.body;
@@ -86,9 +70,6 @@ router.post("/", upload.single("image"), async (req, res) => {
   }
 });
 
-/* ============================================================
-   🟡 CẬP NHẬT TÁC GIẢ
-============================================================ */
 router.put("/:id", upload.single("image"), async (req, res) => {
   try {
     const { name, bio, dateOfBirth, dateOfDeath } = req.body;
@@ -109,10 +90,6 @@ router.put("/:id", upload.single("image"), async (req, res) => {
     res.status(500).json({ message: "Lỗi khi cập nhật tác giả", error });
   }
 });
-
-/* ============================================================
-   🔴 XOÁ TÁC GIẢ
-============================================================ */
 router.delete("/:id", async (req, res) => {
   try {
     const { id } = req.params;
@@ -121,16 +98,12 @@ router.delete("/:id", async (req, res) => {
     if (!author) {
       return res.status(404).json({ message: "❌ Không tìm thấy tác giả!" });
     }
-
-    // Kiểm tra xem tác giả có sách không
     const relatedBooks = await Book.find({ author: id });
     if (relatedBooks.length > 0) {
       return res.status(400).json({
         message: `❌ Không thể xóa! Tác giả này đang có ${relatedBooks.length} sách.`,
       });
     }
-
-    // Xóa ảnh vật lý nếu tồn tại
     if (author.image && fs.existsSync(author.image)) {
       fs.unlinkSync(author.image);
     }

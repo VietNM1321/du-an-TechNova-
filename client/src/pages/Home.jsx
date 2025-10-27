@@ -13,7 +13,6 @@ function Home() {
   const [selectedCategory, setSelectedCategory] = useState("");
   const sliderRefs = useRef({});
 
-  // 🟢 Lấy dữ liệu category + sách
   useEffect(() => {
     const fetchData = async () => {
       try {
@@ -24,7 +23,7 @@ function Home() {
             const resBooks = await axios.get(
               `http://localhost:5000/api/books?category=${cat.name}`
             );
-            return { ...cat, books: resBooks.data };
+            return { ...cat, books: resBooks.data.books || [] };
           })
         );
         setCategories(dataWithBooks);
@@ -44,7 +43,6 @@ function Home() {
 
   return (
     <div className="p-5 bg-gradient-to-b from-gray-50 to-white min-h-screen">
-      {/* ✅ Banner chính */}
       <section className="relative rounded-2xl overflow-hidden shadow-xl mb-16 h-64 md:h-96">
         <img
           src={bannerImg}
@@ -61,8 +59,6 @@ function Home() {
           </p>
         </div>
       </section>
-
-      {/* ✅ Danh sách danh mục + sách */}
       {displayedCategories.map((cat, index) => (
         <section key={cat._id} className="container mx-auto px-4 mb-20 relative">
           <div className="flex justify-between items-center mb-6">

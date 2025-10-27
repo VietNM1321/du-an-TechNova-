@@ -19,7 +19,7 @@ const BookCodeEdit = () => {
 
   const fetchBookCode = async () => {
     try {
-      const res = await axios.get(`http://localhost:5000/api/bookcode/${id}`);
+      const res = await axios.get(`http://localhost:5000/api/bookcodes/${id}`);
       const data = res.data;
       setForm({ category: data.category._id, prefix: data.prefix });
     } catch (err) {
@@ -37,12 +37,12 @@ const BookCodeEdit = () => {
   const handleSubmit = async (e) => {
     e.preventDefault();
     try {
-      await axios.put(`http://localhost:5000/api/bookcode/${id}`, { prefix: form.prefix });
-      alert("✅ Cập nhật thành công!");
+      const res = await axios.put(`http://localhost:5000/api/bookcodes/${id}`, { prefix: form.prefix });
+      alert(res.data.message);
       navigate("/admin/bookcode");
     } catch (err) {
       console.error("Lỗi cập nhật BookCode:", err.response?.data || err);
-      alert("❌ Cập nhật thất bại!");
+      alert(err.response?.data?.message || "❌ Cập nhật thất bại!");
     }
   };
 

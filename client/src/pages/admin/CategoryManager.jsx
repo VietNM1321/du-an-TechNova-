@@ -24,6 +24,28 @@ const CategoryManager = () => {
   useEffect(() => {
     fetchCategories(page);
   }, [page]);
+  useEffect(() => {
+  const { updatedBook, updatedProducts } = location.state || {};
+
+  if (updatedBook) {
+    setBooks(prev =>
+      prev.map(b =>
+        b._id === updatedBook._id
+          ? { ...b, bookCode: updatedBook.bookCode }
+          : b
+      )
+    );
+    if (updatedProducts && updatedProducts.length) {
+      setProducts(prev =>
+        prev.map(p => {
+          const updated = updatedProducts.find(u => u._id === p._id);
+          return updated ? { ...p, bookCode: updated.bookCode } : p;
+        })
+      );
+    }
+    window.history.replaceState({}, document.title);
+  }
+}, [location.state]);
 
   const handleDelete = async (id) => {
     if (window.confirm("Bạn có chắc muốn xóa danh mục này?")) {
@@ -49,7 +71,7 @@ const CategoryManager = () => {
   };
 
   return (
-    <div className="max-w-6xl mx-auto bg-white p-8 rounded-2xl shadow-lg mt-10">
+    <div className="max-w-6xl mx-auto bg-white p-8 rounded-2xl shadow-lg mt-1">
       <div className="flex justify-between items-center mb-6">
         <h2 className="text-3xl font-bold text-blue-700">📚 Quản lý danh mục sách</h2>
         <button

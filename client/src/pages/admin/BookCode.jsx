@@ -7,7 +7,7 @@ const BookCodeManager = () => {
   const [page, setPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
   const navigate = useNavigate();
-  const API = "http://localhost:5000/api/bookcode";
+  const API = "http://localhost:5000/api/bookcodes";
   const fetchBookCodes = async (pageNum = 1) => {
     try {
       const res = await axios.get(`${API}?page=${pageNum}&limit=5`);
