@@ -1,10 +1,35 @@
 import React from "react";
+import axios from "axios";
 import { useCart } from "../components/cart";
+import { toast } from "react-toastify";
 
 const Cart = () => {
   const { cart, updateItem, removeItem, clearCart } = useCart();
 
   const total = cart.items.reduce((s, i) => s + (i.price || 0) * i.quantity, 0);
+
+  const handleBorrow = async () => {
+    try {
+      if (cart.items.length === 0)
+        return toast.warning("Giỏ hàng trống, không thể mượn!");
+
+      const borrowData = cart.items.map((it) => ({
+        book: it.bookId._id,
+        quantity: it.quantity,
+        dueDate: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000), // hạn trả sau 7 ngày
+      }));
+      await axios.post("http://localhost:5000/api/borrowings", {
+        borrowings: borrowData,
+        userId: cart.userId,
+      });
+
+      toast.success("📚 Mượn sách thành công!");
+      clearCart();
+    } catch (err) {
+      console.error(err);
+      toast.error("❌ Mượn sách thất bại!");
+    }
+  };
 
   return (
     <div className="container mx-auto px-4">
@@ -70,23 +95,6 @@ const Cart = () => {
                         </button>
                       </div>
                     </div>
-                    <div className="mt-3 grid grid-cols-1 sm:grid-cols-2 gap-2 text-sm bg-gray-50 p-3 rounded">
-                      <p>
-                        <strong>Họ tên:</strong> {it.fullName || "—"}
-                      </p>
-                      <p>
-                        <strong>Mã SV:</strong> {it.studentId || "—"}
-                      </p>
-                      <p>
-                        <strong>Email:</strong> {it.email || "—"}
-                      </p>
-                      <p>
-                        <strong>Ngày mượn:</strong> {it.borrowDate || "—"}
-                      </p>
-                      <p>
-                        <strong>Ngày trả:</strong> {it.returnDate || "—"}
-                      </p>
-                    </div>
 
                     <div className="mt-3 flex justify-between items-center">
                       <div className="font-medium text-blue-700">
@@ -103,16 +111,25 @@ const Cart = () => {
                 </div>
               ))}
             </div>
-            <div className="mt-8 flex flex-col sm:flex-row justify-between items-center bg-white p-4 rounded-lg shadow">
+
+            <div className="mt-8 flex flex-col sm:flex-row justify-between items-center bg-white p-4 rounded-lg shadow gap-4">
               <button
                 onClick={clearCart}
-                className="bg-red-500 text-white px-5 py-2 rounded hover:bg-red-600 mb-3 sm:mb-0"
+                className="bg-red-500 text-white px-5 py-2 rounded hover:bg-red-600"
               >
                 Xóa toàn bộ giỏ hàng
               </button>
+
               <div className="text-2xl font-bold text-blue-700">
                 Tổng: {total}₫
               </div>
+
+              <button
+                onClick={handleBorrow}
+                className="bg-green-500 text-white px-6 py-2 rounded-lg hover:bg-green-600"
+              >
+                ✅ Xác nhận mượn sách
+              </button>
             </div>
           </>
         )}

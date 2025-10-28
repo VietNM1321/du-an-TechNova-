@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import axios from "axios";
-import { Upload, User, BookOpen } from "lucide-react";
+import { Upload, BookOpen } from "lucide-react";
 
 const BookEdit = () => {
   const { id } = useParams();
@@ -15,23 +15,21 @@ const BookEdit = () => {
     author: "",
     publishedYear: "",
     quantity: "",
-    available: "",
     bookCode: "",
   });
-
   const [categories, setCategories] = useState([]);
   const [authors, setAuthors] = useState([]);
   const [newFiles, setNewFiles] = useState([]);
   const [loadingCode, setLoadingCode] = useState(false);
-
   useEffect(() => {
     const fetchData = async () => {
       try {
         const [catRes, authorRes, bookRes] = await Promise.all([
           axios.get("http://localhost:5000/api/category?limit=1000"),
           axios.get("http://localhost:5000/api/authors?limit=1000"),
-          axios.get(`http://localhost:5000/api/books/${id}`)
+          axios.get(`http://localhost:5000/api/books/${id}`),
         ]);
+
         setCategories(catRes.data.categories || catRes.data);
         setAuthors(authorRes.data.authors || authorRes.data);
 
@@ -43,7 +41,6 @@ const BookEdit = () => {
           author: data.author?._id || "",
           publishedYear: data.publishedYear || "",
           quantity: data.quantity || 0,
-          available: data.available || 0,
           images: data.images || [],
           bookCode: data.bookCode?.code || "",
         });
@@ -53,16 +50,21 @@ const BookEdit = () => {
     };
     fetchData();
   }, [id]);
-
   useEffect(() => {
     const fetchBookCode = async () => {
-      if (!form.category) return setForm((prev) => ({ ...prev, bookCode: "" }));
+      if (!form.category)
+        return setForm((prev) => ({ ...prev, bookCode: "" }));
       setLoadingCode(true);
       try {
-        const res = await axios.get(`http://localhost:5000/api/bookcodes/category/${form.category}`);
+        const res = await axios.get(
+          `http://localhost:5000/api/bookcodes/category/${form.category}`
+        );
         if (res.data) {
           const { prefix, lastNumber } = res.data;
-          const nextCode = `${prefix}-${String(lastNumber + 1).padStart(3, "0")}`;
+          const nextCode = `${prefix}-${String(lastNumber + 1).padStart(
+            3,
+            "0"
+          )}`;
           setForm((prev) => ({ ...prev, bookCode: nextCode }));
         }
       } catch (err) {
@@ -76,44 +78,45 @@ const BookEdit = () => {
   }, [form.category]);
 
   const handleFileChange = (e) => setNewFiles(Array.from(e.target.files));
-
-const handleSubmit = async (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
-    if (!form.title || !form.category || (!newFiles.length && !form.images.length) || !form.publishedYear) {
+    if (
+      !form.title ||
+      !form.category ||
+      (!newFiles.length && !form.images.length) ||
+      !form.publishedYear
+    ) {
       alert("⚠️ Vui lòng nhập đầy đủ thông tin!");
       return;
     }
-    // các trường thêm
-    const formData =new FormData();
-    formData.append("title", form.title);
-    formData.append("category", form.category);
-    formData.append("publishedYear", form.publishedYear);
-    if (form.description) formData.append("description", form.description);
-    if (form.author) formData.append("author", form.author);
-    if (form.quantity) formData.append("quantity", form.quantity);
-    if (form.available) formData.append("available", form.available);
-    if (form.bookCode) formData.append("bookCode", form.bookCode);
+    const dataToSend = {
+      ...form,
+      available: form.quantity,
+    };
 
-    // Xử lý ẢNH
+    const formData = new FormData();
+    Object.entries(dataToSend).forEach(([key, value]) =>
+      formData.append(key, value)
+    );
     if (newFiles.length > 0) {
-      newFiles.forEach(file => formData.append("images", file));
+      newFiles.forEach((file) => formData.append("images", file));
     } else if (form.images.length > 0) {
       formData.append("images", JSON.stringify(form.images));
     }
 
     try {
-      const res = await axios.put(`http://localhost:5000/api/books/${id}`, formData, {
-        headers: { "Content-Type": "multipart/form-data" },
-      });
+      const res = await axios.put(
+        `http://localhost:5000/api/books/${id}`,
+        formData,
+        {
+          headers: { "Content-Type": "multipart/form-data" },
+        }
+      );
 
       alert(res.data.message || "✅ Cập nhật sách thành công!");
-
       navigate("/admin/bookmanager", {
-        state: {
-          updatedBook: res.data.book
-        }
+        state: { updatedBook: res.data.book },
       });
-
     } catch (err) {
       console.error(err);
       alert("❌ Cập nhật thất bại!");
@@ -122,9 +125,14 @@ const handleSubmit = async (e) => {
 
   return (
     <div className="max-w-4xl mx-auto mt-10 p-8 bg-white rounded-2xl shadow-xl border border-gray-200">
-      <h2 className="text-3xl font-bold text-blue-600 mb-6 text-center">Sửa Sách</h2>
+      <h2 className="text-3xl font-bold text-blue-600 mb-6 text-center">
+        Sửa Sách
+      </h2>
 
-      <form className="grid grid-cols-1 md:grid-cols-2 gap-6" onSubmit={handleSubmit}>
+      <form
+        className="grid grid-cols-1 md:grid-cols-2 gap-6"
+        onSubmit={handleSubmit}
+      >
         <div className="relative">
           <BookOpen className="absolute top-3 left-3 text-gray-400" />
           <input
@@ -143,18 +151,21 @@ const handleSubmit = async (e) => {
         >
           <option value="">-- Chọn tác giả --</option>
           {authors.map((a) => (
-            <option key={a._id} value={a._id}>{a.name}</option>
+            <option key={a._id} value={a._id}>
+              {a.name}
+            </option>
           ))}
         </select>
         <input
           type="number"
           placeholder="Năm xuất bản *"
           value={form.publishedYear}
-          onChange={(e) => setForm({ ...form, publishedYear: e.target.value })}
+          onChange={(e) =>
+            setForm({ ...form, publishedYear: e.target.value })
+          }
           className="border rounded-lg w-full py-3 px-4 focus:ring-2 focus:ring-blue-400 outline-none"
           required
         />
-
         <select
           value={form.category}
           onChange={(e) => setForm({ ...form, category: e.target.value })}
@@ -163,7 +174,9 @@ const handleSubmit = async (e) => {
         >
           <option value="">-- Chọn thể loại *--</option>
           {categories.map((c) => (
-            <option key={c._id} value={c._id}>{c.name}</option>
+            <option key={c._id} value={c._id}>
+              {c.name}
+            </option>
           ))}
         </select>
         <input
@@ -175,17 +188,11 @@ const handleSubmit = async (e) => {
         />
         <input
           type="number"
-          placeholder="Số lượng"
+          placeholder="Số lượng *"
           value={form.quantity}
           onChange={(e) => setForm({ ...form, quantity: e.target.value })}
           className="border rounded-lg w-full py-3 px-4 focus:ring-2 focus:ring-blue-400 outline-none"
-        />
-        <input
-          type="number"
-          placeholder="Còn lại"
-          value={form.available}
-          onChange={(e) => setForm({ ...form, available: e.target.value })}
-          className="border rounded-lg w-full py-3 px-4 focus:ring-2 focus:ring-blue-400 outline-none"
+          required
         />
         <textarea
           placeholder="Mô tả"
@@ -206,8 +213,14 @@ const handleSubmit = async (e) => {
           <div className="flex flex-wrap gap-3 mt-2">
             {(newFiles.length ? newFiles : form.images).map((img, idx) => (
               <img
-                key={idx + (img.name || img)} 
-                src={img instanceof File ? URL.createObjectURL(img) : img.startsWith("http") ? img : `http://localhost:5000${img}`}
+                key={idx + (img.name || img)}
+                src={
+                  img instanceof File
+                    ? URL.createObjectURL(img)
+                    : img.startsWith("http")
+                    ? img
+                    : `http://localhost:5000${img}`
+                }
                 alt="book"
                 className="w-24 h-32 object-cover rounded-lg border"
               />

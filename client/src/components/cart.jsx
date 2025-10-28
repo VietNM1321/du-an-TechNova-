@@ -16,6 +16,7 @@ export function CartProvider({ children }) {
       console.error("❌ Lỗi fetch cart:", err);
     }
   };
+
   const addToCart = async ({
     bookId,
     quantity = 1,
@@ -42,7 +43,7 @@ export function CartProvider({ children }) {
     }
   };
 
-  const updatecart = async ({ bookId, quantity }) => {
+  const updateItem = async ({ bookId, quantity }) => {
     try {
       const res = await axios.put(`${API}/update`, {
         userId: cart.userId,
@@ -51,9 +52,10 @@ export function CartProvider({ children }) {
       });
       setCart(res.data);
     } catch (err) {
-      console.error("❌ Lỗi updatecart:", err);
+      console.error("❌ Lỗi updateItem:", err);
     }
   };
+
   const removeItem = async (bookId) => {
     try {
       const res = await axios.delete(`${API}/remove`, {
@@ -65,14 +67,14 @@ export function CartProvider({ children }) {
     }
   };
 
-  const deletecart = async () => {
+  const clearCart = async () => {
     try {
       const res = await axios.delete(`${API}/clear`, {
         data: { userId: cart.userId },
       });
       setCart(res.data || { userId: cart.userId, items: [] });
     } catch (err) {
-      console.error("❌ Lỗi deletecart:", err);
+      console.error("❌ Lỗi clearCart:", err);
     }
   };
 
@@ -86,9 +88,9 @@ export function CartProvider({ children }) {
         cart,
         fetchCart,
         addToCart,
-        updatecart,
+        updateItem,
         removeItem,
-        deletecart,
+        clearCart,
       }}
     >
       {children}

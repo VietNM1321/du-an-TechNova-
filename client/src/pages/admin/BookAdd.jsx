@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from "react";
 import axios from "axios";
-import { PlusCircle, Upload, User, BookOpen } from "lucide-react";
+import { PlusCircle, Upload, BookOpen } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 
 const BookAdd = () => {
@@ -13,7 +13,6 @@ const BookAdd = () => {
     author: "",
     publishedYear: "",
     quantity: "",
-    available: "",
   });
 
   const [previewBookCode, setPreviewBookCode] = useState("");
@@ -44,16 +43,21 @@ const BookAdd = () => {
       }
       setLoadingCode(true);
       try {
-        const res = await axios.get(`http://localhost:5000/api/bookcodes/category/${form.category}`);
+        const res = await axios.get(
+          `http://localhost:5000/api/bookcodes/category/${form.category}`
+        );
         if (res.data) {
           const { prefix, lastNumber } = res.data;
-          const nextCode = `${prefix}-${String(lastNumber + 1).padStart(3, "0")}`;
+          const nextCode = `${prefix}-${String(lastNumber + 1).padStart(
+            3,
+            "0"
+          )}`;
           setPreviewBookCode(nextCode);
         } else {
           setPreviewBookCode("⚠️ Chưa có mã cho thể loại này");
         }
       } catch (err) {
-        setPreviewBookCode("⚠️ Lỗi khi tải mã sách");
+        setPreviewBookCode("⚠️ Mã sách chưa tồn tại");
         console.error("Lỗi lấy mã sách:", err);
       } finally {
         setLoadingCode(false);
@@ -66,13 +70,19 @@ const BookAdd = () => {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    if (!form.title || !form.category || !form.publishedYear || selectedFiles.length === 0) {
+    if (!form.title || !form.category || !form.publishedYear || !form.quantity || selectedFiles.length === 0) {
       alert("⚠️ Vui lòng nhập đầy đủ thông tin bắt buộc!");
       return;
     }
+    const dataToSend = {
+      ...form,
+      available: form.quantity,
+    };
 
     const formData = new FormData();
-    Object.entries(form).forEach(([key, value]) => formData.append(key, value));
+    Object.entries(dataToSend).forEach(([key, value]) =>
+      formData.append(key, value)
+    );
     selectedFiles.forEach((file) => formData.append("images", file));
 
     try {
@@ -89,10 +99,14 @@ const BookAdd = () => {
 
   return (
     <div className="max-w-4xl mx-auto mt-10 p-8 bg-white rounded-2xl shadow-xl border border-gray-200">
-      <h2 className="text-3xl font-bold text-blue-600 mb-6 text-center">Thêm Sách Mới</h2>
+      <h2 className="text-3xl font-bold text-blue-600 mb-6 text-center">
+        Thêm Sách Mới
+      </h2>
 
-      <form className="grid grid-cols-1 md:grid-cols-2 gap-6" onSubmit={handleSubmit}>
-        {/* Title */}
+      <form
+        className="grid grid-cols-1 md:grid-cols-2 gap-6"
+        onSubmit={handleSubmit}
+      >
         <div className="relative">
           <BookOpen className="absolute top-3 left-3 text-gray-400" />
           <input
@@ -112,7 +126,9 @@ const BookAdd = () => {
         >
           <option value="">-- Chọn thể loại *--</option>
           {categories.map((c) => (
-            <option key={c._id} value={c._id}>{c.name}</option>
+            <option key={c._id} value={c._id}>
+              {c.name}
+            </option>
           ))}
         </select>
         <select
@@ -122,14 +138,18 @@ const BookAdd = () => {
         >
           <option value="">-- Chọn tác giả --</option>
           {authors.map((a) => (
-            <option key={a._id} value={a._id}>{a.name}</option>
+            <option key={a._id} value={a._id}>
+              {a.name}
+            </option>
           ))}
         </select>
         <input
           type="number"
           placeholder="Năm xuất bản *"
           value={form.publishedYear}
-          onChange={(e) => setForm({ ...form, publishedYear: e.target.value })}
+          onChange={(e) =>
+            setForm({ ...form, publishedYear: e.target.value })
+          }
           className="border rounded-lg w-full py-3 px-4 focus:ring-2 focus:ring-blue-400 outline-none"
           required
         />
@@ -142,17 +162,11 @@ const BookAdd = () => {
         />
         <input
           type="number"
-          placeholder="Số lượng"
+          placeholder="Số lượng *"
           value={form.quantity}
           onChange={(e) => setForm({ ...form, quantity: e.target.value })}
           className="border rounded-lg w-full py-3 px-4 focus:ring-2 focus:ring-blue-400 outline-none"
-        />
-        <input
-          type="number"
-          placeholder="Còn lại"
-          value={form.available}
-          onChange={(e) => setForm({ ...form, available: e.target.value })}
-          className="border rounded-lg w-full py-3 px-4 focus:ring-2 focus:ring-blue-400 outline-none"
+          required
         />
         <textarea
           placeholder="Mô tả"

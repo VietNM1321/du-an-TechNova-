@@ -1,8 +1,7 @@
 import React, { useEffect, useState } from "react";
 import axios from "axios";
 import { BookOpen } from "lucide-react";
-import { useNavigate } from "react-router-dom";
-import { useLocation } from "react-router-dom";
+import { useNavigate, useLocation } from "react-router-dom";
 
 const BookLManager = () => {
   const [books, setBooks] = useState([]);
@@ -28,24 +27,31 @@ const BookLManager = () => {
         setPage(data.currentPage || pageNum);
       }
     } catch (err) {
-      console.error("Lỗi lấy sách:", err);
+      console.error("❌ Lỗi lấy danh sách sách:", err);
       setBooks([]);
     }
   };
+
   useEffect(() => {
-  if (location.state?.updatedBook) {
-    const updated = location.state.updatedBook;
-    setBooks(prev =>
-      prev.map(b => (b._id === updated._id ? { ...b, code: updated.bookCode || updated.code } : b))
-    );
-    window.history.replaceState({}, document.title);
-  }
-}, [location.state]);
+    if (location.state?.updatedBook) {
+      const updated = location.state.updatedBook;
+      setBooks((prev) =>
+        prev.map((b) =>
+          b._id === updated._id
+            ? { ...b, code: updated.bookCode || updated.code }
+            : b
+        )
+      );
+      window.history.replaceState({}, document.title);
+    }
+  }, [location.state]);
+
   useEffect(() => {
     fetchBooks(page);
   }, [page]);
+
   const handleDelete = async (id) => {
-    if (window.confirm("Bạn có chắc muốn xóa sách này không?")) {
+    if (window.confirm("🗑️ Bạn có chắc muốn xóa sách này không?")) {
       try {
         await axios.delete(`${API}/${id}`);
         fetchBooks(page);
@@ -63,13 +69,22 @@ const BookLManager = () => {
           <BookOpen className="w-8 h-8 text-[#0057FF]" />
           <span>Quản lý Sách</span>
         </h2>
-        <button
-          onClick={() => navigate("/admin/bookadd")}
-          className="bg-blue-600 hover:bg-blue-700 text-white py-2 px-4 rounded-lg"
-        >
-          Thêm sách mới
-        </button>
+        <div className="flex gap-3">
+          <button
+            onClick={() => navigate("/admin/bookadd")}
+            className="bg-blue-600 hover:bg-blue-700 text-white py-2 px-4 rounded-lg"
+          >
+            ➕ Thêm sách mới
+          </button>
+          <button
+            onClick={() => navigate("/admin/return-books")}
+            className="bg-green-600 hover:bg-green-700 text-white py-2 px-4 rounded-lg"
+          >
+            🔁 Trả sách
+          </button>
+        </div>
       </div>
+
       <div className="overflow-x-auto border border-gray-200 rounded-xl shadow-sm">
         <table className="min-w-full">
           <thead className="bg-blue-50 text-blue-800">
@@ -115,11 +130,28 @@ const BookLManager = () => {
                     >
                       ✏️ Sửa
                     </button>
+
                     <button
                       onClick={() => handleDelete(b._id)}
                       className="bg-red-500 hover:bg-red-600 text-white px-3 py-1 rounded-lg"
                     >
                       🗑️ Xóa
+                    </button>
+
+                    {/* ✅ Thêm router “Mượn” */}
+                    <button
+                      onClick={() => navigate(`/admin/borrow/${b._id}`)}
+                      className="bg-indigo-500 hover:bg-indigo-600 text-white px-3 py-1 rounded-lg"
+                    >
+                      📚 Mượn
+                    </button>
+
+                    {/* ✅ Thêm router “Trả” */}
+                    <button
+                      onClick={() => navigate(`/admin/return/${b._id}`)}
+                      className="bg-green-500 hover:bg-green-600 text-white px-3 py-1 rounded-lg"
+                    >
+                      🔁 Trả
                     </button>
                   </td>
                 </tr>
@@ -137,6 +169,7 @@ const BookLManager = () => {
           </tbody>
         </table>
       </div>
+
       {totalPages > 1 && (
         <div className="flex justify-center items-center mt-6 gap-3">
           <button

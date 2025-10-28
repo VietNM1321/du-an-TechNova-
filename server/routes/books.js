@@ -89,7 +89,9 @@ router.get("/:id", async (req, res) => {
     if (!book) return res.status(404).json({ message: "Không tìm thấy sách" });
 
     book.views = (book.views || 0) + 1;
-    await book.save();
+    if (book.code) {
+      await book.save();
+    }
 
     const reviews = await Reviews.find({ bookId: book._id }).populate("userId", "name email");
     res.json({ ...book.toObject(), reviews });
@@ -246,5 +248,61 @@ router.delete("/:id", async (req, res) => {
     res.status(500).json({ message: "Xóa thất bại", error: error.message });
   }
 });
+router.put("/borrow/:id", async (req, res) => {
+  try {
+    const { quantity } = req.body;
+    if (!mongoose.Types.ObjectId.isValid(req.params.id)) {
+      return res.status(400).json({ message: "ID sách không hợp lệ" });
+    }
 
+    const book = await Book.findById(req.params.id);
+    if (!book) return res.status(404).json({ message: "Không tìm thấy sách" });
+
+    const borrowQty = Number(quantity) > 0 ? Number(quantity) : 1;
+
+    if (book.available < borrowQty) {
+      return res.status(400).json({
+        message: `❌ Không đủ sách để mượn. Hiện chỉ còn ${book.available} quyển.`,
+      });
+    }
+
+    book.available -= borrowQty;
+    await book.save();
+
+    res.json({
+      message: `✅ Mượn thành công ${borrowQty} quyển. Còn lại: ${book.available}/${book.quantity}`,
+      book,
+    });
+  } catch (error) {
+    console.error("Lỗi khi mượn sách:", error);
+    res.status(500).json({ message: "Lỗi server khi mượn sách", error: error.message });
+  }
+});
+router.put("/return/:id", async (req, res) => {
+  try {
+    const { quantity } = req.body;
+    if (!mongoose.Types.ObjectId.isValid(req.params.id)) {
+      return res.status(400).json({ message: "ID sách không hợp lệ" });
+    }
+
+    const book = await Book.findById(req.params.id);
+    if (!book) return res.status(404).json({ message: "Không tìm thấy sách để trả" });
+
+    const returnQty = Number(quantity) > 0 ? Number(quantity) : 1;
+
+    book.available += returnQty;
+    if (book.available > book.quantity) {
+      book.available = book.quantity;
+    }
+
+    await book.save();
+    res.json({
+      message: `✅ Đã trả ${returnQty} quyển. Còn lại: ${book.available}/${book.quantity}`,
+      book,
+    });
+  } catch (error) {
+    console.error("Lỗi khi trả sách:", error);
+    res.status(500).json({ message: "Trả sách thất bại", error: error.message });
+  }
+});
 export default router;

@@ -39,7 +39,9 @@ const BookSchema = new mongoose.Schema(
     },
     available: {
       type: Number,
-      default: 0,
+      default: function () {
+        return this.quantity;
+      },
     },
     publishedYear: {
       type: Number,
