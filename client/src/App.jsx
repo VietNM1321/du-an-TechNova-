@@ -14,6 +14,7 @@ import Profile from "./pages/Profile";
 import AdminLayout from "./layout/adminLayout";
 import AdminHome from "./pages/admin/AdminHome";
 import BookManager from "./pages/admin/Bookmanager";
+import BorrowManager from "./pages/admin/BorrowManager";
 import AuthorManager from "./pages/admin/AuthorManager";
 import BookEdit from "./pages/admin/BookEdit"
 import BookCode from "./pages/admin/BookCode"
@@ -62,6 +63,7 @@ function App() {
           <Route path="bookcodeadd" element={<BookCodeAdd />} />
           <Route path="bookcode/edit/:id" element={<BookCodeEdit />} />
           <Route path="author" element={<AuthorManager />} />
+          <Route path="borrowings" element={<BorrowManager />} />
           <Route path="authoradd" element={<AuthorAdd />} />
           <Route path="authoredit/:id" element={<AuthorEdit />} />
           <Route path="category" element={<CategoryManager />} />
