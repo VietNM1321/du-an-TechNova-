@@ -138,20 +138,8 @@ const BookLManager = () => {
                       🗑️ Xóa
                     </button>
 
-                    {/* ✅ Thêm router “Mượn” */}
-                    <button
-                      onClick={() => navigate(`/admin/borrow/${b._id}`)}
-                      className="bg-indigo-500 hover:bg-indigo-600 text-white px-3 py-1 rounded-lg"
-                    >
-                      📚 Mượn
-                    </button>
-
-                    {/* ✅ Thêm router “Trả” */}
-                    <button
-                      onClick={() => navigate(`/admin/return/${b._id}`)}
-                      className="bg-green-500 hover:bg-green-600 text-white px-3 py-1 rounded-lg"
-                    >
-                      🔁 Trả
+                    <button className="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700">
+                      📘 Chi tiết
                     </button>
                   </td>
                 </tr>

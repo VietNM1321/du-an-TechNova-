@@ -43,7 +43,7 @@ const BorrowForm = ({ book, onClose }) => {
         borrowDate: formData.borrowDate,
         returnDate: formData.returnDate
       });
-      alert("✅ Mượn sách thành công!");
+      alert("✅ Sách đã thêm vào giỏ hàng!");
       onClose();
     } catch (error) {
       console.error("Lỗi khi mượn sách:", error);

@@ -3,7 +3,7 @@ import { Link } from "react-router-dom";
 import { Eye, Star, User } from "lucide-react";
 
 function BookCard({ book, btnColor = "bg-yellow-400 hover:bg-yellow-500" }) {
-  const avgRating =book.reviews && book.reviews.length > 0 ? ( // đây là cái để tính trung bình view khi xem
+  const avgRating =book.reviews && book.reviews.length > 0 ? (
           book.reviews.reduce((acc, r) => acc + r.rating, 0) /
           book.reviews.length
         ).toFixed(1)
