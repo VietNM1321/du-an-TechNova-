@@ -56,23 +56,29 @@ router.get("/", async (req, res) => {
 // 🔍 API tìm kiếm sách
 router.get("/search", async (req, res) => {
   try {
-    const { q, author } = req.query;
+    const { q, author, category } = req.query;
 
     if (!q || q.trim() === "") {
       return res.status(400).json({ message: "Vui lòng nhập từ khóa tìm kiếm" });
     }
 
+    // 🟢 Điều kiện tìm kiếm
     const filter = {
       $or: [
         { title: { $regex: q, $options: "i" } },
         { description: { $regex: q, $options: "i" } },
-        { code: { $regex: q, $options: "i" } }, // ✅ dùng code (string)
+        { code: { $regex: q, $options: "i" } },
       ],
     };
 
-    // 🟢 Nếu có filter theo tác giả
+    // 🧑‍💼 Lọc theo tác giả
     if (author && mongoose.Types.ObjectId.isValid(author)) {
       filter.author = author;
+    }
+
+    // 📚 Lọc theo danh mục
+    if (category && mongoose.Types.ObjectId.isValid(category)) {
+      filter.category = category;
     }
 
     const books = await Book.find(filter)
@@ -89,6 +95,7 @@ router.get("/search", async (req, res) => {
     res.status(500).json({ message: "Lỗi server khi tìm kiếm sách.", error: error.message });
   }
 });
+
 
 router.get("/:id", async (req, res) => {
   try {

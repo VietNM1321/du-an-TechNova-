@@ -9,29 +9,42 @@ const SearchResults = () => {
   const [results, setResults] = useState([]);
   const [message, setMessage] = useState("");
   const [authors, setAuthors] = useState([]);
+  const [categories, setCategories] = useState([]);
   const [selectedAuthor, setSelectedAuthor] = useState("");
+  const [selectedCategory, setSelectedCategory] = useState("");
   const query = new URLSearchParams(location.search).get("q") || "";
 
-  // 🟢 Lấy danh sách tác giả
+  // 🟢 Lấy danh sách tác giả và danh mục
   useEffect(() => {
-  axios
-    .get("http://localhost:5000/api/authors")
-    .then((res) => {
-      // ✅ Nếu API trả về object có trường authors thì lấy đúng mảng
-      const data = Array.isArray(res.data)
-        ? res.data
-        : res.data.authors || [];
-      setAuthors(data);
-    })
-    .catch((err) => console.error("Lỗi khi tải danh sách tác giả:", err));
-}, []);
+    const fetchFilters = async () => {
+      try {
+        const [authorRes, categoryRes] = await Promise.all([
+          axios.get("http://localhost:5000/api/authors"),
+          axios.get("http://localhost:5000/api/category"),
+        ]);
 
+        const authorData = Array.isArray(authorRes.data)
+          ? authorRes.data
+          : authorRes.data.authors || [];
+        const categoryData = Array.isArray(categoryRes.data)
+          ? categoryRes.data
+          : categoryRes.data.categories || [];
 
-  // 🟢 Hàm fetch kết quả tìm kiếm (có filter tác giả)
+        setAuthors(authorData);
+        setCategories(categoryData);
+      } catch (err) {
+        console.error("Lỗi khi tải dữ liệu filter:", err);
+      }
+    };
+    fetchFilters();
+  }, []);
+
+  // 🟢 Gọi API tìm kiếm
   const fetchSearch = async () => {
     try {
       let url = `http://localhost:5000/api/books/search?q=${encodeURIComponent(query)}`;
       if (selectedAuthor) url += `&author=${selectedAuthor}`;
+      if (selectedCategory) url += `&category=${selectedCategory}`;
 
       const res = await axios.get(url);
       setResults(res.data);
@@ -47,7 +60,7 @@ const SearchResults = () => {
     }
   };
 
-  // 🟢 Gọi tìm kiếm khi query hoặc author thay đổi
+  // 🟢 Tự động tìm kiếm khi query hoặc filter thay đổi
   useEffect(() => {
     if (query.trim()) {
       fetchSearch();
@@ -56,24 +69,23 @@ const SearchResults = () => {
       setMessage("Nhập từ khóa để tìm kiếm.");
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [location.search, query, selectedAuthor]);
+  }, [query, selectedAuthor, selectedCategory, location.search]);
 
-  // 🟢 Xử lý chọn tác giả
-  const handleAuthorChange = (e) => {
-    const authorId = e.target.value;
-    setSelectedAuthor(authorId);
+  // 🟢 Xử lý thay đổi bộ lọc
+  const handleFilterChange = (type, value) => {
+    if (type === "author") setSelectedAuthor(value);
+    if (type === "category") setSelectedCategory(value);
 
-    // Giữ nguyên từ khóa trong URL, chỉ thay đổi filter
     const params = new URLSearchParams(location.search);
-    if (authorId) params.set("author", authorId);
-    else params.delete("author");
+    if (value) params.set(type, value);
+    else params.delete(type);
     navigate({ search: params.toString() });
   };
 
   return (
     <div className="container mx-auto py-6 px-4">
       <main className="bg-gray-50 p-5 rounded-xl shadow-inner min-h-[500px]">
-        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between mb-6">
+        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between mb-6 gap-4">
           <h3 className="text-2xl font-semibold text-gray-800 flex items-center gap-2">
             <span role="img" aria-label="search">
               🔎
@@ -81,19 +93,37 @@ const SearchResults = () => {
             Kết quả tìm kiếm {query ? `: "${query}"` : ""}
           </h3>
 
-          {/* 🧩 Bộ lọc tác giả */}
-          <select
-            value={selectedAuthor}
-            onChange={handleAuthorChange}
-            className="border border-gray-300 rounded-md px-3 py-2 text-gray-700 mt-3 sm:mt-0"
-          >
-            <option value="">-- Lọc theo tác giả --</option>
-            {authors.map((a) => (
-              <option key={a._id} value={a._id}>
-                {a.name}
-              </option>
-            ))}
-          </select>
+          <div className="flex flex-wrap gap-3">
+            {/* 🧑‍💼 Filter tác giả */}
+            <select
+              value={selectedAuthor}
+              onChange={(e) => handleFilterChange("author", e.target.value)}
+              className="border border-gray-300 rounded-md px-3 py-2 text-gray-700"
+            >
+              <option value="">-- Lọc theo tác giả --</option>
+              {Array.isArray(authors) &&
+                authors.map((a) => (
+                  <option key={a._id} value={a._id}>
+                    {a.name}
+                  </option>
+                ))}
+            </select>
+
+            {/* 📚 Filter danh mục */}
+            <select
+              value={selectedCategory}
+              onChange={(e) => handleFilterChange("category", e.target.value)}
+              className="border border-gray-300 rounded-md px-3 py-2 text-gray-700"
+            >
+              <option value="">-- Lọc theo danh mục --</option>
+              {Array.isArray(categories) &&
+                categories.map((c) => (
+                  <option key={c._id} value={c._id}>
+                    {c.name}
+                  </option>
+                ))}
+            </select>
+          </div>
         </div>
 
         {message ? (
