@@ -20,10 +20,28 @@ const BorrowForm = ({ book, onClose }) => {
   const handleSubmit = async (e) => {
     e.preventDefault();
     try {
+      const borrowDate = new Date(formData.borrowDate);
+      const returnDate = new Date(formData.returnDate);
+      if (borrowDate < new Date().setHours(0, 0, 0, 0)) {
+        alert("Ngày mượn không thể là ngày trong quá khứ!");
+        return;
+      }
+      if (returnDate <= borrowDate) {
+        alert("Ngày trả phải lớn hơn ngày mượn!");
+        return;
+      }
+      const daysDiff = Math.floor((returnDate - borrowDate) / (1000 * 60 * 60 * 24));
+      if (daysDiff > 30) {
+        alert("Thời gian mượn không được quá 30 ngày!");
+        return;
+      }
+
       await addToCart({
         bookId: book._id,
         quantity: 1,
         ...formData,
+        borrowDate: formData.borrowDate,
+        returnDate: formData.returnDate
       });
       alert("✅ Mượn sách thành công!");
       onClose();
@@ -74,6 +92,7 @@ const BorrowForm = ({ book, onClose }) => {
               name="borrowDate"
               value={formData.borrowDate}
               onChange={handleChange}
+              min={new Date().toISOString().split('T')[0]}
               required
               className="flex-1 border rounded-md p-2 outline-none focus:ring-2 focus:ring-blue-500"
             />
@@ -82,6 +101,7 @@ const BorrowForm = ({ book, onClose }) => {
               name="returnDate"
               value={formData.returnDate}
               onChange={handleChange}
+              min={formData.borrowDate || new Date().toISOString().split('T')[0]}
               required
               className="flex-1 border rounded-md p-2 outline-none focus:ring-2 focus:ring-blue-500"
             />

@@ -7,8 +7,8 @@ const CartItemSchema = new mongoose.Schema({
   fullName: { type: String },
   studentId: { type: String },
   email: { type: String },
-  borrowDate: { type: String },
-  returnDate: { type: String },
+  borrowDate: { type: Date },
+  returnDate: { type: Date },
 });
 
 const CartSchema = new mongoose.Schema(

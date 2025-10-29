@@ -7,10 +7,7 @@ const BorrowManager = () => {
 
   useEffect(() => {
     fetchBorrowings();
-    // Thiết lập interval để tự động cập nhật mỗi 30 giây
     const interval = setInterval(fetchBorrowings, 30000);
-
-    // Open SSE to receive live updates from server
     let es;
     try {
       es = new EventSource('http://localhost:5000/api/borrowings/stream');
@@ -18,11 +15,9 @@ const BorrowManager = () => {
         try {
           const data = JSON.parse(e.data);
           if (data && data.type === 'new_borrowings') {
-            // refresh list to include new borrowings
             fetchBorrowings();
           }
         } catch (err) {
-          // ignore non-json or initial comments
         }
       };
     } catch (err) {
@@ -99,9 +94,11 @@ const BorrowManager = () => {
       title: 'Ngày mượn',
       dataIndex: 'borrowDate',
       key: 'borrowDate',
-      render: (date) => {
-        if (!date) return 'N/A';
-        const d = new Date(date);
+      width: '15%',
+      render: (date, record) => {
+        const borrowDate = record.borrowDate || record.cartData?.borrowDate;
+        if (!borrowDate) return 'N/A';
+        const d = new Date(borrowDate);
         return d.toLocaleDateString('vi-VN');
       },
     },
@@ -109,9 +106,11 @@ const BorrowManager = () => {
       title: 'Ngày hẹn trả',
       dataIndex: 'dueDate',
       key: 'dueDate',
-      render: (date) => {
-        if (!date) return 'N/A';
-        const d = new Date(date);
+      width: '15%',
+      render: (date, record) => {
+        const returnDate = record.dueDate || record.cartData?.returnDate;
+        if (!returnDate) return 'N/A';
+        const d = new Date(returnDate);
         return d.toLocaleDateString('vi-VN');
       },
     },

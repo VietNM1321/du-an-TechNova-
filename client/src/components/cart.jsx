@@ -26,22 +26,61 @@ export function CartProvider({ children }) {
     borrowDate,
     returnDate,
   }) => {
-    try {
-      const res = await axios.post(`${API}/add`, {
-        userId: cart.userId,
-        bookId,
-        quantity,
-        fullName,
-        studentId,
-        email,
-        borrowDate,
-        returnDate,
-      });
+  try {
+    const res = await axios.post(`${API}/add`, {
+      userId: cart.userId,
+      bookId,
+      quantity,
+      fullName,
+      studentId,
+      email,
+      borrowDate,
+      returnDate,
+    });
+    if (res.data?.items) {
       setCart(res.data);
-    } catch (err) {
-      console.error("❌ Lỗi addToCart:", err);
+    } else {
+      setCart((prev) => {
+        const existing = prev.items.find((i) => i.bookId._id === bookId);
+        if (existing) {
+          return {
+            ...prev,
+            items: prev.items.map((i) =>
+              i.bookId._id === bookId
+                ? {
+                    ...i,
+                    quantity: i.quantity + quantity,
+                    borrowDate,
+                    returnDate,
+                    fullName,
+                    studentId,
+                    email,
+                  }
+                : i
+            ),
+          };
+        }
+        return {
+          ...prev,
+          items: [
+            ...prev.items,
+            {
+              bookId: { _id: bookId },
+              quantity,
+              borrowDate,
+              returnDate,
+              fullName,
+              studentId,
+              email,
+            },
+          ],
+        };
+      });
     }
-  };
+  } catch (err) {
+    console.error("❌ Lỗi addToCart:", err);
+  }
+};
 
   const updateItem = async ({ bookId, quantity }) => {
     try {

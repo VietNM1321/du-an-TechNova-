@@ -90,9 +90,13 @@ router.post("/", async (req, res) => {
           user: user._id,
           book: book._id,
           quantity: item.quantity,
-          borrowDate: new Date(),
-          dueDate: item.dueDate ? new Date(item.dueDate) : new Date(Date.now() + 7 * 24 * 60 * 60 * 1000),
+          borrowDate: item.borrowDate ? new Date(item.borrowDate) : new Date(),
+          dueDate: item.returnDate ? new Date(item.returnDate) : new Date(Date.now() + 7 * 24 * 60 * 60 * 1000),
           status: "borrowed",
+          cartData: {
+            borrowDate: item.borrowDate,
+            returnDate: item.returnDate
+          },
           bookSnapshot: {
             title: book.title,
             images: book.images,
@@ -120,8 +124,6 @@ router.post("/", async (req, res) => {
     }
 
     if (created.length === 0) return res.status(400).json({ message: "Không tạo được đơn mượn nào." });
-
-    // notify SSE clients about new borrowings
     try {
       sendSseEvent({ type: 'new_borrowings', payload: created });
     } catch (e) {

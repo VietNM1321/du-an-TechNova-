@@ -12,14 +12,22 @@ const borrowingSchema = new mongoose.Schema({
     required: true,
   },
   quantity: { type: Number, required: true },
-  borrowDate: { type: Date, default: Date.now },
+
+  borrowDate: { type: Date, required: true },
   dueDate: { type: Date, required: true },
-  returnDate: Date,
+  returnDate: { type: Date },
+
   status: {
     type: String,
     enum: ["borrowed", "returned", "overdue"],
     default: "borrowed",
   },
+
+  cartData: {
+    borrowDate: Date,
+    returnDate: Date,
+  },
+
   bookSnapshot: {
     title: String,
     images: [String],
@@ -31,6 +39,7 @@ const borrowingSchema = new mongoose.Schema({
     available: Number,
     publishedYear: Number,
   },
+
   userSnapshot: {
     name: String,
     email: String,

@@ -10,18 +10,19 @@ const Cart = () => {
   const total = cart.items.reduce((s, i) => s + (i.price || 0) * i.quantity, 0);
 
   const handleBorrow = async () => {
-    try {
-      if (cart.items.length === 0) return toast.warning("Giỏ hàng trống, không thể mượn!");
-
+  try {
+    if (cart.items.length === 0) return toast.warning("Giỏ hàng trống, không thể mượn!");
       setLoading(true);
-
-  // Use cart.userId; if it's the string 'anon' treat as not-provided so server will fallback to guest
-  const userId = cart.userId && cart.userId !== 'anon' ? cart.userId : undefined;
+      const userId = cart.userId && cart.userId !== 'anon' ? cart.userId : undefined;
+      const now = new Date();
+      const sevenDaysLater = new Date();
+      sevenDaysLater.setDate(now.getDate() + 7);
 
       const borrowData = cart.items.map((it) => ({
         bookId: it.bookId._id,
         quantity: it.quantity,
-        dueDate: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000), // 7 days
+        borrowDate: it.borrowDate || new Date(),
+        returnDate: it.returnDate || new Date(Date.now() + 7 * 24 * 60 * 60 * 1000),
       }));
 
       const res = await axios.post("http://localhost:5000/api/borrowings", {
@@ -36,7 +37,6 @@ const Cart = () => {
         toast.error(res.data?.message || "Mượn sách không thành công");
       }
     } catch (err) {
-      // Log detailed axios error for debugging
       if (err?.response) {
         console.error('Borrow error response data:', err.response.data);
         console.error('Borrow error response status:', err.response.status);
