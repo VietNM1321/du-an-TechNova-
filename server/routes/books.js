@@ -53,29 +53,43 @@ router.get("/", async (req, res) => {
     res.status(500).json({ message: "Lỗi server", error: error.message });
   }
 });
+// 🔍 API tìm kiếm sách
 router.get("/search", async (req, res) => {
   try {
-    const { q } = req.query;
+    const { q, author } = req.query;
+
     if (!q || q.trim() === "") {
       return res.status(400).json({ message: "Vui lòng nhập từ khóa tìm kiếm" });
     }
 
-    const books = await Book.find({
+    const filter = {
       $or: [
         { title: { $regex: q, $options: "i" } },
         { description: { $regex: q, $options: "i" } },
-        { bookCode: { $regex: q, $options: "i" } },
+        { code: { $regex: q, $options: "i" } }, // ✅ dùng code (string)
       ],
-    })
+    };
+
+    // 🟢 Nếu có filter theo tác giả
+    if (author && mongoose.Types.ObjectId.isValid(author)) {
+      filter.author = author;
+    }
+
+    const books = await Book.find(filter)
       .populate("author", "name")
       .populate("category", "name");
 
+    if (!books.length) {
+      return res.status(404).json({ message: "Không tìm thấy sản phẩm phù hợp." });
+    }
+
     res.json(books);
   } catch (error) {
-    console.error("Lỗi khi tìm kiếm sách:", error);
-    res.status(500).json({ message: "Lỗi server khi tìm kiếm", error: error.message });
+    console.error("❌ Lỗi khi tìm kiếm sách:", error);
+    res.status(500).json({ message: "Lỗi server khi tìm kiếm sách.", error: error.message });
   }
 });
+
 router.get("/:id", async (req, res) => {
   try {
     if (!mongoose.Types.ObjectId.isValid(req.params.id)) {
