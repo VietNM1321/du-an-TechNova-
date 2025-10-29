@@ -35,7 +35,7 @@ const borrowingSchema = new mongoose.Schema({
     name: String,
     email: String,
     phone: String,
-    adresses: [String],
+    addresses: [String],
   },
 });
 

@@ -5,29 +5,47 @@ import { toast } from "react-toastify";
 
 const Cart = () => {
   const { cart, updateItem, removeItem, clearCart } = useCart();
+  const [loading, setLoading] = React.useState(false);
 
   const total = cart.items.reduce((s, i) => s + (i.price || 0) * i.quantity, 0);
 
   const handleBorrow = async () => {
     try {
-      if (cart.items.length === 0)
-        return toast.warning("Giỏ hàng trống, không thể mượn!");
+      if (cart.items.length === 0) return toast.warning("Giỏ hàng trống, không thể mượn!");
+
+      setLoading(true);
+
+  // Use cart.userId; if it's the string 'anon' treat as not-provided so server will fallback to guest
+  const userId = cart.userId && cart.userId !== 'anon' ? cart.userId : undefined;
 
       const borrowData = cart.items.map((it) => ({
-        book: it.bookId._id,
+        bookId: it.bookId._id,
         quantity: it.quantity,
-        dueDate: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000), // hạn trả sau 7 ngày
+        dueDate: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000), // 7 days
       }));
-      await axios.post("http://localhost:5000/api/borrowings", {
+
+      const res = await axios.post("http://localhost:5000/api/borrowings", {
         borrowings: borrowData,
-        userId: cart.userId,
+        userId,
       });
 
-      toast.success("📚 Mượn sách thành công!");
-      clearCart();
+      if (res.status === 201) {
+        toast.success("📚 Mượn sách thành công!");
+        await clearCart();
+      } else {
+        toast.error(res.data?.message || "Mượn sách không thành công");
+      }
     } catch (err) {
-      console.error(err);
-      toast.error("❌ Mượn sách thất bại!");
+      // Log detailed axios error for debugging
+      if (err?.response) {
+        console.error('Borrow error response data:', err.response.data);
+        console.error('Borrow error response status:', err.response.status);
+      } else {
+        console.error('Borrow error:', err.message || err);
+      }
+      toast.error(err.response?.data?.message || "Có lỗi xảy ra khi mượn sách!");
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -126,9 +144,10 @@ const Cart = () => {
 
               <button
                 onClick={handleBorrow}
-                className="bg-green-500 text-white px-6 py-2 rounded-lg hover:bg-green-600"
+                className="bg-green-500 text-white px-6 py-2 rounded-lg hover:bg-green-600 disabled:opacity-50"
+                disabled={loading}
               >
-                ✅ Xác nhận mượn sách
+                {loading ? 'Đang xử lý...' : '✅ Xác nhận mượn sách'}
               </button>
             </div>
           </>

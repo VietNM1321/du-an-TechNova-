@@ -4,61 +4,95 @@ import Book from "../models/books.js";
 import User from "../models/User.js";
 
 const router = express.Router();
+// SSE clients
+const sseClients = [];
 
-router.get("/", async (req, res) => {
+function sendSseEvent(data) {
+  const payload = `data: ${JSON.stringify(data)}\n\n`;
+  sseClients.forEach((res) => res.write(payload));
+}
+
+// Get all borrowings (for admin)
+router.get("/all", async (req, res) => {
   try {
-    const list = await Borrowing.find()
-      .populate("user book")
-      .sort({ borrowDate: -1 });
+    const list = await Borrowing.find().sort({ borrowDate: -1 });
+
+    // Update overdue status if needed
+    const now = new Date();
+    await Promise.all(
+      list.map(async (borrowing) => {
+        if (borrowing.status === "borrowed" && new Date(borrowing.dueDate) < now) {
+          borrowing.status = "overdue";
+          await borrowing.save();
+        }
+      })
+    );
+
     res.json(list);
   } catch (err) {
+    console.error("Error fetching all borrowings:", err);
     res.status(500).json({ message: "Lỗi khi tải danh sách mượn sách!" });
   }
 });
 
+// Get borrowings for a specific user
+router.get("/user/:userId", async (req, res) => {
+  try {
+    const borrowings = await Borrowing.find({ user: req.params.userId }).sort({ borrowDate: -1 });
+    res.json(borrowings);
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ message: "Lỗi khi tải lịch sử mượn sách!" });
+  }
+});
+
+// Create new borrowings (expects borrowings: [{ bookId, quantity, dueDate }], userId)
 router.post("/", async (req, res) => {
   try {
-    console.log("POST /api/borrowings body:", req.body);
     const { borrowings, userId } = req.body;
-    if (!borrowings || borrowings.length === 0)
+
+    if (!borrowings || !Array.isArray(borrowings) || borrowings.length === 0) {
       return res.status(400).json({ message: "Không có dữ liệu mượn!" });
-    let user;
-    if (!userId || userId === "anon") {
+    }
+
+    let user = null;
+    if (!userId) {
+      // fallback to guest account if userId not provided
       const guestEmail = "guest@local";
       user = await User.findOne({ email: guestEmail });
       if (!user) {
         user = await User.create({ fullName: "Khách", email: guestEmail });
       }
     } else {
-      const mongoose = (await import("mongoose")).default;
-      if (!mongoose.Types.ObjectId.isValid(userId)) {
-        return res.status(400).json({ message: "Invalid userId" });
-      }
       user = await User.findById(userId);
       if (!user) return res.status(404).json({ message: "Không tìm thấy người dùng!" });
     }
 
     const created = [];
 
-    for (const b of borrowings) {
+    for (const item of borrowings) {
       try {
-        const book = await Book.findById(b.book).populate("author publisher category");
+        const book = await Book.findById(item.bookId).populate("author publisher category");
         if (!book) {
-          console.warn("Book not found for id", b.book);
+          console.warn("Book not found:", item.bookId);
           continue;
         }
 
-        if (book.available < b.quantity)
-          return res.status(400).json({ message: `Sách ${book.title} không đủ số lượng!` });
+        if ((book.available ?? book.available) < item.quantity) {
+          return res.status(400).json({ message: `Sách "${book.title}" không đủ số lượng!` });
+        }
 
-        book.available -= b.quantity;
+        // decrement available
+        book.available = (book.available || 0) - item.quantity;
         await book.save();
 
-        const borrow = await Borrowing.create({
+        const borrowing = await Borrowing.create({
           user: user._id,
           book: book._id,
-          quantity: b.quantity,
-          dueDate: b.dueDate,
+          quantity: item.quantity,
+          borrowDate: new Date(),
+          dueDate: item.dueDate ? new Date(item.dueDate) : new Date(Date.now() + 7 * 24 * 60 * 60 * 1000),
+          status: "borrowed",
           bookSnapshot: {
             title: book.title,
             images: book.images,
@@ -71,50 +105,78 @@ router.post("/", async (req, res) => {
             publishedYear: book.publishedYear,
           },
           userSnapshot: {
-            name: user.name,
+            name: user.fullName,
             email: user.email,
-            phone: user.phone,
-            adresses: user.adresses,
+            phone: user.phone || "",
+            addresses: user.addresses || [],
           },
         });
 
-        created.push(borrow);
+        created.push(borrowing);
       } catch (innerErr) {
-        console.error("Error processing borrowing item:", innerErr, "item:", b);
+        console.error("Error processing item:", innerErr, item);
         continue;
       }
     }
 
-    return res.json({ message: "✅ Mượn sách thành công!", borrowings: created });
+    if (created.length === 0) return res.status(400).json({ message: "Không tạo được đơn mượn nào." });
+
+    // notify SSE clients about new borrowings
+    try {
+      sendSseEvent({ type: 'new_borrowings', payload: created });
+    } catch (e) {
+      console.warn('SSE notify failed:', e);
+    }
+
+    res.status(201).json(created);
   } catch (err) {
-    console.error(err);
-    res.status(500).json({ message: "❌ Lỗi khi mượn sách!" });
+    console.error("Error creating borrowings:", err);
+    res.status(500).json({ message: "Lỗi khi tạo đơn mượn!" });
   }
 });
 
+// SSE endpoint: admin can open EventSource to receive live updates
+router.get('/stream', (req, res) => {
+  res.set({
+    'Content-Type': 'text/event-stream',
+    'Cache-Control': 'no-cache',
+    Connection: 'keep-alive',
+  });
+  res.flushHeaders?.();
+
+  // send an initial comment to establish the stream
+  res.write(':ok\n\n');
+
+  sseClients.push(res);
+
+  req.on('close', () => {
+    const idx = sseClients.indexOf(res);
+    if (idx !== -1) sseClients.splice(idx, 1);
+  });
+});
+
+// Return book endpoint
 router.put("/:id/return", async (req, res) => {
   try {
-    const borrow = await Borrowing.findById(req.params.id).populate("book");
-    if (!borrow)
-      return res.status(404).json({ message: "Không tìm thấy phiếu mượn!" });
+    const borrowing = await Borrowing.findById(req.params.id);
+    if (!borrowing) return res.status(404).json({ message: "Không tìm thấy đơn mượn!" });
 
-    if (borrow.status === "returned")
-      return res.status(400).json({ message: "Sách này đã được trả rồi!" });
+    if (borrowing.status === "returned") return res.status(400).json({ message: "Đã trả rồi" });
 
-    const book = await Book.findById(borrow.book._id);
+    borrowing.status = "returned";
+    borrowing.returnDate = new Date();
+    await borrowing.save();
+
+    const book = await Book.findById(borrowing.book);
     if (book) {
-      book.available += borrow.quantity;
+      book.available = (book.available || 0) + borrowing.quantity;
       await book.save();
     }
 
-    borrow.status = "returned";
-    borrow.returnDate = new Date();
-    await borrow.save();
-
-    res.json({ message: "✅ Trả sách thành công!", borrow });
+    res.json(borrowing);
   } catch (err) {
     console.error(err);
-    res.status(500).json({ message: "❌ Lỗi khi trả sách!" });
+    res.status(500).json({ message: "Lỗi khi cập nhật trạng thái trả sách" });
   }
 });
 
