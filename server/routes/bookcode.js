@@ -33,7 +33,7 @@ router.get("/category/:categoryId", async (req, res) => {
   try {
     const bookCode = await BookCode.findOne({ category: req.params.categoryId });
     if (!bookCode) {
-      return res.status(404).json({ message: "BookCode not found for this category" });
+       return res.json(null);
     }
     res.json(bookCode);
   } catch (err) {
@@ -56,16 +56,44 @@ router.get("/:id", async (req, res) => {
 router.post("/", async (req, res) => {
   try {
     const { category, prefix } = req.body;
-    if (!category || !prefix) return res.status(400).json({ message: "Category và prefix bắt buộc" });
-    const categoryDoc = await Category.findById(category);
-    if (!categoryDoc) return res.status(404).json({ message: "Category không tồn tại" });
-    const existing = await BookCode.findOne({ category });
-    if (existing) return res.status(400).json({ message: "Đã có BookCode cho category này" });
+    if (!category || !prefix)
+      return res.status(400).json({ message: "Category và prefix bắt buộc" });
 
+    const categoryDoc = await Category.findById(category);
+    if (!categoryDoc)
+      return res.status(404).json({ message: "Category không tồn tại" });
+
+    const existing = await BookCode.findOne({ category });
+    if (existing)
+      return res.status(400).json({ message: "Đã có BookCode cho category này" });
     const newBookCode = new BookCode({ category, prefix, lastNumber: 0 });
     await newBookCode.save();
-    res.status(201).json(newBookCode);
+    const books = await Book.find({ category });
+
+    if (books.length === 0) {
+      return res.status(201).json({
+        message: "✅ Thêm BookCode thành công (danh mục chưa có sách nào)",
+        bookCode: newBookCode,
+      });
+    }
+    const bulkOps = books.map((book, index) => {
+      const sequenceNumber = String(index + 1).padStart(3, "0");
+      return {
+        updateOne: {
+          filter: { _id: book._id },
+          update: { code: `${prefix}-${sequenceNumber}`, bookCode: newBookCode._id },
+        },
+      };
+    });
+
+    if (bulkOps.length > 0) await Book.bulkWrite(bulkOps);
+
+    res.status(201).json({
+      message: `✅ Thêm BookCode và gán mã cho ${books.length} sách`,
+      bookCode: newBookCode,
+    });
   } catch (err) {
+    console.error("❌ Lỗi thêm BookCode:", err);
     res.status(500).json({ message: "Lỗi server", error: err.message });
   }
 });

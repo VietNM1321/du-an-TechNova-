@@ -28,7 +28,7 @@ const BookCodeAdd = () => {
       return;
     }
     try {
-      await axios.post("http://localhost:5000/api/bookcode", form);
+      await axios.post("http://localhost:5000/api/bookcodes", form);
       alert("✅ Thêm BookCode thành công!");
       navigate("/admin/bookcode");
     } catch (err) {
