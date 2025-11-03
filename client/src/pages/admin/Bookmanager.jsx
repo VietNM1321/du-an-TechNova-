@@ -138,7 +138,10 @@ const BookLManager = () => {
                       🗑️ Xóa
                     </button>
 
-                    <button className="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700">
+                    <button
+                      onClick={() => navigate(`/admin/book/detail/${b._id}`)}
+                      className="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700"
+                    >
                       📘 Chi tiết
                     </button>
                   </td>

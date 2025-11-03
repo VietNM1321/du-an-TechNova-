@@ -25,6 +25,7 @@ import BookCodeEdit from "./pages/admin/BookCodeEdit";
 import AuthorAdd from "./pages/admin/AuthorAdd";
 import BookAdd from "./pages/admin/BookAdd"
 import AuthorEdit from "./pages/admin/AuthorEdit";
+import Bookdetails from "./pages/admin/Bookdetail"
 import CategoryManager from "./pages/admin/CategoryManager";
 import AddCategory from "./pages/admin/Addcategory";
 import EditCategory from "./pages/admin/Editcategory";
@@ -63,6 +64,7 @@ function App() {
           <Route path="book/edit/:id" element={<BookEdit />} />
           <Route path="bookcode" element={<BookCode />} />
           <Route path="bookcode/add" element={<BookCodeAdd />} />
+          <Route path="book/detail/:id" element={<Bookdetails />} />
           <Route path="bookcode/edit/:id" element={<BookCodeEdit />} />
           <Route path="importlist" element={<ImportList />} />
           <Route path="importlist/add" element={<ImportAdd />} />

@@ -8,7 +8,8 @@ const BookSchema = new mongoose.Schema(
       unique: true 
     },
     bookCode: { 
-      type: mongoose.Schema.Types.ObjectId, ref: "BookCode" },
+      type: mongoose.Schema.Types.ObjectId, ref: "BookCode" 
+    },
     title: { 
       type: String,
       required: [true, "Vui lòng cung cấp tên sách"],
@@ -25,7 +26,7 @@ const BookSchema = new mongoose.Schema(
       trim: true,
     },
     author: {
-        type: mongoose.Schema.Types.ObjectId, ref: "Author"
+      type: mongoose.Schema.Types.ObjectId, ref: "Author"
     },
     publisher: {
       type: mongoose.Schema.Types.ObjectId, ref: "Publisher"
@@ -52,6 +53,17 @@ const BookSchema = new mongoose.Schema(
       type: Number,
       default: 0,
     },
+    borrowCount: {
+      type: Number,
+      default: 0,
+    },
+    importHistory: [
+      {
+        date: { type: Date, default: Date.now },
+        quantity: { type: Number, required: true },
+        note: { type: String },
+      },
+    ],
   },
   {
     timestamps: true,

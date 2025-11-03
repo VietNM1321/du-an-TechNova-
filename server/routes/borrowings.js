@@ -4,20 +4,15 @@ import Book from "../models/books.js";
 import User from "../models/User.js";
 
 const router = express.Router();
-// SSE clients
 const sseClients = [];
 
 function sendSseEvent(data) {
   const payload = `data: ${JSON.stringify(data)}\n\n`;
   sseClients.forEach((res) => res.write(payload));
 }
-
-// Get all borrowings (for admin)
 router.get("/all", async (req, res) => {
   try {
     const list = await Borrowing.find().sort({ borrowDate: -1 });
-
-    // Update overdue status if needed
     const now = new Date();
     await Promise.all(
       list.map(async (borrowing) => {
