@@ -6,14 +6,30 @@ import Book from "../models/books.js";
 const router = express.Router();
 router.get("/", async (req, res) => {
   try {
+    const page = parseInt(req.query.page) || 1;
+    const limit = parseInt(req.query.limit) || 5;
+    const skip = (page - 1) * limit;
+    const total = await ImportWarehouse.countDocuments();
     const imports = await ImportWarehouse.find()
       .populate("book", "title")
-      .sort({ createdAt: -1 });
-    res.json(imports);
+      .sort({ createdAt: -1 })
+      .skip(skip)
+      .limit(limit);
+
+    res.json({
+      imports,
+      totalPages: Math.ceil(total / limit),
+      currentPage: page,
+      totalItems: total,
+    });
   } catch (err) {
-    res.status(500).json({ message: "Lỗi khi lấy danh sách nhập kho", error: err.message });
+    res.status(500).json({
+      message: "Lỗi khi lấy danh sách nhập kho",
+      error: err.message,
+    });
   }
 });
+
 router.post("/", async (req, res) => {
   try {
     const { bookId, quantity, supplier, note } = req.body;

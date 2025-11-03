@@ -19,6 +19,7 @@ const BookAdd = () => {
   const [authors, setAuthors] = useState([]);
   const [selectedFiles, setSelectedFiles] = useState([]);
   const [loadingCode, setLoadingCode] = useState(false);
+
   useEffect(() => {
     const fetchData = async () => {
       try {
@@ -34,6 +35,7 @@ const BookAdd = () => {
     };
     fetchData();
   }, []);
+
   useEffect(() => {
     const fetchBookCode = async () => {
       if (!form.category) {
@@ -47,10 +49,7 @@ const BookAdd = () => {
         );
         if (res.data) {
           const { prefix, lastNumber } = res.data;
-          const nextCode = `${prefix}-${String(lastNumber + 1).padStart(
-            3,
-            "0"
-          )}`;
+          const nextCode = `${prefix}-${String(lastNumber + 1).padStart(3, "0")}`;
           setPreviewBookCode(nextCode);
         } else {
           setPreviewBookCode("⚠️ Chưa có mã cho thể loại này");
@@ -69,10 +68,16 @@ const BookAdd = () => {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    if (!form.title || !form.category || !form.publishedYear || selectedFiles.length === 0) {
+    if (
+      !form.title ||
+      !form.category ||
+      !form.publishedYear ||
+      selectedFiles.length === 0
+    ) {
       alert("⚠️ Vui lòng nhập đầy đủ thông tin bắt buộc!");
       return;
     }
+
     const dataToSend = {
       ...form,
       quantity: 0,
@@ -100,7 +105,7 @@ const BookAdd = () => {
   return (
     <div className="max-w-4xl mx-auto mt-10 p-8 bg-white rounded-2xl shadow-xl border border-gray-200">
       <h2 className="text-3xl font-bold text-blue-600 mb-6 text-center">
-        Thêm Sách Mới
+        📚 Thêm Sách Mới
       </h2>
 
       <form
@@ -118,6 +123,7 @@ const BookAdd = () => {
             required
           />
         </div>
+
         <select
           value={form.category}
           onChange={(e) => setForm({ ...form, category: e.target.value })}
@@ -131,6 +137,7 @@ const BookAdd = () => {
             </option>
           ))}
         </select>
+
         <select
           value={form.author}
           onChange={(e) => setForm({ ...form, author: e.target.value })}
@@ -143,16 +150,16 @@ const BookAdd = () => {
             </option>
           ))}
         </select>
+
         <input
           type="number"
           placeholder="Năm xuất bản *"
           value={form.publishedYear}
-          onChange={(e) =>
-            setForm({ ...form, publishedYear: e.target.value })
-          }
+          onChange={(e) => setForm({ ...form, publishedYear: e.target.value })}
           className="border rounded-lg w-full py-3 px-4 focus:ring-2 focus:ring-blue-400 outline-none"
           required
         />
+
         <input
           type="text"
           value={loadingCode ? "Đang tải..." : previewBookCode}
@@ -160,12 +167,14 @@ const BookAdd = () => {
           className="md:col-span-2 border rounded-lg w-full py-3 px-4 bg-gray-100 text-gray-600"
           placeholder="Mã sách tự sinh"
         />
+
         <textarea
           placeholder="Mô tả"
           value={form.description}
           onChange={(e) => setForm({ ...form, description: e.target.value })}
           className="md:col-span-2 border rounded-lg w-full py-3 px-4 focus:ring-2 focus:ring-blue-400 outline-none resize-none h-32"
         />
+
         <div className="md:col-span-2 flex flex-col gap-2">
           <label className="font-medium flex items-center gap-2">
             <Upload className="text-gray-500" /> Ảnh sách *
@@ -188,12 +197,24 @@ const BookAdd = () => {
             ))}
           </div>
         </div>
-        <button
-          type="submit"
-          className="md:col-span-2 bg-blue-600 hover:bg-blue-700 text-white py-3 rounded-lg text-lg font-semibold transition-all flex justify-center items-center gap-2"
-        >
-          <PlusCircle size={20} /> Thêm Sách
-        </button>
+
+        {/* Nút hành động */}
+        <div className="md:col-span-2 flex justify-center gap-4 mt-6">
+          <button
+            type="button"
+            onClick={() => navigate("/admin/bookmanager")}
+            className="bg-gray-400 hover:bg-gray-500 text-white px-6 py-2 rounded-lg shadow-md transition-all"
+          >
+            ⬅️ Quay lại
+          </button>
+
+          <button
+            type="submit"
+            className="bg-gradient-to-r from-blue-500 to-blue-700 text-white px-6 py-2 rounded-lg shadow-md hover:from-blue-600 hover:to-blue-800 transition-all flex items-center gap-2"
+          >
+            <PlusCircle size={20} /> Thêm Sách
+          </button>
+        </div>
       </form>
     </div>
   );

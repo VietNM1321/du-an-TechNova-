@@ -21,13 +21,18 @@ const AddAuthor = () => {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    const formData = new FormData();
-    Object.keys(form).forEach((key) => formData.append(key, form[key]));
-    await axios.post(API, formData, {
-      headers: { "Content-Type": "multipart/form-data" },
-    });
-    alert("✅ Thêm tác giả thành công!");
-    navigate("/admin/author");
+    try {
+      const formData = new FormData();
+      Object.keys(form).forEach((key) => formData.append(key, form[key]));
+      await axios.post(API, formData, {
+        headers: { "Content-Type": "multipart/form-data" },
+      });
+      alert("✅ Thêm tác giả thành công!");
+      navigate("/admin/author");
+    } catch (error) {
+      console.error("Lỗi thêm tác giả:", error);
+      alert("❌ Có lỗi xảy ra khi thêm tác giả!");
+    }
   };
 
   return (
@@ -54,6 +59,7 @@ const AddAuthor = () => {
             className="border border-gray-300 rounded-lg p-2 focus:ring-2 focus:ring-blue-400 outline-none"
           />
         </div>
+
         <div className="flex flex-col">
           <label className="font-semibold text-gray-700 mb-1">Ảnh tác giả</label>
           <input
@@ -64,6 +70,7 @@ const AddAuthor = () => {
             className="border border-gray-300 rounded-lg p-2"
           />
         </div>
+
         <div className="flex flex-col">
           <label className="font-semibold text-gray-700 mb-1">Ngày sinh</label>
           <input
@@ -74,6 +81,7 @@ const AddAuthor = () => {
             className="border border-gray-300 rounded-lg p-2"
           />
         </div>
+
         <div className="flex flex-col">
           <label className="font-semibold text-gray-700 mb-1">Ngày mất</label>
           <input
@@ -84,6 +92,7 @@ const AddAuthor = () => {
             className="border border-gray-300 rounded-lg p-2"
           />
         </div>
+
         <div className="flex flex-col md:col-span-2">
           <label className="font-semibold text-gray-700 mb-1">Tiểu sử</label>
           <textarea
@@ -96,7 +105,15 @@ const AddAuthor = () => {
           />
         </div>
 
-        <div className="md:col-span-2 flex justify-center">
+        <div className="md:col-span-2 flex justify-center gap-4 mt-6">
+          <button
+            type="button"
+            onClick={() => navigate("/admin/author")}
+            className="bg-gray-400 hover:bg-gray-500 text-white px-6 py-2 rounded-lg shadow-md transition-all"
+          >
+            ⬅️ Quay lại
+          </button>
+
           <button
             type="submit"
             className="bg-gradient-to-r from-blue-500 to-blue-700 text-white px-6 py-2 rounded-lg shadow-md hover:from-blue-600 hover:to-blue-800 transition-all"

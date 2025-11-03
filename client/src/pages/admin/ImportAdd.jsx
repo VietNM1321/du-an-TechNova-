@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from "react";
 import axios from "axios";
 import { toast } from "react-toastify";
+import { useNavigate } from "react-router-dom";
 
 const ImportAdd = () => {
   const [categories, setCategories] = useState([]);
@@ -8,6 +9,7 @@ const ImportAdd = () => {
   const [selectedCategory, setSelectedCategory] = useState("");
   const [selectedBook, setSelectedBook] = useState("");
   const [quantity, setQuantity] = useState("");
+  const navigate = useNavigate();
 
   useEffect(() => {
     const fetchCategories = async () => {
@@ -49,7 +51,8 @@ const ImportAdd = () => {
         bookId: selectedBook,
         quantity: Number(quantity),
       });
-      toast.success("✅ Nhập kho thành công!");
+      alert("✅ Nhập kho thành công!");
+      navigate("/admin/importlist");
       setSelectedBook("");
       setQuantity("");
     } catch (err) {
@@ -58,27 +61,37 @@ const ImportAdd = () => {
   };
 
   return (
-    <div className="max-w-xl mx-auto bg-white shadow-md rounded-xl p-6">
-      <h2 className="text-xl font-bold mb-4 text-center">📦 Nhập Sách Vào Kho</h2>
-
-      <form onSubmit={handleSubmit} className="space-y-4">
+    <div className="max-w-xl mx-auto bg-white shadow-lg rounded-2xl p-8 mt-8">
+      <div className="flex items-center justify-between mb-6">
+        <h2 className="text-2xl font-bold text-blue-700">📦 Nhập Sách Vào Kho</h2>
+        <button
+          onClick={() => navigate("/admin/importlist")}
+          className="flex items-center gap-2 bg-gray-100 text-gray-700 font-medium px-4 py-2 rounded-lg border border-gray-300 hover:bg-gray-200 hover:shadow-sm transition-all duration-200"
+        >
+          ⬅️ <span>Quay lại</span>
+        </button>
+      </div>
+      <form onSubmit={handleSubmit} className="space-y-5">
         <div>
-          <label className="block font-medium mb-1">Danh mục</label>
+          <label className="block font-semibold mb-1 text-gray-700">Danh mục</label>
           <select
-            className="w-full border rounded-lg p-2"
+            className="w-full border rounded-lg p-2 focus:ring-2 focus:ring-blue-400 outline-none transition"
             value={selectedCategory}
             onChange={handleCategoryChange}
           >
             <option value="">-- Chọn danh mục --</option>
             {categories.map((cat) => (
-              <option key={cat._id} value={cat._id}>{cat.name}</option>
+              <option key={cat._id} value={cat._id}>
+                {cat.name}
+              </option>
             ))}
           </select>
         </div>
+
         <div>
-          <label className="block font-medium mb-1">Chọn sách</label>
+          <label className="block font-semibold mb-1 text-gray-700">Chọn sách</label>
           <select
-            className="w-full border rounded-lg p-2"
+            className="w-full border rounded-lg p-2 focus:ring-2 focus:ring-blue-400 outline-none transition"
             value={selectedBook}
             onChange={(e) => setSelectedBook(e.target.value)}
             disabled={!selectedCategory}
@@ -91,11 +104,12 @@ const ImportAdd = () => {
             ))}
           </select>
         </div>
+
         <div>
-          <label className="block font-medium mb-1">Số lượng nhập</label>
+          <label className="block font-semibold mb-1 text-gray-700">Số lượng nhập</label>
           <input
             type="number"
-            className="w-full border rounded-lg p-2"
+            className="w-full border rounded-lg p-2 focus:ring-2 focus:ring-blue-400 outline-none transition"
             value={quantity}
             onChange={(e) => setQuantity(e.target.value)}
             min="1"
@@ -104,9 +118,9 @@ const ImportAdd = () => {
 
         <button
           type="submit"
-          className="w-full bg-blue-600 text-white font-semibold py-2 rounded-lg hover:bg-blue-700 transition"
+          className="w-full bg-blue-600 text-white font-semibold py-2 rounded-lg hover:bg-blue-700 hover:shadow-md transition duration-200"
         >
-          Thêm vào kho
+          ✅ Thêm vào kho
         </button>
       </form>
     </div>
