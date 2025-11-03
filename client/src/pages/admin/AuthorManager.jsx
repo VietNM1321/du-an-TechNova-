@@ -54,7 +54,7 @@ const AuthorManager = () => {
       <div className="flex justify-between items-center mb-6">
         <h2 className="text-3xl font-bold text-blue-700">📚 Quản lý Tác giả</h2>
         <button
-          onClick={() => navigate("/admin/authoradd")}
+          onClick={() => navigate("/admin/author/add")}
           className="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700"
         >
           ➕ Thêm tác giả

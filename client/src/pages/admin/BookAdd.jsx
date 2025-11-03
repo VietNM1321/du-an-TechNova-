@@ -12,7 +12,6 @@ const BookAdd = () => {
     category: "",
     author: "",
     publishedYear: "",
-    quantity: "",
   });
 
   const [previewBookCode, setPreviewBookCode] = useState("");
@@ -70,13 +69,14 @@ const BookAdd = () => {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    if (!form.title || !form.category || !form.publishedYear || !form.quantity || selectedFiles.length === 0) {
+    if (!form.title || !form.category || !form.publishedYear || selectedFiles.length === 0) {
       alert("⚠️ Vui lòng nhập đầy đủ thông tin bắt buộc!");
       return;
     }
     const dataToSend = {
       ...form,
-      available: form.quantity,
+      quantity: 0,
+      available: 0,
     };
 
     const formData = new FormData();
@@ -159,14 +159,6 @@ const BookAdd = () => {
           readOnly
           className="md:col-span-2 border rounded-lg w-full py-3 px-4 bg-gray-100 text-gray-600"
           placeholder="Mã sách tự sinh"
-        />
-        <input
-          type="number"
-          placeholder="Số lượng *"
-          value={form.quantity}
-          onChange={(e) => setForm({ ...form, quantity: e.target.value })}
-          className="border rounded-lg w-full py-3 px-4 focus:ring-2 focus:ring-blue-400 outline-none"
-          required
         />
         <textarea
           placeholder="Mô tả"

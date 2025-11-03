@@ -11,6 +11,8 @@ import BookDetail from "./pages/bookdetail";
 import SearchResults from "./pages/SearchResults";
 import Cart from "./pages/Cart";
 import Profile from "./pages/Profile";
+import ImportList from "./pages/admin/ImportList"
+import ImportAdd from "./pages/admin/ImportAdd"
 import AdminLayout from "./layout/adminLayout";
 import AdminHome from "./pages/admin/AdminHome";
 import BookManager from "./pages/admin/Bookmanager";
@@ -60,11 +62,13 @@ function App() {
           <Route path="bookadd" element={<BookAdd />} />
           <Route path="book/edit/:id" element={<BookEdit />} />
           <Route path="bookcode" element={<BookCode />} />
-          <Route path="bookcodeadd" element={<BookCodeAdd />} />
+          <Route path="bookcode/add" element={<BookCodeAdd />} />
           <Route path="bookcode/edit/:id" element={<BookCodeEdit />} />
+          <Route path="importlist" element={<ImportList />} />
+          <Route path="importlist/add" element={<ImportAdd />} />
           <Route path="author" element={<AuthorManager />} />
           <Route path="borrowings" element={<BorrowManager />} />
-          <Route path="authoradd" element={<AuthorAdd />} />
+          <Route path="author/add" element={<AuthorAdd />} />
           <Route path="authoredit/:id" element={<AuthorEdit />} />
           <Route path="category" element={<CategoryManager />} />
           <Route path="category/add" element={<AddCategory />} />
