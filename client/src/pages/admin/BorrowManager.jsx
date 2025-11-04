@@ -6,22 +6,21 @@ const BorrowManager = () => {
   const [borrowings, setBorrowings] = useState([]);
   const [loading, setLoading] = useState(false);
 
-  const getStatusTag = (status, dueDate) => {
+  const getStatusTag = (status, returnDate) => {
     if (status === 'returned') return <Tag color="green">Đã trả</Tag>;
-    if (!dueDate) return <Tag color="default">Chưa có hạn</Tag>;
-    const now = new Date();
-    const due = new Date(dueDate);
-    if (now > due) return <Tag color="red">Quá hạn</Tag>;
+    if (status === 'damaged') return <Tag color="orange">Hỏng / Mất</Tag>;
+    if (status === 'borrowed' && returnDate && new Date(returnDate) < new Date())
+      return <Tag color="red">Quá hạn</Tag>;
     return <Tag color="blue">Đang mượn</Tag>;
   };
 
   const fetchBorrowings = async () => {
     try {
       setLoading(true);
-      const response = await axios.get('http://localhost:5000/api/borrowings/all');
-      setBorrowings(response.data);
-    } catch (error) {
-      console.error('Error fetching borrowings:', error);
+      const res = await axios.get('http://localhost:5000/api/borrowings');
+      setBorrowings(Array.isArray(res.data) ? res.data : []);
+    } catch (err) {
+      console.error('❌ Error fetching borrowings:', err);
       message.error('Lỗi khi tải danh sách mượn sách');
     } finally {
       setLoading(false);
@@ -30,31 +29,29 @@ const BorrowManager = () => {
 
   useEffect(() => {
     fetchBorrowings();
-    const interval = setInterval(fetchBorrowings, 30000);
+
+    // SSE (nếu backend có stream)
     let es;
     try {
       es = new EventSource('http://localhost:5000/api/borrowings/stream');
       es.onmessage = (e) => {
         try {
           const data = JSON.parse(e.data);
-          if (data && data.type === 'new_borrowings') {
-            fetchBorrowings();
-          }
-        } catch (err) {}
+          if (data?.type === 'new_borrowings') fetchBorrowings();
+        } catch {}
       };
     } catch (err) {
-      console.warn('SSE not available:', err);
+      console.warn('SSE không khả dụng:', err);
     }
 
     return () => {
-      clearInterval(interval);
       if (es) es.close();
     };
   }, []);
 
   const columns = [
     {
-      title: 'Mã đơn mượn',
+      title: 'Mã đơn',
       dataIndex: '_id',
       key: '_id',
       width: '15%',
@@ -65,8 +62,8 @@ const BorrowManager = () => {
       width: '20%',
       render: (record) => (
         <div>
-          <div>{record.userSnapshot?.name || 'N/A'}</div>
-          <div className="text-gray-500 text-sm">{record.userSnapshot?.email || 'N/A'}</div>
+          <div>{record.userSnapshot?.fullName || record.user?.fullName || 'Khách vãng lai'}</div>
+          <div className="text-gray-500 text-sm">{record.userSnapshot?.email || record.user?.email}</div>
         </div>
       ),
     },
@@ -76,9 +73,9 @@ const BorrowManager = () => {
       width: '25%',
       render: (record) => (
         <div>
-          <div className="font-medium">{record.bookSnapshot?.title || 'N/A'}</div>
+          <div className="font-medium">{record.bookSnapshot?.title || record.book?.title || 'N/A'}</div>
           <div className="text-gray-500 text-sm">
-            Tác giả: {record.bookSnapshot?.author?.name || 'N/A'}
+            Tác giả: {record.bookSnapshot?.author?.name || record.book?.author?.name || 'N/A'}
           </div>
         </div>
       ),
@@ -95,43 +92,36 @@ const BorrowManager = () => {
       dataIndex: 'borrowDate',
       key: 'borrowDate',
       width: '15%',
-      render: (date, record) => {
-        const borrowDate = record.borrowDate || record.cartData?.borrowDate;
-        if (!borrowDate) return 'N/A';
-        return new Date(borrowDate).toLocaleDateString('vi-VN');
-      },
+      render: (date) => (date ? new Date(date).toLocaleDateString('vi-VN') : 'N/A'),
     },
     {
       title: 'Ngày hẹn trả',
-      dataIndex: 'dueDate',
-      key: 'dueDate',
+      dataIndex: 'returnDate',
+      key: 'returnDate',
       width: '15%',
-      render: (date, record) => {
-        const returnDate = record.dueDate || record.cartData?.returnDate;
-        if (!returnDate) return 'N/A';
-        return new Date(returnDate).toLocaleDateString('vi-VN');
-      },
+      render: (date) => (date ? new Date(date).toLocaleDateString('vi-VN') : 'N/A'),
     },
     {
       title: 'Trạng thái',
       key: 'status',
-      render: (text, record) => getStatusTag(record.status, record.dueDate),
+      render: (text, record) => getStatusTag(record.status, record.returnDate),
     },
     {
       title: 'Thao tác',
       key: 'action',
       render: (_, record) => (
         <Space size="middle">
-          {record.status !== 'returned' && (
-            <Button 
+          {record.status === 'borrowed' && (
+            <Button
               type="primary"
               onClick={async () => {
                 try {
                   await axios.put(`http://localhost:5000/api/borrowings/${record._id}/return`);
-                  message.success('Cập nhật trạng thái thành công');
+                  message.success('✅ Xác nhận trả sách thành công');
                   fetchBorrowings();
-                } catch (error) {
-                  message.error('Lỗi khi cập nhật trạng thái');
+                } catch (err) {
+                  console.error(err);
+                  message.error('Lỗi khi cập nhật trạng thái trả sách');
                 }
               }}
             >
@@ -144,22 +134,22 @@ const BorrowManager = () => {
   ];
 
   return (
-    <div style={{ padding: '20px' }}>
+    <div style={{ padding: 20 }}>
       <div className="flex justify-between items-center mb-4">
         <h2 className="text-2xl font-semibold">Quản lý đơn mượn sách</h2>
         <Button type="primary" onClick={fetchBorrowings} loading={loading}>
-          Làm mới dữ liệu
+          Làm mới
         </Button>
       </div>
-      <Table 
-        columns={columns} 
-        dataSource={borrowings} 
+      <Table
+        columns={columns}
+        dataSource={borrowings}
         rowKey="_id"
         loading={loading}
-        pagination={{ 
+        pagination={{
           pageSize: 10,
           showSizeChanger: true,
-          showTotal: (total) => `Tổng số ${total} đơn mượn`
+          showTotal: (total) => `Tổng số ${total} đơn mượn`,
         }}
       />
     </div>

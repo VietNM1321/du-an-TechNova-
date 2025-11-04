@@ -13,12 +13,14 @@ const storage = multer.diskStorage({
 });
 const upload = multer({ storage });
 
-// ===== Tạo đơn mượn sách =====
+// ===== Enum trạng thái =====
 const STATUS_ENUM = {
   BORROWED: "borrowed",
   RETURNED: "returned",
   DAMAGED: "damaged",
 };
+
+// ===== Tạo đơn mượn =====
 router.post("/", async (req, res) => {
   try {
     const { userId, items } = req.body;
@@ -42,6 +44,7 @@ router.post("/", async (req, res) => {
       borrowDate: item.borrowDate || new Date(),
       returnDate: item.returnDate || new Date(Date.now() + 7 * 24 * 60 * 60 * 1000),
       status: STATUS_ENUM.BORROWED,
+      quantity: item.quantity || 1,
     }));
 
     const saved = await Borrowing.insertMany(borrowings);
@@ -52,7 +55,21 @@ router.post("/", async (req, res) => {
   }
 });
 
-// ===== Lấy lịch sử =====
+// ===== Lấy tất cả đơn mượn (Admin) =====
+router.get("/", async (req, res) => {
+  try {
+    const borrowings = await Borrowing.find()
+      .sort({ borrowDate: -1 })
+      .populate("book")
+      .populate("user");
+    res.json(borrowings);
+  } catch (err) {
+    console.error("❌ Lỗi lấy danh sách borrowings:", err);
+    res.status(500).json({ message: "Lỗi server khi lấy danh sách mượn sách!" });
+  }
+});
+
+// ===== Lấy lịch sử mượn của user =====
 router.get("/history/:userId", async (req, res) => {
   try {
     const { userId } = req.params;
@@ -76,6 +93,26 @@ router.get("/history/:userId", async (req, res) => {
     console.error("❌ Lỗi lấy lịch sử:", error);
     res.status(500).json({ message: "Lỗi server khi lấy lịch sử mượn!" });
   }
+});
+
+// ===== SSE stream đơn mượn =====
+router.get("/stream", (req, res) => {
+  res.setHeader('Content-Type', 'text/event-stream');
+  res.setHeader('Cache-Control', 'no-cache');
+
+  const sendEvent = async () => {
+    const borrowings = await Borrowing.find()
+      .sort({ borrowDate: -1 })
+      .populate("book")
+      .populate("user");
+    res.write(`data: ${JSON.stringify({ type: 'new_borrowings', borrowings })}\n\n`);
+  };
+
+  const interval = setInterval(sendEvent, 5000);
+
+  req.on('close', () => {
+    clearInterval(interval);
+  });
 });
 
 // ===== Báo mất =====
