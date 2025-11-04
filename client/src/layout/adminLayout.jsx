@@ -23,10 +23,7 @@ const sidebarLinks = [
   { to: "/admin/course", label: "Quản lý khóa học", icon: <BookOpen size={18} /> },
   { to: "/admin/setpassword", label: "Cấp mật khẩu", icon: <KeyRound size={18} /> },
   { to: "/admin/bookcode", label: "Quản lý mã sách", icon: <FileText size={18} /> },
-<<<<<<< HEAD
-=======
   { to: "/admin/importlist", label: "Quản lý nhập kho", icon: <FileText size={18} /> },
->>>>>>> origin/main
 ];
 
 const AdminLayout = () => {

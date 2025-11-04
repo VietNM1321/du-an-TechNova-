@@ -1,129 +1,192 @@
-import React from "react";
+import React, { useEffect, useState } from "react";
 import axios from "axios";
-import { useCart } from "../components/cart";
-import { toast } from "react-toastify";
+import { Table, Button, InputNumber, message, Space, Modal } from "antd";
+import { ExclamationCircleOutlined } from "@ant-design/icons";
 
 const Cart = () => {
-  const { cart, updateItem, removeItem, clearCart } = useCart();
-  const [loading, setLoading] = React.useState(false);
+  const [loading, setLoading] = useState(false);
+  const [cart, setCart] = useState({ items: [] });
+  const userId = "6900cbaa373bd68ade6b791a"; // user đăng nhập
 
-  const total = cart.items.reduce((s, i) => s + (i.price || 0) * i.quantity, 0);
-
-  const handleBorrow = async () => {
+  // 🔹 Fetch giỏ hàng
+  const fetchCart = async () => {
     try {
-      if (cart.items.length === 0) return toast.warning("Giỏ hàng trống, không thể mượn!");
-      setLoading(true);
-      const userId = cart.userId && cart.userId !== 'anon' ? cart.userId : undefined;
-      const borrowData = cart.items.map((it) => ({
-        bookId: it.bookId._id,
-        quantity: it.quantity,
-        borrowDate: it.borrowDate || new Date(),
-        returnDate: it.returnDate || new Date(Date.now() + 7 * 24 * 60 * 60 * 1000),
-      }));
-
-      const res = await axios.post("http://localhost:5000/api/borrowings", {
-        borrowings: borrowData,
-        userId,
+      const res = await axios.get("http://localhost:5000/api/cart", {
+        params: { userId },
       });
+      const data = res.data || { items: [] };
 
-      if (res.status === 201) {
-        toast.success("📚 Mượn sách thành công!");
-        await clearCart();
-      } else {
-        toast.error(res.data?.message || "Mượn sách không thành công");
+      // ⚡ Hardcode test nếu chưa có item
+      if (!data.items || data.items.length === 0) {
+        data.items = [
+          {
+            _id: "test1",
+            book: "68f36c3e8a23553d16b11289", // ✅ ObjectId hợp lệ
+            quantity: 1,
+            borrowDate: new Date().toISOString(),
+            dueDate: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString(),
+            bookSnapshot: {
+              title: "Thao túng tâm lý",
+              author: { name: "Lê Hoài Phong" },
+            },
+          },
+        ];
       }
+
+      setCart(data);
+      console.log("Cart fetched:", data);
     } catch (err) {
-      toast.error(err.response?.data?.message || "Có lỗi xảy ra khi mượn sách!");
-    } finally {
-      setLoading(false);
+      console.error("❌ Lỗi fetch cart:", err);
+      message.error("Không thể tải giỏ hàng!");
+      setCart({
+        items: [
+          {
+            _id: "test1",
+            book: "68f36c3e8a23553d16b11289", // ✅ ObjectId hợp lệ
+            quantity: 1,
+            borrowDate: new Date().toISOString(),
+            dueDate: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString(),
+            bookSnapshot: {
+              title: "Thao túng tâm lý",
+              author: { name: "Lê Hoài Phong" },
+            },
+          },
+        ],
+      });
     }
   };
 
+  useEffect(() => {
+    fetchCart();
+  }, []);
+
+  // 🔹 Thay đổi số lượng
+  const handleQuantityChange = (_id, value) => {
+    setCart((prev) => ({
+      ...prev,
+      items: prev.items.map((item) =>
+        item._id === _id ? { ...item, quantity: value } : item
+      ),
+    }));
+  };
+
+  // 🔹 Table columns
+  const columns = [
+    {
+      title: "Tên sách",
+      dataIndex: "bookSnapshot",
+      key: "title",
+      render: (book) => book?.title || "—",
+    },
+    {
+      title: "Tác giả",
+      dataIndex: "bookSnapshot",
+      key: "author",
+      render: (book) => book?.author?.name || "—",
+    },
+    {
+      title: "Số lượng",
+      dataIndex: "quantity",
+      key: "quantity",
+      render: (text, record) => (
+        <InputNumber
+          min={1}
+          value={record.quantity}
+          onChange={(val) => handleQuantityChange(record._id, val)}
+        />
+      ),
+    },
+    {
+      title: "Ngày mượn",
+      dataIndex: "borrowDate",
+      key: "borrowDate",
+      render: (date) =>
+        date ? new Date(date).toLocaleDateString("vi-VN") : "—",
+    },
+    {
+      title: "Ngày trả",
+      dataIndex: "dueDate",
+      key: "dueDate",
+      render: (date) =>
+        date ? new Date(date).toLocaleDateString("vi-VN") : "—",
+    },
+  ];
+
+  // 🔹 Xác nhận mượn
+  const handleBorrow = async () => {
+    if (!cart.items || cart.items.length === 0) {
+      message.warning("Giỏ sách đang trống!");
+      return;
+    }
+
+    Modal.confirm({
+      title: "Xác nhận mượn sách",
+      icon: <ExclamationCircleOutlined />,
+      content: "Bạn có chắc chắn muốn mượn những sách này không?",
+      okText: "Xác nhận",
+      cancelText: "Hủy",
+      async onOk() {
+        try {
+          setLoading(true);
+
+          // ✅ Payload đúng ObjectId
+          const payload = {
+            userId,
+            items: cart.items.map((item) => ({
+              bookId: item.book, // ObjectId thực của sách
+              quantity: item.quantity,
+              borrowDate: item.borrowDate,
+              dueDate: item.dueDate,
+            })),
+          };
+
+          await axios.post(
+            "http://localhost:5000/api/borrowings",
+            payload
+          );
+
+          // Xóa giỏ hàng
+          await axios.delete("http://localhost:5000/api/cart/clear", {
+            data: { userId },
+          });
+
+          setCart({ items: [] });
+          message.success("✅ Mượn sách thành công!");
+        } catch (error) {
+          console.error(
+            "❌ Borrow error:",
+            error.response?.data || error.message
+          );
+          message.error(
+            error.response?.data?.message || "Không thể tạo đơn mượn!"
+          );
+        } finally {
+          setLoading(false);
+        }
+      },
+    });
+  };
+
   return (
-    <div className="container mx-auto px-4">
-      <div className="max-w-6xl mx-auto p-6 bg-gray-100 min-h-screen rounded-lg shadow">
-        <h2 className="text-3xl font-bold mb-6 text-center text-blue-700">
-          🛒 Giỏ sách của bạn
-        </h2>
-
-        {cart.items.length === 0 ? (
-          <p className="text-center text-gray-500 mt-20 text-lg">Giỏ sách trống.</p>
-        ) : (
-          <>
-            <div className="space-y-4">
-              {cart.items.map((it) => (
-                <div
-                  key={it.bookId._id}
-                  className="flex flex-col sm:flex-row items-center gap-4 bg-white p-4 rounded-lg shadow hover:shadow-lg transition"
-                >
-                  <img
-                    src={it.bookId.images?.[0] || "https://cdn-icons-png.flaticon.com/512/2232/2232688.png"}
-                    alt={it.bookId.title}
-                    className="w-28 h-28 object-cover rounded"
-                  />
-                  <div className="flex-1 w-full">
-                    <div className="flex justify-between items-center">
-                      <div>
-                        <div className="font-semibold text-lg">{it.bookId.title}</div>
-                        <div className="text-sm text-gray-500 mt-1">
-                          Giá: {it.price ?? it.bookId.price ?? 0}₫
-                        </div>
-                      </div>
-
-                      <div className="flex items-center gap-2">
-                        <button
-                          onClick={() => updateItem({ bookId: it.bookId._id, quantity: it.quantity - 1 })}
-                          className="px-3 py-1 bg-gray-200 rounded hover:bg-gray-300"
-                        >
-                          -
-                        </button>
-                        <div className="px-3">{it.quantity}</div>
-                        <button
-                          onClick={() => updateItem({ bookId: it.bookId._id, quantity: it.quantity + 1 })}
-                          className="px-3 py-1 bg-gray-200 rounded hover:bg-gray-300"
-                        >
-                          +
-                        </button>
-                      </div>
-                    </div>
-
-                    <div className="mt-3 flex justify-between items-center">
-                      <div className="font-medium text-blue-700">
-                        Tổng: {(it.price || it.bookId.price || 0) * it.quantity}₫
-                      </div>
-                      <button
-                        onClick={() => removeItem(it.bookId._id)}
-                        className="text-red-500 hover:text-red-700"
-                      >
-                        Xóa
-                      </button>
-                    </div>
-                  </div>
-                </div>
-              ))}
-            </div>
-
-            <div className="mt-8 flex flex-col sm:flex-row justify-between items-center bg-white p-4 rounded-lg shadow gap-4">
-              <button
-                onClick={clearCart}
-                className="bg-red-500 text-white px-5 py-2 rounded hover:bg-red-600"
-              >
-                Xóa toàn bộ giỏ hàng
-              </button>
-
-              <div className="text-2xl font-bold text-blue-700">Tổng: {total}₫</div>
-
-              <button
-                onClick={handleBorrow}
-                className="bg-green-500 text-white px-6 py-2 rounded-lg hover:bg-green-600 disabled:opacity-50"
-                disabled={loading}
-              >
-                {loading ? 'Đang xử lý...' : '✅ Xác nhận mượn sách'}
-              </button>
-            </div>
-          </>
-        )}
-      </div>
+    <div style={{ padding: 24 }}>
+      <h2>📚 Giỏ sách mượn</h2>
+      <Table
+        rowKey={(record) => record._id}
+        columns={columns}
+        dataSource={Array.isArray(cart.items) ? cart.items : []}
+        pagination={false}
+        bordered
+      />
+      <Space style={{ marginTop: 20 }}>
+        <Button
+          type="primary"
+          onClick={handleBorrow}
+          loading={loading}
+          disabled={!cart.items || cart.items.length === 0}
+        >
+          Xác nhận mượn
+        </Button>
+      </Space>
     </div>
   );
 };

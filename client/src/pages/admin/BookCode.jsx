@@ -8,6 +8,8 @@ const BookCodeManager = () => {
   const [totalPages, setTotalPages] = useState(1);
   const navigate = useNavigate();
   const API = "http://localhost:5000/api/bookcodes";
+
+  // Lấy danh sách bookcode với phân trang
   const fetchBookCodes = async (pageNum = 1) => {
     try {
       const res = await axios.get(`${API}?page=${pageNum}&limit=5`);
@@ -23,6 +25,8 @@ const BookCodeManager = () => {
   useEffect(() => {
     fetchBookCodes(page);
   }, [page]);
+
+  // Xóa BookCode
   const handleDelete = async (id) => {
     if (window.confirm("Bạn có chắc muốn xóa BookCode này?")) {
       try {
@@ -32,16 +36,16 @@ const BookCodeManager = () => {
       } catch (err) {
         alert(
           err.response?.data?.message ||
-          "❌ Không thể xóa BookCode. Do đang có sách sử dụng!"
+            "❌ Không thể xóa BookCode. Do đang có sách sử dụng!"
         );
       }
     }
   };
 
+  // Phân trang
   const handlePrev = () => {
     if (page > 1) setPage(page - 1);
   };
-
   const handleNext = () => {
     if (page < totalPages) setPage(page + 1);
   };
@@ -51,11 +55,7 @@ const BookCodeManager = () => {
       <div className="flex justify-between items-center mb-6">
         <h2 className="text-3xl font-bold text-blue-700">📚 Quản lý BookCode</h2>
         <button
-<<<<<<< HEAD
-          onClick={() => navigate("/admin/bookcodeadd")}
-=======
           onClick={() => navigate("/admin/bookcode/add")}
->>>>>>> origin/main
           className="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700"
         >
           ➕ Thêm BookCode
@@ -71,7 +71,6 @@ const BookCodeManager = () => {
             <th className="p-3 border text-center">Hành động</th>
           </tr>
         </thead>
-
         <tbody>
           {bookCodes.map((b) => (
             <tr key={b._id} className="hover:bg-gray-50 h-16 align-middle">
@@ -106,6 +105,7 @@ const BookCodeManager = () => {
           )}
         </tbody>
       </table>
+
       <div className="flex justify-center mt-6 space-x-4">
         <button
           onClick={handlePrev}
@@ -118,11 +118,9 @@ const BookCodeManager = () => {
         >
           ◀ Trước
         </button>
-
         <span className="px-4 py-2 text-gray-700 font-semibold">
           Trang {page}/{totalPages}
         </span>
-
         <button
           onClick={handleNext}
           disabled={page === totalPages}

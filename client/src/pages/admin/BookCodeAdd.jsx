@@ -28,16 +28,12 @@ const BookCodeAdd = () => {
       return;
     }
     try {
-<<<<<<< HEAD
-      await axios.post("http://localhost:5000/api/bookcode", form);
-=======
       await axios.post("http://localhost:5000/api/bookcodes", form);
->>>>>>> origin/main
       alert("✅ Thêm BookCode thành công!");
       navigate("/admin/bookcode");
     } catch (err) {
       console.error("Lỗi thêm BookCode:", err.response?.data || err);
-      alert("❌ Thêm thất bại đã có mã!");
+      alert("❌ Thêm thất bại, có thể mã đã tồn tại!");
     }
   };
 
@@ -53,7 +49,9 @@ const BookCodeAdd = () => {
         >
           <option value="">-- Chọn category --</option>
           {categories.map((c) => (
-            <option key={c._id} value={c._id}>{c.name}</option>
+            <option key={c._id} value={c._id}>
+              {c.name}
+            </option>
           ))}
         </select>
         <input

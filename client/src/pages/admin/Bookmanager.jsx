@@ -22,7 +22,7 @@ const BookLManager = () => {
         setTotalPages(1);
         setPage(1);
       } else {
-        setBooks(data.books || data || []);
+        setBooks(data.books || []);
         setTotalPages(data.totalPages || 1);
         setPage(data.currentPage || pageNum);
       }
@@ -32,6 +32,7 @@ const BookLManager = () => {
     }
   };
 
+  // Cập nhật dữ liệu khi có sách mới được edit
   useEffect(() => {
     if (location.state?.updatedBook) {
       const updated = location.state.updatedBook;
@@ -110,11 +111,15 @@ const BookLManager = () => {
                   } hover:bg-blue-50 transition`}
                 >
                   <td className="p-3 text-center">
-                    <img
-                      src={b.images?.[0]}
-                      alt={b.title}
-                      className="w-14 h-14 object-cover rounded-lg shadow-sm mx-auto"
-                    />
+                    {b.images?.[0] ? (
+                      <img
+                        src={b.images[0]}
+                        alt={b.title}
+                        className="w-14 h-14 object-cover rounded-lg shadow-sm mx-auto"
+                      />
+                    ) : (
+                      "❌"
+                    )}
                   </td>
                   <td className="p-3 font-mono">{b.code || "—"}</td>
                   <td className="p-3">{b.title}</td>
@@ -138,14 +143,10 @@ const BookLManager = () => {
                       🗑️ Xóa
                     </button>
 
-<<<<<<< HEAD
-                    <button className="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700">
-=======
                     <button
                       onClick={() => navigate(`/admin/book/detail/${b._id}`)}
                       className="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700"
                     >
->>>>>>> origin/main
                       📘 Chi tiết
                     </button>
                   </td>

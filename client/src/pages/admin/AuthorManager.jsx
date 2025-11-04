@@ -9,18 +9,17 @@ const AuthorManager = () => {
   const navigate = useNavigate();
   const API = "http://localhost:5000/api/authors";
 
-  // lấy danh sách tác giả theo mảng và phân trang đây
   const fetchAuthors = async (pageNum = 1) => {
-  try {
-    const res = await axios.get(`${API}?page=${pageNum}&limit=5`);
-    setAuthors(res.data.authors || []);
-    setTotalPages(res.data.totalPages || 1);
-    setPage(res.data.currentPage || 1);
-  } catch (error) {
-    console.error("Lỗi tải danh sách tác giả:", error);
-    setAuthors([]);
-  }
-};
+    try {
+      const res = await axios.get(`${API}?page=${pageNum}&limit=5`);
+      setAuthors(res.data.authors || []);
+      setTotalPages(res.data.totalPages || 1);
+      setPage(res.data.currentPage || 1);
+    } catch (error) {
+      console.error("Lỗi tải danh sách tác giả:", error);
+      setAuthors([]);
+    }
+  };
 
   useEffect(() => {
     fetchAuthors(page);
@@ -40,7 +39,7 @@ const AuthorManager = () => {
       }
     }
   };
-  // cấu trúc phân trang đây
+
   const handlePrev = () => {
     if (page > 1) setPage(page - 1);
   };
@@ -54,11 +53,7 @@ const AuthorManager = () => {
       <div className="flex justify-between items-center mb-6">
         <h2 className="text-3xl font-bold text-blue-700">📚 Quản lý Tác giả</h2>
         <button
-<<<<<<< HEAD
-          onClick={() => navigate("/admin/authoradd")}
-=======
           onClick={() => navigate("/admin/author/add")}
->>>>>>> origin/main
           className="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700"
         >
           ➕ Thêm tác giả
@@ -79,10 +74,7 @@ const AuthorManager = () => {
 
         <tbody>
           {authors.map((a) => (
-            <tr
-              key={a._id}
-              className="hover:bg-gray-50 h-20 align-middle"
-            >
+            <tr key={a._id} className="hover:bg-gray-50 h-20 align-middle">
               <td className="p-3 border text-center align-middle">
                 {a.image ? (
                   <img

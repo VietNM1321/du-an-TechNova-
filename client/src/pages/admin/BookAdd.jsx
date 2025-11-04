@@ -12,10 +12,7 @@ const BookAdd = () => {
     category: "",
     author: "",
     publishedYear: "",
-<<<<<<< HEAD
     quantity: "",
-=======
->>>>>>> origin/main
   });
 
   const [previewBookCode, setPreviewBookCode] = useState("");
@@ -23,10 +20,8 @@ const BookAdd = () => {
   const [authors, setAuthors] = useState([]);
   const [selectedFiles, setSelectedFiles] = useState([]);
   const [loadingCode, setLoadingCode] = useState(false);
-<<<<<<< HEAD
-=======
 
->>>>>>> origin/main
+  // Lấy danh mục và tác giả
   useEffect(() => {
     const fetchData = async () => {
       try {
@@ -42,10 +37,8 @@ const BookAdd = () => {
     };
     fetchData();
   }, []);
-<<<<<<< HEAD
-=======
 
->>>>>>> origin/main
+  // Tạo preview mã sách
   useEffect(() => {
     const fetchBookCode = async () => {
       if (!form.category) {
@@ -59,14 +52,7 @@ const BookAdd = () => {
         );
         if (res.data) {
           const { prefix, lastNumber } = res.data;
-<<<<<<< HEAD
-          const nextCode = `${prefix}-${String(lastNumber + 1).padStart(
-            3,
-            "0"
-          )}`;
-=======
           const nextCode = `${prefix}-${String(lastNumber + 1).padStart(3, "0")}`;
->>>>>>> origin/main
           setPreviewBookCode(nextCode);
         } else {
           setPreviewBookCode("⚠️ Chưa có mã cho thể loại này");
@@ -85,19 +71,12 @@ const BookAdd = () => {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-<<<<<<< HEAD
-    if (!form.title || !form.category || !form.publishedYear || !form.quantity || selectedFiles.length === 0) {
-      alert("⚠️ Vui lòng nhập đầy đủ thông tin bắt buộc!");
-      return;
-    }
-    const dataToSend = {
-      ...form,
-      available: form.quantity,
-=======
+
     if (
       !form.title ||
       !form.category ||
       !form.publishedYear ||
+      !form.quantity ||
       selectedFiles.length === 0
     ) {
       alert("⚠️ Vui lòng nhập đầy đủ thông tin bắt buộc!");
@@ -106,9 +85,7 @@ const BookAdd = () => {
 
     const dataToSend = {
       ...form,
-      quantity: 0,
-      available: 0,
->>>>>>> origin/main
+      available: form.quantity,
     };
 
     const formData = new FormData();
@@ -132,17 +109,14 @@ const BookAdd = () => {
   return (
     <div className="max-w-4xl mx-auto mt-10 p-8 bg-white rounded-2xl shadow-xl border border-gray-200">
       <h2 className="text-3xl font-bold text-blue-600 mb-6 text-center">
-<<<<<<< HEAD
-        Thêm Sách Mới
-=======
         📚 Thêm Sách Mới
->>>>>>> origin/main
       </h2>
 
       <form
         className="grid grid-cols-1 md:grid-cols-2 gap-6"
         onSubmit={handleSubmit}
       >
+        {/* Tên sách */}
         <div className="relative">
           <BookOpen className="absolute top-3 left-3 text-gray-400" />
           <input
@@ -154,10 +128,8 @@ const BookAdd = () => {
             required
           />
         </div>
-<<<<<<< HEAD
-=======
 
->>>>>>> origin/main
+        {/* Thể loại */}
         <select
           value={form.category}
           onChange={(e) => setForm({ ...form, category: e.target.value })}
@@ -171,10 +143,8 @@ const BookAdd = () => {
             </option>
           ))}
         </select>
-<<<<<<< HEAD
-=======
 
->>>>>>> origin/main
+        {/* Tác giả */}
         <select
           value={form.author}
           onChange={(e) => setForm({ ...form, author: e.target.value })}
@@ -187,28 +157,20 @@ const BookAdd = () => {
             </option>
           ))}
         </select>
-<<<<<<< HEAD
-=======
 
->>>>>>> origin/main
+        {/* Năm xuất bản */}
         <input
           type="number"
           placeholder="Năm xuất bản *"
           value={form.publishedYear}
-<<<<<<< HEAD
           onChange={(e) =>
             setForm({ ...form, publishedYear: e.target.value })
           }
           className="border rounded-lg w-full py-3 px-4 focus:ring-2 focus:ring-blue-400 outline-none"
           required
         />
-=======
-          onChange={(e) => setForm({ ...form, publishedYear: e.target.value })}
-          className="border rounded-lg w-full py-3 px-4 focus:ring-2 focus:ring-blue-400 outline-none"
-          required
-        />
 
->>>>>>> origin/main
+        {/* Mã sách tự sinh */}
         <input
           type="text"
           value={loadingCode ? "Đang tải..." : previewBookCode}
@@ -216,7 +178,8 @@ const BookAdd = () => {
           className="md:col-span-2 border rounded-lg w-full py-3 px-4 bg-gray-100 text-gray-600"
           placeholder="Mã sách tự sinh"
         />
-<<<<<<< HEAD
+
+        {/* Số lượng */}
         <input
           type="number"
           placeholder="Số lượng *"
@@ -225,19 +188,16 @@ const BookAdd = () => {
           className="border rounded-lg w-full py-3 px-4 focus:ring-2 focus:ring-blue-400 outline-none"
           required
         />
-=======
 
->>>>>>> origin/main
+        {/* Mô tả */}
         <textarea
           placeholder="Mô tả"
           value={form.description}
           onChange={(e) => setForm({ ...form, description: e.target.value })}
           className="md:col-span-2 border rounded-lg w-full py-3 px-4 focus:ring-2 focus:ring-blue-400 outline-none resize-none h-32"
         />
-<<<<<<< HEAD
-=======
 
->>>>>>> origin/main
+        {/* Ảnh sách */}
         <div className="md:col-span-2 flex flex-col gap-2">
           <label className="font-medium flex items-center gap-2">
             <Upload className="text-gray-500" /> Ảnh sách *
@@ -260,14 +220,6 @@ const BookAdd = () => {
             ))}
           </div>
         </div>
-<<<<<<< HEAD
-        <button
-          type="submit"
-          className="md:col-span-2 bg-blue-600 hover:bg-blue-700 text-white py-3 rounded-lg text-lg font-semibold transition-all flex justify-center items-center gap-2"
-        >
-          <PlusCircle size={20} /> Thêm Sách
-        </button>
-=======
 
         {/* Nút hành động */}
         <div className="md:col-span-2 flex justify-center gap-4 mt-6">
@@ -286,7 +238,6 @@ const BookAdd = () => {
             <PlusCircle size={20} /> Thêm Sách
           </button>
         </div>
->>>>>>> origin/main
       </form>
     </div>
   );
