@@ -51,7 +51,11 @@ const BookCodeManager = () => {
       <div className="flex justify-between items-center mb-6">
         <h2 className="text-3xl font-bold text-blue-700">📚 Quản lý BookCode</h2>
         <button
+<<<<<<< HEAD
           onClick={() => navigate("/admin/bookcodeadd")}
+=======
+          onClick={() => navigate("/admin/bookcode/add")}
+>>>>>>> origin/main
           className="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700"
         >
           ➕ Thêm BookCode

@@ -5,6 +5,11 @@ import path from "path";
 import fs from "fs";
 import Book from "../models/books.js";
 import Reviews from "../models/review.js";
+<<<<<<< HEAD
+=======
+import Borrowing from "../models/borrowings.js"
+import ImportWarehouse from "../models/importWarehouse.js"
+>>>>>>> origin/main
 import BookCode from "../models/bookcode.js";
 
 const router = express.Router();
@@ -108,14 +113,26 @@ router.get("/:id", async (req, res) => {
       .populate("author", "name");
 
     if (!book) return res.status(404).json({ message: "Không tìm thấy sách" });
+<<<<<<< HEAD
+=======
+    book.imports = book.importHistory || [];
+>>>>>>> origin/main
 
     book.views = (book.views || 0) + 1;
     if (book.code) {
       await book.save();
     }
+<<<<<<< HEAD
 
     const reviews = await Reviews.find({ bookId: book._id }).populate("userId", "name email");
     res.json({ ...book.toObject(), reviews });
+=======
+    const importHistory = await ImportWarehouse.find({ book: book._id }).sort({ createdAt: -1 });
+    const borrowHistory = await Borrowing.find({ book: book._id }).populate("user", "fullName email").sort({ borrowDate: -1 });
+    const borrowCount = borrowHistory.reduce((sum, b) => sum + (b.quantity || 1), 0);
+    const reviews = await Reviews.find({ bookId: book._id }).populate("userId", "name email");
+    res.json({ ...book.toObject(), reviews,imports: importHistory,borrowHistory,borrowCount });
+>>>>>>> origin/main
   } catch (error) {
     console.error("Lỗi lấy chi tiết sách:", error);
     res.status(500).json({ message: "Lỗi server khi lấy sách", error: error.message });

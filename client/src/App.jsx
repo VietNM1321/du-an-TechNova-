@@ -11,6 +11,11 @@ import BookDetail from "./pages/bookdetail";
 import SearchResults from "./pages/SearchResults";
 import Cart from "./pages/Cart";
 import Profile from "./pages/Profile";
+<<<<<<< HEAD
+=======
+import ImportList from "./pages/admin/ImportList"
+import ImportAdd from "./pages/admin/ImportAdd"
+>>>>>>> origin/main
 import AdminLayout from "./layout/adminLayout";
 import AdminHome from "./pages/admin/AdminHome";
 import BookManager from "./pages/admin/Bookmanager";
@@ -23,6 +28,10 @@ import BookCodeEdit from "./pages/admin/BookCodeEdit";
 import AuthorAdd from "./pages/admin/AuthorAdd";
 import BookAdd from "./pages/admin/BookAdd"
 import AuthorEdit from "./pages/admin/AuthorEdit";
+<<<<<<< HEAD
+=======
+import Bookdetails from "./pages/admin/Bookdetail"
+>>>>>>> origin/main
 import CategoryManager from "./pages/admin/CategoryManager";
 import AddCategory from "./pages/admin/Addcategory";
 import EditCategory from "./pages/admin/Editcategory";
@@ -60,11 +69,22 @@ function App() {
           <Route path="bookadd" element={<BookAdd />} />
           <Route path="book/edit/:id" element={<BookEdit />} />
           <Route path="bookcode" element={<BookCode />} />
+<<<<<<< HEAD
           <Route path="bookcodeadd" element={<BookCodeAdd />} />
           <Route path="bookcode/edit/:id" element={<BookCodeEdit />} />
           <Route path="author" element={<AuthorManager />} />
           <Route path="borrowings" element={<BorrowManager />} />
           <Route path="authoradd" element={<AuthorAdd />} />
+=======
+          <Route path="bookcode/add" element={<BookCodeAdd />} />
+          <Route path="book/detail/:id" element={<Bookdetails />} />
+          <Route path="bookcode/edit/:id" element={<BookCodeEdit />} />
+          <Route path="importlist" element={<ImportList />} />
+          <Route path="importlist/add" element={<ImportAdd />} />
+          <Route path="author" element={<AuthorManager />} />
+          <Route path="borrowings" element={<BorrowManager />} />
+          <Route path="author/add" element={<AuthorAdd />} />
+>>>>>>> origin/main
           <Route path="authoredit/:id" element={<AuthorEdit />} />
           <Route path="category" element={<CategoryManager />} />
           <Route path="category/add" element={<AddCategory />} />

@@ -5,6 +5,7 @@ const CartContext = createContext();
 export const useCart = () => useContext(CartContext);
 
 export function CartProvider({ children }) {
+<<<<<<< HEAD
   const [cart, setCart] = useState(() => {
     const saved = localStorage.getItem("cart");
     return saved ? JSON.parse(saved) : { items: [], userId: "anon" };
@@ -19,6 +20,22 @@ export function CartProvider({ children }) {
   const addToCart = ({
     bookId,
     title,
+=======
+  const [cart, setCart] = useState({ items: [], userId: "anon" });
+  const API = "http://localhost:5000/api/cart";
+
+  const fetchCart = async (userId = cart.userId) => {
+    try {
+      const res = await axios.get(API, { params: { userId } });
+      setCart(res.data || { userId, items: [] });
+    } catch (err) {
+      console.error("❌ Lỗi fetch cart:", err);
+    }
+  };
+
+  const addToCart = async ({
+    bookId,
+>>>>>>> origin/main
     quantity = 1,
     fullName,
     studentId,
@@ -26,6 +43,7 @@ export function CartProvider({ children }) {
     borrowDate,
     returnDate,
   }) => {
+<<<<<<< HEAD
     setCart((prev) => {
       const existing = prev.items.find((i) => i.bookId === bookId);
       if (existing) {
@@ -99,14 +117,119 @@ export function CartProvider({ children }) {
     }
   };
 
+=======
+  try {
+    const res = await axios.post(`${API}/add`, {
+      userId: cart.userId,
+      bookId,
+      quantity,
+      fullName,
+      studentId,
+      email,
+      borrowDate,
+      returnDate,
+    });
+    if (res.data?.items) {
+      setCart(res.data);
+    } else {
+      setCart((prev) => {
+        const existing = prev.items.find((i) => i.bookId._id === bookId);
+        if (existing) {
+          return {
+            ...prev,
+            items: prev.items.map((i) =>
+              i.bookId._id === bookId
+                ? {
+                    ...i,
+                    quantity: i.quantity + quantity,
+                    borrowDate,
+                    returnDate,
+                    fullName,
+                    studentId,
+                    email,
+                  }
+                : i
+            ),
+          };
+        }
+        return {
+          ...prev,
+          items: [
+            ...prev.items,
+            {
+              bookId: { _id: bookId },
+              quantity,
+              borrowDate,
+              returnDate,
+              fullName,
+              studentId,
+              email,
+            },
+          ],
+        };
+      });
+    }
+  } catch (err) {
+    console.error("❌ Lỗi addToCart:", err);
+  }
+};
+
+  const updateItem = async ({ bookId, quantity }) => {
+    try {
+      const res = await axios.put(`${API}/update`, {
+        userId: cart.userId,
+        bookId,
+        quantity,
+      });
+      setCart(res.data);
+    } catch (err) {
+      console.error("❌ Lỗi updateItem:", err);
+    }
+  };
+
+  const removeItem = async (bookId) => {
+    try {
+      const res = await axios.delete(`${API}/remove`, {
+        data: { userId: cart.userId, bookId },
+      });
+      setCart(res.data);
+    } catch (err) {
+      console.error("❌ Lỗi removeItem:", err);
+    }
+  };
+
+  const clearCart = async () => {
+    try {
+      const res = await axios.delete(`${API}/clear`, {
+        data: { userId: cart.userId },
+      });
+      setCart(res.data || { userId: cart.userId, items: [] });
+    } catch (err) {
+      console.error("❌ Lỗi clearCart:", err);
+    }
+  };
+
+  useEffect(() => {
+    fetchCart();
+  }, []);
+
+>>>>>>> origin/main
   return (
     <CartContext.Provider
       value={{
         cart,
+<<<<<<< HEAD
         addToCart,
         removeItem,
         clearCart,
         confirmBorrow,
+=======
+        fetchCart,
+        addToCart,
+        updateItem,
+        removeItem,
+        clearCart,
+>>>>>>> origin/main
       }}
     >
       {children}
