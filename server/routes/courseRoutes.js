@@ -2,10 +2,6 @@ import express from "express";
 import Course from "../models/Course.js";
 
 const router = express.Router();
-
-/* ============================================================
-   1️⃣  Thêm khóa học mới (Admin)
-   ============================================================ */
 router.post("/", async (req, res) => {
   try {
     const { courseName, courseCode, minStudentCode, maxStudentCode } = req.body;
@@ -51,10 +47,6 @@ router.post("/", async (req, res) => {
     res.status(500).json({ message: err.message });
   }
 });
-
-/* ============================================================
-   2️⃣  Lấy danh sách khóa học
-   ============================================================ */
 router.get("/", async (req, res) => {
   try {
     const courses = await Course.find();
@@ -64,10 +56,6 @@ router.get("/", async (req, res) => {
     res.status(500).json({ message: err.message });
   }
 });
-
-/* ============================================================
-   3️⃣  Lấy chi tiết khóa học theo ID
-   ============================================================ */
 router.get("/:id", async (req, res) => {
   try {
     const course = await Course.findById(req.params.id);
@@ -80,10 +68,6 @@ router.get("/:id", async (req, res) => {
     res.status(500).json({ message: err.message });
   }
 });
-
-/* ============================================================
-   4️⃣  Cập nhật thông tin khóa học (Admin)
-   ============================================================ */
 router.put("/:id", async (req, res) => {
   try {
     const { courseName, courseCode, minStudentCode, maxStudentCode } = req.body;
@@ -125,10 +109,6 @@ router.put("/:id", async (req, res) => {
     res.status(500).json({ message: err.message });
   }
 });
-
-/* ============================================================
-   5️⃣  Xóa khóa học (Admin)
-   ============================================================ */
 router.delete("/:id", async (req, res) => {
   try {
     const course = await Course.findByIdAndDelete(req.params.id);

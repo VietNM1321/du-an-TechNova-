@@ -6,7 +6,7 @@ const authorSchema = new mongoose.Schema(
     bio: { type: String },
     dateOfBirth: { type: Date },
     dateOfDeath: { type: Date },
-    image: { type: String }, // đường dẫn ảnh hoặc URL
+    image: { type: String },
   },
   {
     timestamps: true,

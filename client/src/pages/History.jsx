@@ -20,21 +20,31 @@ const STATUS_COLOR = {
 const History = ({ userId, refreshFlag }) => {
   const [history, setHistory] = useState([]);
   const [loading, setLoading] = useState(false);
+  const token = localStorage.getItem("token");
+  const storedUser = JSON.parse(localStorage.getItem("user") || "null");
+  const effectiveUserId = userId || storedUser?.id;
 
   const fetchHistory = async () => {
     try {
       setLoading(true);
-      const res = await axios.get(`http://localhost:5000/api/borrowings/history/${userId}`);
+      if (!token || !effectiveUserId) throw new Error("UNAUTHENTICATED");
+      const res = await axios.get(`http://localhost:5000/api/borrowings/history/${effectiveUserId}` , {
+        headers: { Authorization: `Bearer ${token}` }
+      });
       setHistory(res.data || []);
     } catch (error) {
       console.error("❌ Lỗi fetch history:", error.response?.data || error.message);
-      message.error("Không thể tải lịch sử mượn!");
+      if (error.message === "UNAUTHENTICATED" || error.response?.status === 401) {
+        message.warning("Vui lòng đăng nhập để xem lịch sử mượn.");
+      } else {
+        message.error("Không thể tải lịch sử mượn!");
+      }
     } finally {
       setLoading(false);
     }
   };
 
-  useEffect(() => { fetchHistory(); }, [userId, refreshFlag]); // refreshFlag giúp cập nhật dữ liệu mới
+  useEffect(() => { fetchHistory(); }, [effectiveUserId, refreshFlag]);
 
   const handleReportLost = (id) => {
     Modal.confirm({
@@ -44,7 +54,7 @@ const History = ({ userId, refreshFlag }) => {
       cancelText: "Hủy",
       async onOk() {
         try {
-          await axios.put(`http://localhost:5000/api/borrowings/${id}/report-lost`);
+          await axios.put(`http://localhost:5000/api/borrowings/${id}/report-lost`, null, { headers: { Authorization: `Bearer ${token}` } });
           message.success("✅ Đã báo mất!");
           fetchHistory();
         } catch (error) {
@@ -85,7 +95,7 @@ const History = ({ userId, refreshFlag }) => {
           await axios.put(
             `http://localhost:5000/api/borrowings/${record._id}/report-broken`,
             formData,
-            { headers: { "Content-Type": "multipart/form-data" } }
+            { headers: { "Content-Type": "multipart/form-data", Authorization: `Bearer ${token}` } }
           );
 
           message.success("✅ Đã báo hỏng!");
@@ -101,20 +111,27 @@ const History = ({ userId, refreshFlag }) => {
   const columns = [
     {
       title: "Mã SV / Tên",
-      dataIndex: "userSnapshot",
       key: "user",
-      render: (user) => (user?.studentId || "000000") + " - " + (user?.fullName || "Khách vãng lai"),
+      render: (_, record) => {
+        const u = record.user || record.userSnapshot || {};
+        const code = u.studentCode || u.studentId || "000000";
+        const name = u.fullName || u.name || u.email || "Khách vãng lai";
+        return `${code} - ${name}`;
+      },
     },
     {
       title: "Sách mượn",
-      dataIndex: "bookSnapshot",
       key: "book",
-      render: (book) => (
+      render: (_, record) => {
+        const book = record.book || record.bookSnapshot || {};
+        const authorName = book.author?.name || record.book?.author?.name || "";
+        return (
         <Space>
           <Image src={book?.images?.[0]} width={40} height={60} />
-          <span>{book?.title}</span>
+          <span>{book?.title || "—"}{authorName ? ` — ${authorName}` : ""}</span>
         </Space>
-      ),
+        );
+      },
     },
     {
       title: "Ngày mượn",
@@ -149,8 +166,8 @@ const History = ({ userId, refreshFlag }) => {
               title: "Chi tiết sách mượn",
               content: (
                 <div>
-                  <p>Tên sách: {record.bookSnapshot?.title}</p>
-                  <p>Tác giả: {record.bookSnapshot?.author?.name}</p>
+                  <p>Tên sách: {record.book?.title || record.bookSnapshot?.title || "—"}</p>
+                  <p>Tác giả: {record.book?.author?.name || record.bookSnapshot?.author?.name || "—"}</p>
                   <p>Ngày mượn: {new Date(record.borrowDate).toLocaleDateString("vi-VN")}</p>
                   <p>Ngày trả: {new Date(record.dueDate).toLocaleDateString("vi-VN")}</p>
                   <p>Trạng thái: {STATUS_LABEL[record.status]}</p>

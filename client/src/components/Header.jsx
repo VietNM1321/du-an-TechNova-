@@ -1,7 +1,7 @@
 import { useState, useEffect, useRef } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { Search, ShoppingCart, User, Menu, LogOut, LayoutDashboard, History, BookOpen, PenTool } from "lucide-react";
-import { Link, useNavigate } from "react-router-dom";
+import { Link, useNavigate, useLocation } from "react-router-dom";
 import logo from "../assets/logo.png";
 import axios from "axios";
 
@@ -16,6 +16,7 @@ const Header = ({ selectedCategory, setSelectedCategory, selectedAuthor, setSele
   const userMenuRef = useRef(null);
   const menuRef = useRef(null);
   const navigate = useNavigate();
+  const location = useLocation();
   useEffect(() => {
     const storedUser = localStorage.getItem("user");
     if (storedUser) {
@@ -39,6 +40,11 @@ const Header = ({ selectedCategory, setSelectedCategory, selectedAuthor, setSele
       window.removeEventListener("storage", handleAuthChange);
     };
   }, []);
+  // Đồng bộ khi chuyển route để đảm bảo header cập nhật ngay sau điều hướng
+  useEffect(() => {
+    const storedUser = localStorage.getItem("user");
+    setUser(storedUser ? JSON.parse(storedUser) : null);
+  }, [location.pathname]);
   useEffect(() => {
     const handleClickOutside = (e) => {
       if (userMenuRef.current && !userMenuRef.current.contains(e.target)) setUserMenuOpen(false);

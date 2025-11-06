@@ -5,14 +5,18 @@ const CartContext = createContext();
 export const useCart = () => useContext(CartContext);
 
 export function CartProvider({ children }) {
-  const [cart, setCart] = useState({ items: [], userId: "anon" });
+  const savedUser = JSON.parse(localStorage.getItem("user") || "null");
+  const savedToken = localStorage.getItem("token");
+  const initialUserId = savedUser?.id || null;
+  const [cart, setCart] = useState({ items: [], userId: initialUserId });
   const API = "http://localhost:5000/api/cart";
 
-  const fetchCart = async (userId = cart.userId) => {
+  const fetchCart = async () => {
     try {
-      const res = await axios.get(API, { params: { userId } });
-      setCart(res.data || { userId, items: [] });
-      localStorage.setItem("cart", JSON.stringify(res.data || { userId, items: [] }));
+      if (!savedToken) return; // chưa đăng nhập thì bỏ qua
+      const res = await axios.get(API, { headers: { Authorization: `Bearer ${savedToken}` } });
+      setCart(res.data || { userId: initialUserId, items: [] });
+      localStorage.setItem("cart", JSON.stringify(res.data || { userId: initialUserId, items: [] }));
     } catch (err) {
       console.error("❌ Lỗi fetch cart:", err);
     }
@@ -28,16 +32,15 @@ export function CartProvider({ children }) {
     returnDate,
   }) => {
     try {
-      const res = await axios.post(`${API}/add`, {
-        userId: cart.userId,
-        bookId,
-        quantity,
-        fullName,
-        studentId,
-        email,
-        borrowDate,
-        returnDate,
-      });
+      if (!savedToken || !initialUserId) {
+        alert("Vui lòng đăng nhập để mượn sách.");
+        throw new Error("Not authenticated");
+      }
+      const res = await axios.post(
+        `${API}/add`,
+        { bookId, quantity, fullName, studentId, email, borrowDate, returnDate },
+        { headers: { Authorization: `Bearer ${savedToken}` } }
+      );
       setCart(res.data);
       localStorage.setItem("cart", JSON.stringify(res.data));
     } catch (err) {
@@ -47,7 +50,12 @@ export function CartProvider({ children }) {
 
   const updateItem = async ({ bookId, quantity }) => {
     try {
-      const res = await axios.put(`${API}/update`, { userId: cart.userId, bookId, quantity });
+      if (!savedToken) throw new Error("Not authenticated");
+      const res = await axios.put(
+        `${API}/update`,
+        { bookId, quantity },
+        { headers: { Authorization: `Bearer ${savedToken}` } }
+      );
       setCart(res.data);
       localStorage.setItem("cart", JSON.stringify(res.data));
     } catch (err) {
@@ -57,7 +65,11 @@ export function CartProvider({ children }) {
 
   const removeItem = async (bookId) => {
     try {
-      const res = await axios.delete(`${API}/remove`, { data: { userId: cart.userId, bookId } });
+      if (!savedToken) throw new Error("Not authenticated");
+      const res = await axios.delete(`${API}/remove`, {
+        headers: { Authorization: `Bearer ${savedToken}` },
+        data: { bookId },
+      });
       setCart(res.data);
       localStorage.setItem("cart", JSON.stringify(res.data));
     } catch (err) {
@@ -67,9 +79,10 @@ export function CartProvider({ children }) {
 
   const clearCart = async () => {
     try {
-      const res = await axios.delete(`${API}/clear`, { data: { userId: cart.userId } });
-      setCart(res.data || { userId: cart.userId, items: [] });
-      localStorage.setItem("cart", JSON.stringify(res.data || { userId: cart.userId, items: [] }));
+      if (!savedToken) throw new Error("Not authenticated");
+      const res = await axios.delete(`${API}/clear`, { headers: { Authorization: `Bearer ${savedToken}` } });
+      setCart(res.data || { userId: initialUserId, items: [] });
+      localStorage.setItem("cart", JSON.stringify(res.data || { userId: initialUserId, items: [] }));
     } catch (err) {
       console.error("❌ Lỗi clearCart:", err);
     }

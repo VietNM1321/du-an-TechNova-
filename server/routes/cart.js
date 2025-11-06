@@ -10,11 +10,19 @@ router.get("/", verifyToken, async (req, res) => {
     const userId = req.user?.id;
     if (!userId) return res.status(401).json({ message: "Chưa xác thực" });
 
-    let cart = await Cart.findOne({ userId }).populate("items.bookId", "title images price");
+    let cart = await Cart.findOne({ userId }).populate({
+      path: "items.bookId",
+      select: "title images author",
+      populate: { path: "author", select: "name" }
+    });
 
     if (!cart) {
       cart = await Cart.create({ userId, items: [] });
-      cart = await Cart.findById(cart._id).populate("items.bookId", "title images price");
+      cart = await Cart.findById(cart._id).populate({
+        path: "items.bookId",
+        select: "title images author",
+        populate: { path: "author", select: "name" }
+      });
     }
 
 
@@ -65,7 +73,11 @@ router.post("/add", verifyToken, async (req, res) => {
     }
 
     await cart.save();
-    const populated = await Cart.findById(cart._id).populate("items.bookId", "title images price");
+    const populated = await Cart.findById(cart._id).populate({
+      path: "items.bookId",
+      select: "title images author",
+      populate: { path: "author", select: "name" }
+    });
     res.json(populated);
   } catch (error) {
     console.error("❌ Lỗi POST /cart/add:", error);
@@ -89,7 +101,11 @@ router.put("/update", verifyToken, async (req, res) => {
     else item.quantity = Number(quantity);
 
     await cart.save();
-    const populated = await Cart.findById(cart._id).populate("items.bookId", "title images price");
+    const populated = await Cart.findById(cart._id).populate({
+      path: "items.bookId",
+      select: "title images author",
+      populate: { path: "author", select: "name" }
+    });
     res.json(populated);
   } catch (error) {
     console.error("❌ Lỗi PUT /cart/update:", error);
@@ -109,7 +125,11 @@ router.delete("/remove", verifyToken, async (req, res) => {
     cart.items = cart.items.filter(i => i.bookId && i.bookId.toString() !== bookId);
     await cart.save();
 
-    const populated = await Cart.findById(cart._id).populate("items.bookId", "title images price");
+    const populated = await Cart.findById(cart._id).populate({
+      path: "items.bookId",
+      select: "title images author",
+      populate: { path: "author", select: "name" }
+    });
     res.json(populated);
   } catch (error) {
     console.error("❌ Lỗi DELETE /cart/remove:", error);
