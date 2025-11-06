@@ -1,16 +1,12 @@
-// routes/auth.js
 import express from "express";
 import jwt from "jsonwebtoken";
 import nodemailer from "nodemailer";
 import dotenv from "dotenv";
 import User from "../models/User.js";
+import { verifyToken, requireRole } from "../middleware/auth.js";
 
 dotenv.config();
 const router = express.Router();
-
-/* ============================================================
-   0️⃣ TẠO ADMIN MẶC ĐỊNH (nếu chưa có)
-   ============================================================ */
 const createDefaultAdmin = async () => {
   try {
     const email = "admin@gmail.com";
@@ -35,10 +31,6 @@ const createDefaultAdmin = async () => {
   }
 };
 createDefaultAdmin();
-
-/* ============================================================
-   1️⃣ ĐĂNG KÝ SINH VIÊN
-   ============================================================ */
 router.post("/register", async (req, res) => {
   try {
     const { studentCode, email, fullName, course } = req.body;
@@ -56,7 +48,7 @@ router.post("/register", async (req, res) => {
       course,
       role: "student",
       active: true,
-      password: "", // admin sẽ cấp sau
+      password: "",
     });
 
     await newUser.save();
@@ -66,11 +58,7 @@ router.post("/register", async (req, res) => {
     res.status(500).json({ message: "Lỗi server khi đăng ký!" });
   }
 });
-
-/* ============================================================
-   2️⃣ CẤP/ĐỔI MẬT KHẨU (ADMIN) - KHÔNG MÃ HÓA, KHÔNG CHO SINH VIÊN BỊ KHÓA
-   ============================================================ */
-router.put("/setpassword/:id", async (req, res) => {
+router.put("/setpassword/:id", verifyToken, requireRole("admin"), async (req, res) => {
   const { id } = req.params;
   const { password } = req.body;
 
@@ -84,10 +72,8 @@ router.put("/setpassword/:id", async (req, res) => {
       return res.status(403).json({ message: "Sinh viên đã bị khóa, không thể cấp mật khẩu!" });
     }
 
-    user.password = password; // không mã hóa
+    user.password = password;
     await user.save();
-
-    // Gửi email thông báo
     const transporter = nodemailer.createTransport({
       service: "gmail",
       auth: {
@@ -124,11 +110,7 @@ router.put("/setpassword/:id", async (req, res) => {
     res.status(500).json({ message: "Lỗi server!" });
   }
 });
-
-/* ============================================================
-   3️⃣ LẤY DANH SÁCH SINH VIÊN (ADMIN)
-   ============================================================ */
-router.get("/users", async (req, res) => {
+router.get("/users", verifyToken, requireRole("admin"), async (req, res) => {
   try {
     const students = await User.find({ role: "student" }).select(
       "studentCode fullName email course active password"
@@ -139,10 +121,6 @@ router.get("/users", async (req, res) => {
     res.status(500).json({ message: "Lỗi server khi lấy danh sách sinh viên!" });
   }
 });
-
-/* ============================================================
-   4️⃣ ĐĂNG NHẬP
-   ============================================================ */
 router.post("/login", async (req, res) => {
   try {
     const { email, password } = req.body;

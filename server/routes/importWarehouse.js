@@ -12,6 +12,7 @@ router.get("/", async (req, res) => {
     const total = await ImportWarehouse.countDocuments();
     const imports = await ImportWarehouse.find()
       .populate("book", "title")
+      .populate("user", "fullName")
       .sort({ createdAt: -1 })
       .skip(skip)
       .limit(limit);
@@ -29,10 +30,9 @@ router.get("/", async (req, res) => {
     });
   }
 });
-
 router.post("/", async (req, res) => {
   try {
-    const { bookId, quantity, supplier, note } = req.body;
+    const { bookId, quantity, supplier, note, user } = req.body;
 
     if (!mongoose.Types.ObjectId.isValid(bookId)) {
       return res.status(400).json({ message: "ID sách không hợp lệ" });
@@ -40,14 +40,19 @@ router.post("/", async (req, res) => {
     if (!quantity || quantity <= 0) {
       return res.status(400).json({ message: "Số lượng phải lớn hơn 0" });
     }
+
     const book = await Book.findById(bookId);
     if (!book) return res.status(404).json({ message: "Không tìm thấy sách" });
+    const importUser = user || "674f00f48a7b9b4c4b8e7a22";
+
     const newImport = await ImportWarehouse.create({
       book: bookId,
       quantity: Number(quantity),
       supplier,
       note,
+      user: importUser,
     });
+
     book.quantity += Number(quantity);
     book.available += Number(quantity);
     await book.save();

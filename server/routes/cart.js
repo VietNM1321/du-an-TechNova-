@@ -1,13 +1,14 @@
 import express from "express";
 import Cart from "../models/cart.js";
 import Book from "../models/books.js";
+import { verifyToken } from "../middleware/auth.js";
 
 const router = express.Router();
 
-router.get("/", async (req, res) => {
+router.get("/", verifyToken, async (req, res) => {
   try {
-    const { userId } = req.query;
-    if (!userId) return res.status(400).json({ message: "Cần userId" });
+    const userId = req.user?.id;
+    if (!userId) return res.status(401).json({ message: "Chưa xác thực" });
 
     let cart = await Cart.findOne({ userId }).populate("items.bookId", "title images price");
 
@@ -26,10 +27,9 @@ router.get("/", async (req, res) => {
   }
 });
 
-router.post("/add", async (req, res) => {
+router.post("/add", verifyToken, async (req, res) => {
   try {
     const {
-      userId,
       bookId,
       quantity = 1,
       fullName,
@@ -38,8 +38,8 @@ router.post("/add", async (req, res) => {
       borrowDate,
       returnDate,
     } = req.body;
-
-    if (!userId || !bookId) return res.status(400).json({ message: "Thiếu userId hoặc bookId" });
+    const userId = req.user?.id;
+    if (!userId || !bookId) return res.status(400).json({ message: "Thiếu dữ liệu bắt buộc" });
 
     let cart = await Cart.findOne({ userId }) || new Cart({ userId, items: [] });
 
@@ -73,9 +73,10 @@ router.post("/add", async (req, res) => {
   }
 });
 
-router.put("/update", async (req, res) => {
+router.put("/update", verifyToken, async (req, res) => {
   try {
-    const { userId, bookId, quantity } = req.body;
+    const { bookId, quantity } = req.body;
+    const userId = req.user?.id;
     if (!userId || !bookId) return res.status(400).json({ message: "Thiếu dữ liệu" });
 
     const cart = await Cart.findOne({ userId });
@@ -96,9 +97,10 @@ router.put("/update", async (req, res) => {
   }
 });
 
-router.delete("/remove", async (req, res) => {
+router.delete("/remove", verifyToken, async (req, res) => {
   try {
-    const { userId, bookId } = req.body;
+    const { bookId } = req.body;
+    const userId = req.user?.id;
     if (!userId || !bookId) return res.status(400).json({ message: "Thiếu dữ liệu" });
 
     const cart = await Cart.findOne({ userId });
@@ -115,10 +117,10 @@ router.delete("/remove", async (req, res) => {
   }
 });
 
-router.delete("/clear", async (req, res) => {
+router.delete("/clear", verifyToken, async (req, res) => {
   try {
-    const { userId } = req.body;
-    if (!userId) return res.status(400).json({ message: "Cần userId" });
+    const userId = req.user?.id;
+    if (!userId) return res.status(401).json({ message: "Chưa xác thực" });
 
     const cart = await Cart.findOne({ userId });
     if (!cart) return res.status(404).json({ message: "Không có giỏ hàng" });

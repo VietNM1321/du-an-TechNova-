@@ -4,6 +4,7 @@ import multer from "multer";
 import path from "path";
 import fs from "fs";
 import Book from "../models/books.js";
+import { verifyToken, requireRole } from "../middleware/auth.js";
 import Reviews from "../models/review.js";
 import Borrowing from "../models/borrowings.js";
 import ImportWarehouse from "../models/importWarehouse.js";
@@ -58,8 +59,6 @@ router.get("/", async (req, res) => {
     res.status(500).json({ message: "Lỗi server", error: error.message });
   }
 });
-
-// Tìm kiếm sách
 router.get("/search", async (req, res) => {
   try {
     const { q, author, category } = req.query;
@@ -98,8 +97,6 @@ router.get("/search", async (req, res) => {
     res.status(500).json({ message: "Lỗi server khi tìm kiếm sách.", error: error.message });
   }
 });
-
-// Lấy chi tiết sách
 router.get("/:id", async (req, res) => {
   try {
     if (!mongoose.Types.ObjectId.isValid(req.params.id)) {
@@ -116,8 +113,9 @@ router.get("/:id", async (req, res) => {
     if (book.code) {
       await book.save();
     }
-
-    const importHistory = await ImportWarehouse.find({ book: book._id }).sort({ createdAt: -1 });
+    const importHistory = await ImportWarehouse.find({ book: book._id })
+    .populate("user", "fullName")
+    .sort({ createdAt: -1 });
     const borrowHistory = await Borrowing.find({ book: book._id })
       .populate("user", "fullName email")
       .sort({ borrowDate: -1 });
@@ -130,9 +128,7 @@ router.get("/:id", async (req, res) => {
     res.status(500).json({ message: "Lỗi server khi lấy sách", error: error.message });
   }
 });
-
-// Thêm sách mới
-router.post("/", upload.array("images", 10), async (req, res) => {
+router.post("/", verifyToken, requireRole("admin"), upload.array("images", 10), async (req, res) => {
   try {
     const { title, description, category, author, publishedYear, quantity, available } = req.body;
 
@@ -202,9 +198,7 @@ router.post("/", upload.array("images", 10), async (req, res) => {
     res.status(500).json({ message: "Lỗi khi tạo sách mới", error: err.message });
   }
 });
-
-// Cập nhật sách
-router.put("/:id", upload.array("images", 10), async (req, res) => {
+router.put("/:id", verifyToken, requireRole("admin"), upload.array("images", 10), async (req, res) => {
   try {
     if (!mongoose.Types.ObjectId.isValid(req.params.id)) {
       return res.status(400).json({ message: "ID sách không hợp lệ" });
@@ -246,9 +240,7 @@ router.put("/:id", upload.array("images", 10), async (req, res) => {
     res.status(500).json({ message: "Cập nhật thất bại", error: err.message });
   }
 });
-
-// Xóa sách
-router.delete("/:id", async (req, res) => {
+router.delete("/:id", verifyToken, requireRole("admin"), async (req, res) => {
   try {
     if (!mongoose.Types.ObjectId.isValid(req.params.id)) {
       return res.status(400).json({ message: "ID không hợp lệ" });
@@ -264,9 +256,7 @@ router.delete("/:id", async (req, res) => {
     res.status(500).json({ message: "Xóa thất bại", error: error.message });
   }
 });
-
-// Mượn sách
-router.put("/borrow/:id", async (req, res) => {
+router.put("/borrow/:id", verifyToken, async (req, res) => {
   try {
     const { quantity } = req.body;
     if (!mongoose.Types.ObjectId.isValid(req.params.id)) {
@@ -291,8 +281,7 @@ router.put("/borrow/:id", async (req, res) => {
   }
 });
 
-// Trả sách
-router.put("/return/:id", async (req, res) => {
+router.put("/return/:id", verifyToken, async (req, res) => {
   try {
     const { quantity } = req.body;
     if (!mongoose.Types.ObjectId.isValid(req.params.id)) {

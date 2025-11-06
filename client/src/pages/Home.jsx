@@ -43,22 +43,41 @@ function Home() {
 
   return (
     <div className="p-5 bg-gradient-to-b from-gray-50 to-white min-h-screen">
-      <section className="relative rounded-2xl overflow-hidden shadow-xl mb-16 h-64 md:h-96">
+      <section className="relative rounded-2xl overflow-hidden shadow-xl ring-1 ring-slate-100 mb-16 h-64 md:h-96">
         <img
           src={bannerImg}
           alt="banner"
           className="w-full h-full object-cover brightness-90"
         />
-        <div className="absolute inset-0 bg-black bg-opacity-40 flex flex-col justify-center items-center text-white text-center">
-          <h1 className="text-3xl md:text-5xl font-bold mb-3 drop-shadow-lg">
+        <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-black/20 flex flex-col justify-center items-center text-white text-center">
+          <h1 className="text-3xl md:text-5xl font-extrabold mb-3 drop-shadow-lg tracking-tight">
             📚 Chào mừng đến với{" "}
             <span className="text-yellow-300">Thư Viện Sách Số</span>
           </h1>
-          <p className="text-lg md:text-xl font-light tracking-wide">
+          <p className="text-lg md:text-xl font-light tracking-wide max-w-3xl mx-auto">
             Khám phá hàng ngàn tựa sách đa dạng & truyền cảm hứng
           </p>
         </div>
       </section>
+      <div className="container mx-auto px-4 mb-10">
+        <div className="flex flex-wrap items-center gap-2">
+          <button
+            onClick={() => setSelectedCategory("")}
+            className={`${selectedCategory === "" ? "bg-slate-900 text-white ring-slate-900" : "bg-white text-slate-700 hover:bg-slate-50 ring-slate-200"} px-3 py-1.5 rounded-full text-sm font-medium transition ring-1`}
+          >
+            Tất cả
+          </button>
+          {[...new Set(categories.map((c) => c.name))].map((name) => (
+            <button
+              key={name}
+              onClick={() => setSelectedCategory(name)}
+              className={`${selectedCategory === name ? "bg-blue-600 text-white ring-blue-600" : "bg-white text-slate-700 hover:bg-slate-50 ring-slate-200"} px-3 py-1.5 rounded-full text-sm font-medium transition ring-1`}
+            >
+              {name}
+            </button>
+          ))}
+        </div>
+      </div>
       {displayedCategories.map((cat, index) => (
         <section key={cat._id} className="container mx-auto px-4 mb-20 relative">
           <div className="flex justify-between items-center mb-6">
@@ -98,13 +117,13 @@ function Home() {
               </Slider>
               <button
                 onClick={() => prevSlide(cat._id)}
-                className="absolute left-0 top-1/2 -translate-y-1/2 bg-pink-500 text-white p-3 rounded-full shadow-lg hover:bg-pink-600 transition z-10"
+                className="absolute left-0 top-1/2 -translate-y-1/2 bg-white/90 backdrop-blur text-pink-600 p-3 rounded-full shadow-lg ring-1 ring-slate-200 hover:bg-white transition z-10"
               >
                 <ChevronLeft size={26} />
               </button>
               <button
                 onClick={() => nextSlide(cat._id)}
-                className="absolute right-0 top-1/2 -translate-y-1/2 bg-pink-500 text-white p-3 rounded-full shadow-lg hover:bg-pink-600 transition z-10"
+                className="absolute right-0 top-1/2 -translate-y-1/2 bg-white/90 backdrop-blur text-pink-600 p-3 rounded-full shadow-lg ring-1 ring-slate-200 hover:bg-white transition z-10"
               >
                 <ChevronRight size={26} />
               </button>
@@ -127,7 +146,7 @@ function Home() {
                   </div>
                 )}
                 customPaging={() => (
-                  <div className="w-3 h-3 bg-gray-400 rounded-full hover:bg-blue-500 transition"></div>
+                  <div className="w-3 h-3 bg-slate-300 rounded-full hover:bg-blue-500 transition"></div>
                 )}
                 responsive={[
                   { breakpoint: 1024, settings: { slidesToShow: 2 } },

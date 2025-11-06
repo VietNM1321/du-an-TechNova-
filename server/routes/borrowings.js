@@ -3,46 +3,35 @@ import Borrowing from "../models/borrowings.js";
 import Book from "../models/books.js";
 import User from "../models/User.js";
 import multer from "multer";
+import { verifyToken, isSelfOrAdmin } from "../middleware/auth.js";
 
 const router = express.Router();
-
-// ===== Multer setup upload ảnh =====
 const storage = multer.diskStorage({
   destination: (req, file, cb) => cb(null, "uploads/"),
   filename: (req, file, cb) => cb(null, Date.now() + "_" + file.originalname),
 });
 const upload = multer({ storage });
-
-// ===== Enum trạng thái =====
 const STATUS_ENUM = {
   BORROWED: "borrowed",
   RETURNED: "returned",
   DAMAGED: "damaged",
 };
-
-// ===== Tạo đơn mượn =====
-router.post("/", async (req, res) => {
+router.post("/", verifyToken, async (req, res) => {
   try {
-    const { userId, items } = req.body;
+    const { items } = req.body;
 
     if (!items || items.length === 0) {
       return res.status(400).json({ message: "Danh sách sách mượn trống!" });
     }
 
-    let user = null;
-    if (userId && /^[0-9a-fA-F]{24}$/.test(userId)) {
-      user = await User.findById(userId);
-      if (!user) return res.status(404).json({ message: "Không tìm thấy người dùng!" });
-    } else {
-      const anonUser = await User.findOne({ email: "anon@example.com" });
-      user = anonUser || (await User.create({ fullName: "Khách vãng lai", email: "anon@example.com" }));
-    }
+    const user = await User.findById(req.user.id);
+    if (!user) return res.status(404).json({ message: "Không tìm thấy người dùng!" });
 
     const borrowings = items.map((item) => ({
       book: item.bookId,
       user: user._id,
       borrowDate: item.borrowDate || new Date(),
-      returnDate: item.returnDate || new Date(Date.now() + 7 * 24 * 60 * 60 * 1000),
+      dueDate: item.dueDate || new Date(Date.now() + 7 * 24 * 60 * 60 * 1000),
       status: STATUS_ENUM.BORROWED,
       quantity: item.quantity || 1,
     }));
@@ -54,9 +43,7 @@ router.post("/", async (req, res) => {
     res.status(500).json({ message: "Lỗi server khi tạo đơn mượn!", error: error.message });
   }
 });
-
-// ===== Lấy tất cả đơn mượn (Admin) =====
-router.get("/", async (req, res) => {
+router.get("/", verifyToken, async (req, res) => {
   try {
     const borrowings = await Borrowing.find()
       .sort({ borrowDate: -1 })
@@ -68,9 +55,7 @@ router.get("/", async (req, res) => {
     res.status(500).json({ message: "Lỗi server khi lấy danh sách mượn sách!" });
   }
 });
-
-// ===== Lấy lịch sử mượn của user =====
-router.get("/history/:userId", async (req, res) => {
+router.get("/history/:userId", verifyToken, isSelfOrAdmin("userId"), async (req, res) => {
   try {
     const { userId } = req.params;
     let filter = {};
@@ -84,7 +69,7 @@ router.get("/history/:userId", async (req, res) => {
     borrowings = borrowings.map((b) => {
       let status = b.status;
       const now = new Date();
-      if (status === STATUS_ENUM.BORROWED && new Date(b.returnDate) < now) status = "overdue";
+      if (status === STATUS_ENUM.BORROWED && new Date(b.dueDate) < now) status = "overdue";
       return { ...b._doc, status };
     });
 
@@ -94,8 +79,6 @@ router.get("/history/:userId", async (req, res) => {
     res.status(500).json({ message: "Lỗi server khi lấy lịch sử mượn!" });
   }
 });
-
-// ===== SSE stream đơn mượn =====
 router.get("/stream", (req, res) => {
   res.setHeader('Content-Type', 'text/event-stream');
   res.setHeader('Cache-Control', 'no-cache');
@@ -114,9 +97,7 @@ router.get("/stream", (req, res) => {
     clearInterval(interval);
   });
 });
-
-// ===== Báo mất =====
-router.put("/:id/report-lost", async (req, res) => {
+router.put("/:id/report-lost", verifyToken, async (req, res) => {
   try {
     const borrowing = await Borrowing.findByIdAndUpdate(
       req.params.id,
@@ -130,9 +111,7 @@ router.put("/:id/report-lost", async (req, res) => {
     res.status(500).json({ message: "Lỗi server khi báo mất!" });
   }
 });
-
-// ===== Báo hỏng =====
-router.put("/:id/report-broken", upload.single("image"), async (req, res) => {
+router.put("/:id/report-broken", verifyToken, upload.single("image"), async (req, res) => {
   try {
     const { reason } = req.body;
     const image = req.file ? req.file.path : null;

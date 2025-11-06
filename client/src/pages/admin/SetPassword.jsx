@@ -7,13 +7,19 @@ const SetPassword = () => {
   const [loading, setLoading] = useState(true);
   const [loadingIds, setLoadingIds] = useState([]);
 
-  // Lấy danh sách user
   const fetchUsers = async () => {
     try {
-      const res = await axios.get("http://localhost:5000/api/auth/users");
+      const token = localStorage.getItem("token");
+      if (!token) throw new Error("UNAUTHENTICATED");
+      const res = await axios.get("http://localhost:5000/api/auth/users", {
+        headers: { Authorization: `Bearer ${token}` },
+      });
       setUsers(res.data);
     } catch (err) {
       console.error("Lỗi khi tải danh sách:", err);
+      if (err.response?.status === 401 || err.message === "UNAUTHENTICATED") {
+        alert("Bạn cần đăng nhập với quyền Admin để truy cập.");
+      }
     } finally {
       setLoading(false);
     }
@@ -36,9 +42,13 @@ const SetPassword = () => {
     setLoadingIds((prev) => [...prev, id]);
 
     try {
-      const res = await axios.put(`http://localhost:5000/api/auth/setpassword/${id}`, {
-        password,
-      });
+      const token = localStorage.getItem("token");
+      if (!token) throw new Error("UNAUTHENTICATED");
+      const res = await axios.put(
+        `http://localhost:5000/api/auth/setpassword/${id}`,
+        { password },
+        { headers: { Authorization: `Bearer ${token}` } }
+      );
 
       alert(res.data.message || "✅ Mật khẩu đã được cấp và gửi tới email sinh viên!");
 
@@ -56,7 +66,11 @@ const SetPassword = () => {
       if (err.response && err.response.data?.message) {
         alert(`❌ ${err.response.data.message}`);
       } else {
-        alert("❌ Lỗi khi cấp mật khẩu!");
+        const msg =
+          err.response?.status === 401 || err.message === "UNAUTHENTICATED"
+            ? "Bạn cần đăng nhập với quyền Admin để cấp mật khẩu."
+            : "❌ Lỗi khi cấp mật khẩu!";
+        alert(msg);
       }
     } finally {
       setLoadingIds((prev) => prev.filter((uid) => uid !== id));

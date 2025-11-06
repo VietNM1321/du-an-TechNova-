@@ -6,22 +6,18 @@ import { ExclamationCircleOutlined } from "@ant-design/icons";
 const Cart = () => {
   const [loading, setLoading] = useState(false);
   const [cart, setCart] = useState({ items: [] });
-  const userId = "6900cbaa373bd68ade6b791a"; // user đăng nhập
-
-  // 🔹 Fetch giỏ hàng
+  const userId = "6900cbaa373bd68ade6b791a";
   const fetchCart = async () => {
     try {
       const res = await axios.get("http://localhost:5000/api/cart", {
         params: { userId },
       });
       const data = res.data || { items: [] };
-
-      // ⚡ Hardcode test nếu chưa có item
       if (!data.items || data.items.length === 0) {
         data.items = [
           {
             _id: "test1",
-            book: "68f36c3e8a23553d16b11289", // ✅ ObjectId hợp lệ
+            book: "68f36c3e8a23553d16b11289",
             quantity: 1,
             borrowDate: new Date().toISOString(),
             dueDate: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString(),
@@ -42,7 +38,7 @@ const Cart = () => {
         items: [
           {
             _id: "test1",
-            book: "68f36c3e8a23553d16b11289", // ✅ ObjectId hợp lệ
+            book: "68f36c3e8a23553d16b11289",
             quantity: 1,
             borrowDate: new Date().toISOString(),
             dueDate: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString(),
@@ -59,8 +55,6 @@ const Cart = () => {
   useEffect(() => {
     fetchCart();
   }, []);
-
-  // 🔹 Thay đổi số lượng
   const handleQuantityChange = (_id, value) => {
     setCart((prev) => ({
       ...prev,
@@ -69,8 +63,6 @@ const Cart = () => {
       ),
     }));
   };
-
-  // 🔹 Table columns
   const columns = [
     {
       title: "Tên sách",
@@ -111,8 +103,6 @@ const Cart = () => {
         date ? new Date(date).toLocaleDateString("vi-VN") : "—",
     },
   ];
-
-  // 🔹 Xác nhận mượn
   const handleBorrow = async () => {
     if (!cart.items || cart.items.length === 0) {
       message.warning("Giỏ sách đang trống!");
@@ -128,12 +118,10 @@ const Cart = () => {
       async onOk() {
         try {
           setLoading(true);
-
-          // ✅ Payload đúng ObjectId
           const payload = {
             userId,
             items: cart.items.map((item) => ({
-              bookId: item.book, // ObjectId thực của sách
+              bookId: item.book,
               quantity: item.quantity,
               borrowDate: item.borrowDate,
               dueDate: item.dueDate,
@@ -144,8 +132,6 @@ const Cart = () => {
             "http://localhost:5000/api/borrowings",
             payload
           );
-
-          // Xóa giỏ hàng
           await axios.delete("http://localhost:5000/api/cart/clear", {
             data: { userId },
           });

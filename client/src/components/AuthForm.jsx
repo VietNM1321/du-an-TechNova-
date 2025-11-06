@@ -27,8 +27,12 @@ function AuthForm({ mode }) {
       if (res.ok) {
         if (isLogin) {
           localStorage.setItem("token", data.token);
+          if (data.user) {
+            localStorage.setItem("user", JSON.stringify(data.user));
+          }
+          window.dispatchEvent(new Event("authChange"));
           alert("Đăng nhập thành công 🎉");
-          navigate("/");
+          window.location.replace("/");
         } else {
           alert("Đăng ký thành công 🎉");
           navigate("/login");

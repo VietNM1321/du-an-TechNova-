@@ -52,74 +52,107 @@ const BorrowForm = ({ book, onClose }) => {
   };
 
   return (
-    <div className="fixed inset-0 flex items-center justify-center bg-black/40 z-50">
-      <div className="bg-white p-6 rounded-2xl shadow-xl w-full max-w-md">
-        <h2 className="text-xl font-semibold text-blue-700 mb-4 text-center flex items-center justify-center gap-2">
-          📚 Thông tin mượn sách
-        </h2>
+    <div className="fixed inset-0 z-50 flex items-center justify-center">
+      <div className="absolute inset-0 bg-slate-900/50 backdrop-blur-sm" onClick={onClose} />
+      <div className="relative bg-white w-full max-w-lg rounded-2xl shadow-2xl ring-1 ring-slate-100 p-6 mx-4">
+        <button
+          aria-label="Đóng"
+          onClick={onClose}
+          className="absolute top-3 right-3 text-slate-500 hover:text-slate-700 transition"
+        >
+          ✕
+        </button>
+
+        <div className="mb-4">
+          <h2 className="text-xl font-bold text-slate-900 flex items-center gap-2">
+            📚 Thông tin mượn sách
+          </h2>
+          <p className="text-sm text-slate-500 mt-1">
+            {book?.title}
+          </p>
+        </div>
 
         <form onSubmit={handleSubmit} className="space-y-3">
-          <input
-            type="text"
-            name="fullName"
-            placeholder="Họ và tên"
-            value={formData.fullName}
-            onChange={handleChange}
-            required
-            className="w-full border rounded-md p-2 outline-none focus:ring-2 focus:ring-blue-500"
-          />
-          <input
-            type="text"
-            name="studentId"
-            placeholder="Mã sinh viên"
-            value={formData.studentId}
-            onChange={handleChange}
-            required
-            className="w-full border rounded-md p-2 bg-gray-100 text-gray-700"
-          />
-          <input
-            type="email"
-            name="email"
-            placeholder="Email"
-            value={formData.email}
-            onChange={handleChange}
-            required
-            className="w-full border rounded-md p-2 outline-none focus:ring-2 focus:ring-blue-500"
-          />
-          <div className="flex gap-3">
+          <div>
+            <label className="text-sm font-medium text-slate-700">Họ và tên</label>
             <input
-              type="date"
-              name="borrowDate"
-              value={formData.borrowDate}
+              type="text"
+              name="fullName"
+              placeholder="Họ và tên"
+              value={formData.fullName}
               onChange={handleChange}
-              min={new Date().toISOString().split('T')[0]}
               required
-              className="flex-1 border rounded-md p-2 outline-none focus:ring-2 focus:ring-blue-500"
-            />
-            <input
-              type="date"
-              name="returnDate"
-              value={formData.returnDate}
-              onChange={handleChange}
-              min={formData.borrowDate || new Date().toISOString().split('T')[0]}
-              required
-              className="flex-1 border rounded-md p-2 outline-none focus:ring-2 focus:ring-blue-500"
+              className="mt-1 w-full border border-slate-300 rounded-lg p-2.5 outline-none focus:ring-2 focus:ring-blue-500"
             />
           </div>
 
-          <div className="flex justify-between mt-4 gap-3">
+          <div>
+            <label className="text-sm font-medium text-slate-700">Mã sinh viên</label>
+            <input
+              type="text"
+              name="studentId"
+              placeholder="Mã sinh viên"
+              value={formData.studentId}
+              readOnly
+              aria-readonly="true"
+              className="mt-1 w-full border border-slate-300 rounded-lg p-2.5 bg-slate-100 text-slate-700 cursor-not-allowed"
+            />
+            <p className="text-xs text-slate-500 mt-1">Mã sinh viên được lấy theo tài khoản đăng nhập.</p>
+          </div>
+
+          <div>
+            <label className="text-sm font-medium text-slate-700">Email</label>
+            <input
+              type="email"
+              name="email"
+              placeholder="Email"
+              value={formData.email}
+              onChange={handleChange}
+              required
+              className="mt-1 w-full border border-slate-300 rounded-lg p-2.5 outline-none focus:ring-2 focus:ring-blue-500"
+            />
+          </div>
+
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+            <div>
+              <label className="text-sm font-medium text-slate-700">Ngày mượn</label>
+              <input
+                type="date"
+                name="borrowDate"
+                value={formData.borrowDate}
+                onChange={handleChange}
+                min={new Date().toISOString().split('T')[0]}
+                required
+                className="mt-1 w-full border border-slate-300 rounded-lg p-2.5 outline-none focus:ring-2 focus:ring-blue-500"
+              />
+            </div>
+            <div>
+              <label className="text-sm font-medium text-slate-700">Ngày trả</label>
+              <input
+                type="date"
+                name="returnDate"
+                value={formData.returnDate}
+                onChange={handleChange}
+                min={formData.borrowDate || new Date().toISOString().split('T')[0]}
+                required
+                className="mt-1 w-full border border-slate-300 rounded-lg p-2.5 outline-none focus:ring-2 focus:ring-blue-500"
+              />
+            </div>
+          </div>
+
+          <div className="grid grid-cols-2 gap-3 pt-2">
             <button
               type="button"
               onClick={onClose}
-              className="w-1/2 bg-gray-300 hover:bg-gray-400 text-gray-800 font-medium py-2 rounded-md transition-all"
+              className="inline-flex justify-center items-center gap-2 border border-slate-300 px-4 py-2.5 rounded-lg hover:bg-slate-50 transition font-medium"
             >
               Quay lại
             </button>
             <button
               type="submit"
-              className="w-1/2 bg-green-600 hover:bg-green-700 text-white font-medium py-2 rounded-md transition-all"
+              className="inline-flex justify-center items-center gap-2 bg-emerald-600 text-white px-4 py-2.5 rounded-lg hover:bg-emerald-700 transition font-semibold shadow-sm"
             >
-              Mượn sách
+              ✅ Mượn sách
             </button>
           </div>
         </form>

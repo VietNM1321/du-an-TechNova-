@@ -16,21 +16,29 @@ const Header = ({ selectedCategory, setSelectedCategory, selectedAuthor, setSele
   const userMenuRef = useRef(null);
   const menuRef = useRef(null);
   const navigate = useNavigate();
-
-  // 🟢 Load user & cart từ localStorage
   useEffect(() => {
     const storedUser = localStorage.getItem("user");
     if (storedUser) {
       const parsedUser = JSON.parse(storedUser);
       setUser(parsedUser);
-
-      // Cart riêng từng user theo email hoặc id
       const storedCart = localStorage.getItem(`cart_${parsedUser.email}`);
       if (storedCart) setCartItems(JSON.parse(storedCart));
     }
   }, []);
 
-  // 🟢 Đóng menu khi click ngoài
+  // Lắng nghe sự kiện đăng nhập/đăng xuất để cập nhật Header
+  useEffect(() => {
+    const handleAuthChange = () => {
+      const storedUser = localStorage.getItem("user");
+      setUser(storedUser ? JSON.parse(storedUser) : null);
+    };
+    window.addEventListener("authChange", handleAuthChange);
+    window.addEventListener("storage", handleAuthChange);
+    return () => {
+      window.removeEventListener("authChange", handleAuthChange);
+      window.removeEventListener("storage", handleAuthChange);
+    };
+  }, []);
   useEffect(() => {
     const handleClickOutside = (e) => {
       if (userMenuRef.current && !userMenuRef.current.contains(e.target)) setUserMenuOpen(false);
@@ -39,8 +47,6 @@ const Header = ({ selectedCategory, setSelectedCategory, selectedAuthor, setSele
     document.addEventListener("mousedown", handleClickOutside);
     return () => document.removeEventListener("mousedown", handleClickOutside);
   }, []);
-
-  // 🟢 Load danh mục & tác giả
   useEffect(() => {
     const fetchData = async () => {
       try {
@@ -59,16 +65,16 @@ const Header = ({ selectedCategory, setSelectedCategory, selectedAuthor, setSele
 
   const totalItems = cartItems?.reduce((sum, item) => sum + item.quantity, 0) || 0;
 
-  // 🟢 Đăng xuất
+  //  Đăng xuất
   const handleLogout = () => {
     localStorage.removeItem("user");
+    localStorage.removeItem("token");
     if (user) localStorage.removeItem(`cart_${user.email}`);
     setUser(null);
     setCartItems([]);
+    window.dispatchEvent(new Event("authChange"));
     navigate("/login");
   };
-
-  // 🟢 Tìm kiếm
   const handleSearch = (e) => {
     e.preventDefault();
     if (!searchTerm.trim()) return;
@@ -131,7 +137,7 @@ const Header = ({ selectedCategory, setSelectedCategory, selectedAuthor, setSele
           {user ? (
             <div ref={userMenuRef} className="relative">
               <button onClick={() => setUserMenuOpen((prev) => !prev)} className="text-gray-700 hover:text-red-700 font-medium">
-                {user.role === "admin" ? "Admin" : user.fullName}
+                {user.role === "admin" ? "Admin" : (user.fullName || user.name || user.email || "Tài khoản")}
               </button>
               <AnimatePresence>
                 {userMenuOpen && (

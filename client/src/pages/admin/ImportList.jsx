@@ -57,63 +57,51 @@ const ImportList = () => {
       </div>
       <table className="min-w-full border border-gray-200 rounded-lg overflow-hidden">
         <thead className="bg-blue-100 text-blue-800">
-          <tr>
-            <th className="p-3 border text-center">#</th>
-            <th className="p-3 border text-left">Tên sách</th>
-            <th className="p-3 border text-center">Số lượng</th>
-            <th className="p-3 border text-left">Nhà cung cấp</th>
-            <th className="p-3 border text-left">Ghi chú</th>
-            <th className="p-3 border text-center">Ngày nhập</th>
-            <th className="p-3 border text-center">Hành động</th>
+        <tr>
+          <th className="p-3 border text-center">#</th>
+          <th className="p-3 border text-left">Tên sách</th>
+          <th className="p-3 border text-center">Số lượng</th>
+          <th className="p-3 border text-left">Nhà cung cấp</th>
+          <th className="p-3 border text-left">Người nhập</th>
+          <th className="p-3 border text-left">Ghi chú</th>
+          <th className="p-3 border text-center">Ngày nhập</th>
+          <th className="p-3 border text-center">Hành động</th>
+        </tr>
+      </thead>
+
+      <tbody>
+        {imports.map((imp, idx) => (
+          <tr key={imp._id} className="hover:bg-gray-50 h-16 transition-all">
+            <td className="p-3 border text-center">{(page - 1) * limit + idx + 1}</td>
+            <td className="p-3 border font-semibold">{imp.book?.title || "Không rõ"}</td>
+            <td className="p-3 border text-center text-blue-700 font-bold">{imp.quantity}</td>
+            <td className="p-3 border">{imp.supplier || "-"}</td>
+            <td className="p-3 border text-gray-700">{imp.user?.fullName || "admin"}</td>
+            <td className="p-3 border text-gray-600 italic max-w-xs truncate">{imp.note || "-"}</td>
+            <td className="p-3 border text-center">
+              {new Date(imp.createdAt).toLocaleDateString("vi-VN")}
+            </td>
+            <td className="p-3 border text-center">
+              <button
+                onClick={() => handleDelete(imp._id)}
+                className="bg-red-500 hover:bg-red-600 text-white px-3 py-1 rounded"
+              >
+                🗑️ Xóa
+              </button>
+            </td>
           </tr>
-        </thead>
+        ))}
 
-        <tbody>
-          {imports.map((imp, idx) => (
-            <tr
-              key={imp._id}
-              className="hover:bg-gray-50 h-16 align-middle transition-all"
-            >
-              <td className="p-3 border text-center align-middle">
-                {(page - 1) * limit + idx + 1}
-              </td>
-              <td className="p-3 border align-middle font-semibold">
-                {imp.book?.title || "Không rõ"}
-              </td>
-              <td className="p-3 border text-center align-middle text-blue-700 font-bold">
-                {imp.quantity}
-              </td>
-              <td className="p-3 border align-middle">{imp.supplier || "-"}</td>
-              <td className="p-3 border text-gray-600 italic max-w-xs truncate align-middle">
-                {imp.note || "-"}
-              </td>
-              <td className="p-3 border text-center align-middle">
-                {new Date(imp.createdAt).toLocaleDateString("vi-VN")}
-              </td>
-              <td className="p-3 border text-center align-middle">
-                <div className="flex items-center justify-center gap-2">
-                  <button
-                    onClick={() => handleDelete(imp._id)}
-                    className="bg-red-500 hover:bg-red-600 text-white px-3 py-1 rounded flex items-center gap-1"
-                  >
-                    🗑️ Xóa
-                  </button>
-                </div>
-              </td>
-            </tr>
-          ))}
+                {imports.length === 0 && (
+                  <tr>
+                    <td colSpan="7" className="text-center py-6 text-gray-500 italic">
+                      📭 Chưa có phiếu nhập nào.
+                    </td>
+                  </tr>
+                )}
+              </tbody>
+            </table>
 
-          {imports.length === 0 && (
-            <tr>
-              <td colSpan="7" className="text-center py-6 text-gray-500 italic">
-                📭 Chưa có phiếu nhập nào.
-              </td>
-            </tr>
-          )}
-        </tbody>
-      </table>
-
-      {/* Pagination */}
       <div className="flex justify-center mt-6 space-x-4">
         <button
           onClick={handlePrev}

@@ -1,6 +1,4 @@
 import mongoose from "mongoose";
-
-
 const BorrowingSchema = new mongoose.Schema(
   {
     user: { type: mongoose.Schema.Types.ObjectId, ref: "User", required: true },
@@ -9,15 +7,11 @@ const BorrowingSchema = new mongoose.Schema(
 
     borrowDate: { type: Date, default: Date.now },
     dueDate: { type: Date },
-
-    // ⚙️ Trạng thái đơn: borrowed | returned | damaged | lost | overdue
     status: {
       type: String,
       enum: ["borrowed", "returned", "damaged", "lost", "overdue"],
       default: "borrowed",
     },
-
-    // Lưu thông tin snapshot phòng khi user/book bị xóa
     userSnapshot: {
       fullName: String,
       studentId: String,

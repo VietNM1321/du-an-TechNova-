@@ -9,6 +9,7 @@ const ImportAdd = () => {
   const [selectedCategory, setSelectedCategory] = useState("");
   const [selectedBook, setSelectedBook] = useState("");
   const [quantity, setQuantity] = useState("");
+  const [selectedUser, setSelectedUser] = useState("");
   const navigate = useNavigate();
 
   useEffect(() => {
@@ -32,7 +33,9 @@ const ImportAdd = () => {
     if (!categoryId) return;
 
     try {
-      const res = await axios.get(`http://localhost:5000/api/books?limit=1000&category=${categoryId}`);
+      const res = await axios.get(
+        `http://localhost:5000/api/books?limit=1000&category=${categoryId}`
+      );
       setBooks(res.data.books);
     } catch (err) {
       toast.error("Không tìm thấy sách trong danh mục này");
@@ -41,8 +44,8 @@ const ImportAdd = () => {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    if (!selectedBook || !quantity) {
-      toast.warn("Vui lòng chọn sách và nhập số lượng!");
+    if (!selectedBook || !quantity || !selectedUser) {
+      toast.warn("Vui lòng nhập đủ thông tin!");
       return;
     }
 
@@ -50,16 +53,15 @@ const ImportAdd = () => {
       await axios.post("http://localhost:5000/api/imports", {
         bookId: selectedBook,
         quantity: Number(quantity),
+        user: selectedUser,
       });
       alert("✅ Nhập kho thành công!");
       navigate("/admin/importlist");
-      setSelectedBook("");
-      setQuantity("");
     } catch (err) {
+      console.error("Lỗi khi nhập kho:", err);
       toast.error("Lỗi khi nhập kho!");
     }
   };
-
   return (
     <div className="max-w-xl mx-auto bg-white shadow-lg rounded-2xl p-8 mt-8">
       <div className="flex items-center justify-between mb-6">
@@ -87,7 +89,6 @@ const ImportAdd = () => {
             ))}
           </select>
         </div>
-
         <div>
           <label className="block font-semibold mb-1 text-gray-700">Chọn sách</label>
           <select
@@ -104,7 +105,18 @@ const ImportAdd = () => {
             ))}
           </select>
         </div>
-
+        <div>
+          <label className="block font-semibold mb-1 text-gray-700">Người nhập kho</label>
+          <select
+            className="w-full border rounded-lg p-2 focus:ring-2 focus:ring-blue-400 outline-none transition"
+            value={selectedUser}
+            onChange={(e) => setSelectedUser(e.target.value)}
+          >
+            <option value="">-- Chọn người nhập --</option>
+            <option value="674f00f48a7b9b4c4b8e7a22">Admin</option>
+            <option value="6753aa4fb8a98a6f21dd33f9">Thủ thư</option>
+          </select>
+        </div>
         <div>
           <label className="block font-semibold mb-1 text-gray-700">Số lượng nhập</label>
           <input
