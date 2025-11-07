@@ -52,18 +52,31 @@ const BookDetail = () => {
         <h3 className="text-lg font-semibold text-gray-800 mb-3">📦 Lịch sử nhập kho</h3>
         {imports.length > 0 ? (
         <div className="space-y-3">
-            {imports.map((imp) => (
+            {imports.map((imp) => {
+              const role = imp.user?.role?.toLowerCase().trim();
+              const roleLabel = role === "admin" ? "Admin" : role ? "Thủ thư" : "Admin";
+              const fullName = imp.user?.fullName && imp.user.fullName !== "Chưa cập nhật"
+                ? imp.user.fullName
+                : null;
+              const displayUser = imp.userLabel
+                ? imp.userLabel
+                : imp.user
+                ? fullName
+                  ? `${fullName} (${roleLabel})`
+                  : roleLabel
+                : roleLabel;
+              return (
             <div
                 key={imp._id}
                 className="p-4 border rounded-lg shadow-sm flex justify-between items-center bg-gray-50 hover:bg-gray-100 transition"
             >
                 <div>
                 <p className="text-gray-700"><strong>Ngày nhập:</strong> {new Date(imp.createdAt).toLocaleDateString("vi-VN")}</p>
-                <p className="text-gray-700"><strong>Người nhập:</strong> {imp.user?.fullName || "—"}</p>
+                <p className="text-gray-700"><strong>Người nhập:</strong> {displayUser}</p>
                 </div>
                 <div className="text-blue-700 font-bold text-lg">{imp.quantity}</div>
             </div>
-            ))}
+            );})}
         </div>
         ) : (
         <p className="text-gray-500 italic">Chưa có lần nhập kho nào cho sách này.</p>

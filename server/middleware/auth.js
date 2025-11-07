@@ -33,7 +33,14 @@ export const verifyToken = async (req, res, next) => {
 export const requireRole = (...roles) => {
   return (req, res, next) => {
     if (!req.user) return res.status(401).json({ message: "Chưa xác thực" });
-    if (!roles.includes(req.user.role)) {
+    const currentRole = typeof req.user.role === "string"
+      ? req.user.role.trim().toLowerCase()
+      : req.user.role;
+    const normalizedRoles = roles.map((role) =>
+      typeof role === "string" ? role.trim().toLowerCase() : role
+    );
+
+    if (!normalizedRoles.includes(currentRole)) {
       return res.status(403).json({ message: "Không có quyền truy cập" });
     }
     next();
@@ -43,7 +50,8 @@ export const requireRole = (...roles) => {
 export const isSelfOrAdmin = (paramKey = "id") => {
   return (req, res, next) => {
     if (!req.user) return res.status(401).json({ message: "Chưa xác thực" });
-    if (req.user.role === "admin") return next();
+    const role = typeof req.user.role === "string" ? req.user.role.trim().toLowerCase() : req.user.role;
+    if (role === "admin") return next();
     if (req.user.id === req.params[paramKey]) return next();
     return res.status(403).json({ message: "Không có quyền thực hiện thao tác" });
   };

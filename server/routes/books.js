@@ -114,7 +114,7 @@ router.get("/:id", async (req, res) => {
       await book.save();
     }
     const importHistory = await ImportWarehouse.find({ book: book._id })
-    .populate("user", "fullName")
+    .populate("user", "fullName role")
     .sort({ createdAt: -1 });
     const borrowHistory = await Borrowing.find({ book: book._id })
       .populate("user", "fullName email")

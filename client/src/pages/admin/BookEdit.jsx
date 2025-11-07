@@ -24,10 +24,15 @@ const BookEdit = () => {
   useEffect(() => {
     const fetchData = async () => {
       try {
+        const token = localStorage.getItem("token");
+        const authConfig = token
+          ? { headers: { Authorization: `Bearer ${token}` } }
+          : undefined;
+
         const [catRes, authorRes, bookRes] = await Promise.all([
-          axios.get("http://localhost:5000/api/category?limit=1000"),
-          axios.get("http://localhost:5000/api/authors?limit=1000"),
-          axios.get(`http://localhost:5000/api/books/${id}`),
+          axios.get("http://localhost:5000/api/category?limit=1000", authConfig),
+          axios.get("http://localhost:5000/api/authors?limit=1000", authConfig),
+          axios.get(`http://localhost:5000/api/books/${id}`, authConfig),
         ]);
 
         setCategories(catRes.data.categories || catRes.data);
@@ -56,12 +61,17 @@ const BookEdit = () => {
         return setForm((prev) => ({ ...prev, bookCode: "" }));
       setLoadingCode(true);
       try {
+        const token = localStorage.getItem("token");
+        const authConfig = token
+          ? { headers: { Authorization: `Bearer ${token}` } }
+          : undefined;
         const res = await axios.get(
-          `http://localhost:5000/api/bookcodes/category/${form.category}`
+          `http://localhost:5000/api/bookcodes/category/${form.category}`,
+          authConfig
         );
-        if (res.data) {
-          const { prefix, lastNumber } = res.data;
-          const nextCode = `${prefix}-${String(lastNumber + 1).padStart(
+        if (res.data?.prefix) {
+          const { prefix, lastNumber = 0 } = res.data;
+          const nextCode = `${prefix}-${String((lastNumber || 0) + 1).padStart(
             3,
             "0"
           )}`;
@@ -89,15 +99,15 @@ const BookEdit = () => {
       alert("⚠️ Vui lòng nhập đầy đủ thông tin!");
       return;
     }
-    const dataToSend = {
-      ...form,
-      available: form.quantity,
-    };
-
     const formData = new FormData();
-    Object.entries(dataToSend).forEach(([key, value]) =>
-      formData.append(key, value)
-    );
+    formData.append("title", form.title);
+    formData.append("description", form.description);
+    formData.append("category", form.category);
+    formData.append("author", form.author);
+    formData.append("publishedYear", form.publishedYear);
+    formData.append("quantity", form.quantity);
+    formData.append("available", form.quantity);
+    if (form.bookCode) formData.append("bookCode", form.bookCode);
     if (newFiles.length > 0) {
       newFiles.forEach((file) => formData.append("images", file));
     } else if (form.images.length > 0) {
@@ -105,11 +115,17 @@ const BookEdit = () => {
     }
 
     try {
+      const token = localStorage.getItem("token");
+      const headers = {
+        "Content-Type": "multipart/form-data",
+      };
+      if (token) headers.Authorization = `Bearer ${token}`;
+
       const res = await axios.put(
         `http://localhost:5000/api/books/${id}`,
         formData,
         {
-          headers: { "Content-Type": "multipart/form-data" },
+          headers,
         }
       );
 

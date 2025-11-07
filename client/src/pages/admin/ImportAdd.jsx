@@ -9,7 +9,7 @@ const ImportAdd = () => {
   const [selectedCategory, setSelectedCategory] = useState("");
   const [selectedBook, setSelectedBook] = useState("");
   const [quantity, setQuantity] = useState("");
-  const [selectedUser, setSelectedUser] = useState("");
+  const [selectedRole, setSelectedRole] = useState("");
   const navigate = useNavigate();
 
   useEffect(() => {
@@ -44,7 +44,7 @@ const ImportAdd = () => {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    if (!selectedBook || !quantity || !selectedUser) {
+    if (!selectedBook || !quantity || !selectedRole) {
       toast.warn("Vui lòng nhập đủ thông tin!");
       return;
     }
@@ -53,7 +53,7 @@ const ImportAdd = () => {
       await axios.post("http://localhost:5000/api/imports", {
         bookId: selectedBook,
         quantity: Number(quantity),
-        user: selectedUser,
+        userRole: selectedRole,
       });
       alert("✅ Nhập kho thành công!");
       navigate("/admin/importlist");
@@ -109,12 +109,12 @@ const ImportAdd = () => {
           <label className="block font-semibold mb-1 text-gray-700">Người nhập kho</label>
           <select
             className="w-full border rounded-lg p-2 focus:ring-2 focus:ring-blue-400 outline-none transition"
-            value={selectedUser}
-            onChange={(e) => setSelectedUser(e.target.value)}
+            value={selectedRole}
+            onChange={(e) => setSelectedRole(e.target.value)}
           >
             <option value="">-- Chọn người nhập --</option>
-            <option value="674f00f48a7b9b4c4b8e7a22">Admin</option>
-            <option value="6753aa4fb8a98a6f21dd33f9">Thủ thư</option>
+            <option value="admin">Admin</option>
+            <option value="librarian">Thủ thư</option>
           </select>
         </div>
         <div>

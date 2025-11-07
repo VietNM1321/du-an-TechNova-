@@ -70,13 +70,27 @@ const ImportList = () => {
       </thead>
 
       <tbody>
-        {imports.map((imp, idx) => (
-          <tr key={imp._id} className="hover:bg-gray-50 h-16 transition-all">
+        {imports.map((imp, idx) => {
+          const role = imp.user?.role?.toLowerCase().trim();
+          const roleLabel = role === "admin" ? "Admin" : role ? "Thủ thư" : "Admin";
+          const fullName = imp.user?.fullName && imp.user.fullName !== "Chưa cập nhật"
+            ? imp.user.fullName
+            : null;
+          const displayUser = imp.userLabel
+            ? imp.userLabel
+            : imp.user
+            ? fullName
+              ? `${fullName} (${roleLabel})`
+              : roleLabel
+            : roleLabel;
+
+          return (
+            <tr key={imp._id} className="hover:bg-gray-50 h-16 transition-all">
             <td className="p-3 border text-center">{(page - 1) * limit + idx + 1}</td>
             <td className="p-3 border font-semibold">{imp.book?.title || "Không rõ"}</td>
             <td className="p-3 border text-center text-blue-700 font-bold">{imp.quantity}</td>
             <td className="p-3 border">{imp.supplier || "-"}</td>
-            <td className="p-3 border text-gray-700">{imp.user?.fullName || "admin"}</td>
+            <td className="p-3 border text-gray-700">{displayUser}</td>
             <td className="p-3 border text-gray-600 italic max-w-xs truncate">{imp.note || "-"}</td>
             <td className="p-3 border text-center">
               {new Date(imp.createdAt).toLocaleDateString("vi-VN")}
@@ -90,7 +104,8 @@ const ImportList = () => {
               </button>
             </td>
           </tr>
-        ))}
+          );
+        })}
 
                 {imports.length === 0 && (
                   <tr>

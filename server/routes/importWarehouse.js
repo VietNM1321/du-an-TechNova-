@@ -2,6 +2,7 @@ import express from "express";
 import mongoose from "mongoose";
 import ImportWarehouse from "../models/importWarehouse.js";
 import Book from "../models/books.js";
+import User from "../models/User.js";
 
 const router = express.Router();
 router.get("/", async (req, res) => {
@@ -12,7 +13,7 @@ router.get("/", async (req, res) => {
     const total = await ImportWarehouse.countDocuments();
     const imports = await ImportWarehouse.find()
       .populate("book", "title")
-      .populate("user", "fullName")
+      .populate("user", "fullName role")
       .sort({ createdAt: -1 })
       .skip(skip)
       .limit(limit);
@@ -32,7 +33,7 @@ router.get("/", async (req, res) => {
 });
 router.post("/", async (req, res) => {
   try {
-    const { bookId, quantity, supplier, note, user } = req.body;
+    const { bookId, quantity, supplier, note, user, userRole } = req.body;
 
     if (!mongoose.Types.ObjectId.isValid(bookId)) {
       return res.status(400).json({ message: "ID sách không hợp lệ" });
@@ -43,7 +44,27 @@ router.post("/", async (req, res) => {
 
     const book = await Book.findById(bookId);
     if (!book) return res.status(404).json({ message: "Không tìm thấy sách" });
-    const importUser = user || "674f00f48a7b9b4c4b8e7a22";
+
+    let importUser = null;
+    let userLabel = "Admin";
+
+    if (user && mongoose.Types.ObjectId.isValid(user)) {
+      const userDoc = await User.findById(user).select("fullName role");
+      if (userDoc) {
+        importUser = userDoc._id;
+        if (userDoc.fullName && userDoc.fullName !== "Chưa cập nhật") {
+          userLabel = userDoc.fullName;
+        } else if (userDoc.role === "student" || userDoc.role === "client") {
+          userLabel = "Thủ thư";
+        } else {
+          userLabel = "Admin";
+        }
+      }
+    }
+
+    if (!importUser && userRole) {
+      userLabel = userRole === "librarian" ? "Thủ thư" : "Admin";
+    }
 
     const newImport = await ImportWarehouse.create({
       book: bookId,
@@ -51,6 +72,7 @@ router.post("/", async (req, res) => {
       supplier,
       note,
       user: importUser,
+      userLabel,
     });
 
     book.quantity += Number(quantity);

@@ -28,7 +28,12 @@ const ImportWarehouseSchema = new mongoose.Schema(
       type: mongoose.Schema.Types.ObjectId,
       ref: "User",
       required: false 
-    }
+    },
+    userLabel: {
+      type: String,
+      default: "Admin",
+      trim: true,
+    },
   },
   {
     timestamps: true,
