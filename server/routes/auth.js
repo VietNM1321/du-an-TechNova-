@@ -141,10 +141,13 @@ router.post("/login", async (req, res) => {
       message: "Đăng nhập thành công!",
       token,
       user: {
+        _id: user._id,
         id: user._id,
         email: user.email,
         role: user.role,
         fullName: user.fullName,
+        studentCode: user.studentCode || "",
+        studentId: user.studentCode || "",
       },
     });
   } catch (error) {

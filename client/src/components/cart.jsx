@@ -7,7 +7,8 @@ export const useCart = () => useContext(CartContext);
 export function CartProvider({ children }) {
   const savedUser = JSON.parse(localStorage.getItem("user") || "null");
   const savedToken = localStorage.getItem("token");
-  const initialUserId = savedUser?.id || null;
+  const initialUserId = savedUser?._id || savedUser?.id || null;
+  const derivedStudentId = savedUser?.studentId || savedUser?.studentCode || "";
   const [cart, setCart] = useState({ items: [], userId: initialUserId });
   const API = "http://localhost:5000/api/cart";
 
@@ -36,9 +37,18 @@ export function CartProvider({ children }) {
         alert("Vui lòng đăng nhập để mượn sách.");
         throw new Error("Not authenticated");
       }
+      const payload = {
+        bookId,
+        quantity,
+        fullName: fullName || savedUser?.fullName,
+        studentId: studentId || derivedStudentId,
+        email: email || savedUser?.email,
+        borrowDate,
+        returnDate,
+      };
       const res = await axios.post(
         `${API}/add`,
-        { bookId, quantity, fullName, studentId, email, borrowDate, returnDate },
+        payload,
         { headers: { Authorization: `Bearer ${savedToken}` } }
       );
       setCart(res.data);

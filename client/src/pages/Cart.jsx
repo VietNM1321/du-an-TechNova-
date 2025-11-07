@@ -8,6 +8,8 @@ const Cart = () => {
   const [cart, setCart] = useState({ items: [] });
   const token = localStorage.getItem("token");
   const user = JSON.parse(localStorage.getItem("user") || "null");
+  const items = Array.isArray(cart.items) ? cart.items : [];
+  const isEmpty = items.length === 0;
   const fetchCart = async () => {
     try {
       if (!token) throw new Error("UNAUTHENTICATED");
@@ -15,23 +17,8 @@ const Cart = () => {
         headers: { Authorization: `Bearer ${token}` },
       });
       const data = res.data || { items: [] };
-      if (!data.items || data.items.length === 0) {
-        data.items = [
-          {
-            _id: "test1",
-            book: "68f36c3e8a23553d16b11289",
-            quantity: 1,
-            borrowDate: new Date().toISOString(),
-            dueDate: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString(),
-            bookSnapshot: {
-              title: "Thao túng tâm lý",
-              author: { name: "Lê Hoài Phong" },
-            },
-          },
-        ];
-      }
-
-      setCart(data);
+      const normalizedItems = Array.isArray(data.items) ? data.items : [];
+      setCart({ ...data, items: normalizedItems });
       console.log("Cart fetched:", data);
     } catch (err) {
       console.error("❌ Lỗi fetch cart:", err);
@@ -40,21 +27,7 @@ const Cart = () => {
         return;
       }
       message.error("Không thể tải giỏ hàng!");
-      setCart({
-        items: [
-          {
-            _id: "test1",
-            book: "68f36c3e8a23553d16b11289",
-            quantity: 1,
-            borrowDate: new Date().toISOString(),
-            dueDate: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString(),
-            bookSnapshot: {
-              title: "Thao túng tâm lý",
-              author: { name: "Lê Hoài Phong" },
-            },
-          },
-        ],
-      });
+      setCart({ items: [] });
     }
   };
 
@@ -263,17 +236,26 @@ const Cart = () => {
             </Space>
           </div>
 
-          <Table
-            rowKey={(record) => record._id}
-            columns={columns}
-            dataSource={Array.isArray(cart.items) ? cart.items : []}
-            pagination={{ pageSize: 6 }}
-            bordered
-          />
+          {isEmpty ? (
+            <div className="text-center py-16 text-slate-500">
+              <div className="text-4xl mb-3">📭</div>
+              <Typography.Text>Giỏ sách đang trống. Hãy thêm sách để mượn nhé!</Typography.Text>
+            </div>
+          ) : (
+            <>
+              <Table
+                rowKey={(record) => record._id}
+                columns={columns}
+                dataSource={items}
+                pagination={{ pageSize: 6 }}
+                bordered
+              />
 
-          <div className="flex justify-end mt-4 text-sm text-slate-600">
-            Tổng đầu sách: <span className="font-semibold text-slate-900 ml-1">{cart.items?.length || 0}</span>
-          </div>
+              <div className="flex justify-end mt-4 text-sm text-slate-600">
+                Tổng đầu sách: <span className="font-semibold text-slate-900 ml-1">{items.length}</span>
+              </div>
+            </>
+          )}
         </div>
       </div>
     </div>

@@ -34,7 +34,9 @@ router.post("/", verifyToken, async (req, res) => {
     const user = await User.findById(req.user.id).lean();
     const borrowings = await Promise.all(
       items.map(async (item) => {
-        const book = await Book.findById(item.bookId).lean();
+        const book = await Book.findById(item.bookId)
+          .populate("author", "name")
+          .lean();
 
         // ✅ Tạo snapshot an toàn — không bao giờ null
         const userSnapshot = user
@@ -54,7 +56,9 @@ router.post("/", verifyToken, async (req, res) => {
         const bookSnapshot = book
           ? {
               title: book.title || "Không rõ",
-              author: book.author?.name || "Không rõ",
+              author:
+                (typeof book.author === "string" ? book.author : book.author?.name) ||
+                "Không rõ",
               isbn: book.code || "N/A",
             }
           : {
@@ -95,7 +99,7 @@ router.get("/", verifyToken, async (req, res) => {
   try {
     const borrowings = await Borrowing.find()
       .sort({ borrowDate: -1 })
-      .populate("book")
+      .populate({ path: "book", populate: { path: "author", select: "name" } })
       .populate("user");
 
     const now = new Date();
@@ -121,7 +125,7 @@ router.get("/history/:userId", verifyToken, isSelfOrAdmin("userId"), async (req,
 
     let borrowings = await Borrowing.find(filter)
       .sort({ borrowDate: -1 })
-      .populate("book")
+      .populate({ path: "book", populate: { path: "author", select: "name" } })
       .populate("user");
 
     const now = new Date();

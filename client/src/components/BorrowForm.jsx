@@ -1,17 +1,52 @@
 import React, { useState, useEffect } from "react";
+import axios from "axios";
 import { useCart } from "../components/cart";
 
 const BorrowForm = ({ book, onClose }) => {
   const { addToCart } = useCart();
 
   const user = JSON.parse(localStorage.getItem("user")) || {};
+  const derivedStudentId = user.studentId || user.studentCode || "";
   const [formData, setFormData] = useState({
     fullName: user.fullName || "",
-    studentId: user.studentId || "",
+    studentId: derivedStudentId,
     email: user.email || "",
     borrowDate: "",
     returnDate: "",
   });
+
+  useEffect(() => {
+    const ensureStudentId = async () => {
+      if (formData.studentId) return;
+
+      const latestUser = JSON.parse(localStorage.getItem("user")) || {};
+      const token = localStorage.getItem("token");
+      const userId = latestUser?._id || latestUser?.id;
+      if (!token || !userId) return;
+
+      try {
+        const res = await axios.get(
+          `http://localhost:5000/api/users/${userId}/profile`,
+          { headers: { Authorization: `Bearer ${token}` } }
+        );
+        const fetchedCode = res.data?.user?.studentCode || "";
+        if (fetchedCode) {
+          const updatedUser = {
+            ...latestUser,
+            studentCode: fetchedCode,
+            studentId: fetchedCode,
+          };
+          localStorage.setItem("user", JSON.stringify(updatedUser));
+          setFormData((prev) => ({ ...prev, studentId: fetchedCode }));
+        }
+      } catch (error) {
+        console.error("❌ Không lấy được mã sinh viên:", error);
+      }
+    };
+
+    ensureStudentId();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [formData.studentId]);
 
   const handleChange = (e) => {
     setFormData({ ...formData, [e.target.name]: e.target.value });
