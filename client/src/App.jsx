@@ -1,4 +1,4 @@
-import { BrowserRouter as Router, Routes, Route } from "react-router-dom";
+import { BrowserRouter as Router, Routes, Route, Navigate } from "react-router-dom";
 import Home from "./pages/Home";
 import Login from "./pages/Login";
 import Register from "./pages/Register";
@@ -35,6 +35,16 @@ import History from "./pages/History";
 import ClientLayout from "./layout/ClientLayout";
 import CourseManager from "./pages/admin/CourseManager";
 
+const AdminRoute = ({ children }) => {
+  const stored = localStorage.getItem("adminUser");
+  const adminUser = stored ? JSON.parse(stored) : null;
+  const adminToken = localStorage.getItem("adminToken");
+  if (!adminToken || !adminUser || adminUser.role !== "admin") {
+    return <Navigate to="/login" replace />;
+  }
+  return children;
+};
+
 function App() {
   return (
     <Router>
@@ -57,7 +67,14 @@ function App() {
         </Route>
 
         {/* Admin routes */}
-        <Route path="/admin/*" element={<AdminLayout />}>
+        <Route
+          path="/admin/*"
+          element={
+            <AdminRoute>
+              <AdminLayout />
+            </AdminRoute>
+          }
+        >
           <Route index element={<AdminHome />} />
           <Route path="bookmanager" element={<BookManager />} />
           <Route path="bookadd" element={<BookAdd />} />

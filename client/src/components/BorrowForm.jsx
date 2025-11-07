@@ -6,6 +6,7 @@ const BorrowForm = ({ book, onClose }) => {
   const { addToCart } = useCart();
 
   const user = JSON.parse(localStorage.getItem("clientUser")) || {};
+  const isAdmin = user.role === "admin";
   const derivedStudentId = user.studentId || user.studentCode || "";
   const [formData, setFormData] = useState({
     fullName: user.fullName || "",
@@ -17,7 +18,7 @@ const BorrowForm = ({ book, onClose }) => {
 
   useEffect(() => {
     const ensureStudentId = async () => {
-      if (formData.studentId) return;
+      if (formData.studentId || isAdmin) return;
 
       const latestUser = JSON.parse(localStorage.getItem("clientUser")) || {};
       const token = localStorage.getItem("clientToken");
@@ -55,6 +56,10 @@ const BorrowForm = ({ book, onClose }) => {
   const handleSubmit = async (e) => {
     e.preventDefault();
     try {
+      if (isAdmin) {
+        alert("Tài khoản quản trị không thể mượn sách.");
+        return;
+      }
       const borrowDate = new Date(formData.borrowDate);
       const returnDate = new Date(formData.returnDate);
       if (borrowDate < new Date().setHours(0, 0, 0, 0)) {

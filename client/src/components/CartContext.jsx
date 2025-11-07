@@ -11,10 +11,12 @@ export function CartProvider({ children }) {
   const API = "http://localhost:5000/api/cart";
   const user = JSON.parse(localStorage.getItem("clientUser"));
   const userId = user?._id || user?.id || null;
+  const isAdmin = user?.role === "admin";
 
   const fetchCart = useCallback(async () => {
-    if (!userId) {
+    if (!userId || isAdmin) {
       setCart({ userId: null, items: [] });
+      localStorage.removeItem("cart");
       return;
     }
     try {
@@ -27,7 +29,10 @@ export function CartProvider({ children }) {
   }, [userId]);
 
   const addToCart = async ({ bookId, quantity = 1, borrowDate, returnDate }) => {
-    if (!userId) return;
+    if (!userId || isAdmin) {
+      if (isAdmin) alert("Tài khoản quản trị không thể mượn sách.");
+      return;
+    }
     try {
       const payload = {
         userId,
@@ -47,7 +52,7 @@ export function CartProvider({ children }) {
   };
 
   const updateItem = async ({ bookId, quantity }) => {
-    if (!userId) return;
+    if (!userId || isAdmin) return;
     try {
       const res = await axios.put(`${API}/update`, { userId, bookId, quantity });
       setCart(res.data);
@@ -57,7 +62,7 @@ export function CartProvider({ children }) {
   };
 
   const removeItem = async (bookId) => {
-    if (!userId) return;
+    if (!userId || isAdmin) return;
     try {
       const res = await axios.delete(`${API}/remove`, { data: { userId, bookId } });
       setCart(res.data);
@@ -67,7 +72,7 @@ export function CartProvider({ children }) {
   };
 
   const clearCart = async () => {
-    if (!userId) return;
+    if (!userId || isAdmin) return;
     try {
       const res = await axios.delete(`${API}/clear`, { data: { userId } });
       setCart(res.data || { userId, items: [] });

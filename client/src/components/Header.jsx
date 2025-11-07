@@ -104,6 +104,8 @@ const Header = ({ selectedCategory, setSelectedCategory, selectedAuthor, setSele
     setMenuOpen(false);
   };
 
+  const isAdmin = user?.role === "admin";
+
   return (
     <header className="w-full bg-white shadow-md border-b border-gray-200 font-sans">
       <div className="bg-red-600 text-white text-sm py-1">
@@ -133,19 +135,21 @@ const Header = ({ selectedCategory, setSelectedCategory, selectedAuthor, setSele
         </form>
 
         <div className="flex items-center gap-5">
-          <Link to="/cart" className="relative text-gray-700 hover:text-red-700 transition">
-            <ShoppingCart size={24} />
-            {totalItems > 0 && (
-              <span className="absolute -top-2 -right-2 bg-red-600 text-white text-xs w-5 h-5 rounded-full flex items-center justify-center font-semibold">
-                {totalItems}
-              </span>
-            )}
-          </Link>
+          {!isAdmin && (
+            <Link to="/cart" className="relative text-gray-700 hover:text-red-700 transition">
+              <ShoppingCart size={24} />
+              {totalItems > 0 && (
+                <span className="absolute -top-2 -right-2 bg-red-600 text-white text-xs w-5 h-5 rounded-full flex items-center justify-center font-semibold">
+                  {totalItems}
+                </span>
+              )}
+            </Link>
+          )}
 
           {user ? (
             <div ref={userMenuRef} className="relative">
               <button onClick={() => setUserMenuOpen((prev) => !prev)} className="text-gray-700 hover:text-red-700 font-medium">
-                {user.role === "admin" ? "Admin" : (user.fullName || user.name || user.email || "Tài khoản")}
+                {isAdmin ? "Admin" : (user.fullName || user.name || user.email || "Tài khoản")}
               </button>
               <AnimatePresence>
                 {userMenuOpen && (
@@ -155,7 +159,7 @@ const Header = ({ selectedCategory, setSelectedCategory, selectedAuthor, setSele
                     exit={{ opacity: 0, y: -10 }}
                     className="absolute right-0 mt-3 bg-white text-gray-800 rounded-xl overflow-hidden shadow-xl w-48 border border-gray-100 z-50"
                   >
-                    {user.role === "admin" && (
+                    {isAdmin && (
                       <li>
                         <Link to="/admin" className="flex items-center gap-2 px-4 py-2 hover:bg-gray-100">
                           <LayoutDashboard size={16} /> Quản trị

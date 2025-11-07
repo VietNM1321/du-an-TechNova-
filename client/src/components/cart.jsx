@@ -9,12 +9,19 @@ export function CartProvider({ children }) {
   const savedToken = localStorage.getItem("clientToken");
   const initialUserId = savedUser?._id || savedUser?.id || null;
   const derivedStudentId = savedUser?.studentId || savedUser?.studentCode || "";
+  const isAdmin = savedUser?.role === "admin";
   const [cart, setCart] = useState({ items: [], userId: initialUserId });
   const API = "http://localhost:5000/api/cart";
 
   const fetchCart = async () => {
     try {
-      if (!savedToken) return; // chưa đăng nhập thì bỏ qua
+      if (!savedToken || isAdmin) {
+        if (isAdmin) {
+          setCart({ userId: null, items: [] });
+          localStorage.removeItem("cart");
+        }
+        return; // chưa đăng nhập thì bỏ qua
+      }
       const res = await axios.get(API, { headers: { Authorization: `Bearer ${savedToken}` } });
       setCart(res.data || { userId: initialUserId, items: [] });
       localStorage.setItem("cart", JSON.stringify(res.data || { userId: initialUserId, items: [] }));
@@ -33,6 +40,10 @@ export function CartProvider({ children }) {
     returnDate,
   }) => {
     try {
+      if (isAdmin) {
+        alert("Tài khoản quản trị không thể mượn sách.");
+        throw new Error("Admin not allowed");
+      }
       if (!savedToken || !initialUserId) {
         alert("Vui lòng đăng nhập để mượn sách.");
         throw new Error("Not authenticated");
@@ -60,7 +71,7 @@ export function CartProvider({ children }) {
 
   const updateItem = async ({ bookId, quantity }) => {
     try {
-      if (!savedToken) throw new Error("Not authenticated");
+      if (!savedToken || isAdmin) throw new Error("Not authenticated");
       const res = await axios.put(
         `${API}/update`,
         { bookId, quantity },
@@ -75,7 +86,7 @@ export function CartProvider({ children }) {
 
   const removeItem = async (bookId) => {
     try {
-      if (!savedToken) throw new Error("Not authenticated");
+      if (!savedToken || isAdmin) throw new Error("Not authenticated");
       const res = await axios.delete(`${API}/remove`, {
         headers: { Authorization: `Bearer ${savedToken}` },
         data: { bookId },
@@ -89,7 +100,7 @@ export function CartProvider({ children }) {
 
   const clearCart = async () => {
     try {
-      if (!savedToken) throw new Error("Not authenticated");
+      if (!savedToken || isAdmin) throw new Error("Not authenticated");
       const res = await axios.delete(`${API}/clear`, { headers: { Authorization: `Bearer ${savedToken}` } });
       setCart(res.data || { userId: initialUserId, items: [] });
       localStorage.setItem("cart", JSON.stringify(res.data || { userId: initialUserId, items: [] }));

@@ -2,17 +2,24 @@ import React, { useEffect, useState } from "react";
 import axios from "axios";
 import { Table, Button, InputNumber, message, Space, Modal, Typography } from "antd";
 import { ExclamationCircleOutlined, DeleteOutlined, ClearOutlined, CheckCircleOutlined } from "@ant-design/icons";
+import { useNavigate } from "react-router-dom";
 
 const Cart = () => {
   const [loading, setLoading] = useState(false);
   const [cart, setCart] = useState({ items: [] });
+  const navigate = useNavigate();
   const token = localStorage.getItem("clientToken");
   const user = JSON.parse(localStorage.getItem("clientUser") || "null");
   const items = Array.isArray(cart.items) ? cart.items : [];
   const isEmpty = items.length === 0;
+  const isAdmin = user?.role === "admin";
   const fetchCart = async () => {
     try {
       if (!token) throw new Error("UNAUTHENTICATED");
+      if (isAdmin) {
+        setCart({ items: [], userId: null });
+        return;
+      }
       const res = await axios.get("http://localhost:5000/api/cart", {
         headers: { Authorization: `Bearer ${token}` },
       });
@@ -33,7 +40,7 @@ const Cart = () => {
 
   useEffect(() => {
     fetchCart();
-  }, []);
+  }, [token, isAdmin]);
   const handleQuantityChange = (_id, value) => {
     setCart((prev) => ({
       ...prev,
@@ -114,6 +121,10 @@ const Cart = () => {
     },
   ];
   const handleBorrow = async () => {
+    if (isAdmin) {
+      message.info("Tài khoản quản trị không thể tạo đơn mượn.");
+      return;
+    }
     if (!cart.items || cart.items.length === 0) {
       message.warning("Giỏ sách đang trống!");
       return;
@@ -169,6 +180,10 @@ const Cart = () => {
 
   const handleRemoveItem = async (record) => {
     try {
+      if (isAdmin) {
+        message.info("Tài khoản quản trị không thể thao tác giỏ sách.");
+        return;
+      }
       if (!token) {
         message.warning("Vui lòng đăng nhập để thao tác.");
         return;
@@ -195,6 +210,10 @@ const Cart = () => {
       cancelText: "Hủy",
       async onOk() {
         try {
+          if (isAdmin) {
+            message.info("Tài khoản quản trị không thể thao tác giỏ sách.");
+            return;
+          }
           if (!token) throw new Error("UNAUTHENTICATED");
           await axios.delete("http://localhost:5000/api/cart/clear", {
             headers: { Authorization: `Bearer ${token}` },
@@ -208,6 +227,22 @@ const Cart = () => {
       },
     });
   };
+
+  if (isAdmin) {
+    return (
+      <div className="min-h-screen bg-gradient-to-b from-slate-50 to-white">
+        <div className="container mx-auto px-4 py-10">
+          <div className="max-w-3xl mx-auto bg-white rounded-2xl shadow-sm border border-slate-200 p-8 text-center space-y-4">
+            <Typography.Title level={3}>📚 Giỏ mượn dành cho sinh viên</Typography.Title>
+            <p className="text-slate-600">
+              Tài khoản quản trị không sử dụng giỏ sách. Vui lòng đăng nhập bằng tài khoản sinh viên để mượn sách.
+            </p>
+            <Button type="primary" onClick={() => navigate("/login")}>Đăng nhập tài khoản sinh viên</Button>
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-gradient-to-b from-slate-50 to-white">
