@@ -26,10 +26,21 @@ function AuthForm({ mode }) {
       const data = await res.json();
       if (res.ok) {
         if (isLogin) {
-          localStorage.setItem("token", data.token);
-          if (data.user) {
-            localStorage.setItem("user", JSON.stringify(data.user));
+          if (data.user?.role === "admin") {
+            localStorage.setItem("adminToken", data.token);
+            localStorage.setItem("adminUser", JSON.stringify(data.user));
+            localStorage.setItem("clientToken", data.token);
+            if (data.user) {
+              localStorage.setItem("clientUser", JSON.stringify(data.user));
+            }
+          } else {
+            localStorage.setItem("clientToken", data.token);
+            if (data.user) {
+              localStorage.setItem("clientUser", JSON.stringify(data.user));
+            }
           }
+          localStorage.removeItem("token");
+          localStorage.removeItem("user");
           window.dispatchEvent(new Event("authChange"));
           alert("Đăng nhập thành công 🎉");
           window.location.replace("/");

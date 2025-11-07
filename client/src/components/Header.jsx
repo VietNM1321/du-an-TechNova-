@@ -18,7 +18,7 @@ const Header = ({ selectedCategory, setSelectedCategory, selectedAuthor, setSele
   const navigate = useNavigate();
   const location = useLocation();
   useEffect(() => {
-    const storedUser = localStorage.getItem("user");
+    const storedUser = localStorage.getItem("clientUser");
     if (storedUser) {
       const parsedUser = JSON.parse(storedUser);
       setUser(parsedUser);
@@ -30,7 +30,7 @@ const Header = ({ selectedCategory, setSelectedCategory, selectedAuthor, setSele
   // Lắng nghe sự kiện đăng nhập/đăng xuất để cập nhật Header
   useEffect(() => {
     const handleAuthChange = () => {
-      const storedUser = localStorage.getItem("user");
+      const storedUser = localStorage.getItem("clientUser");
       setUser(storedUser ? JSON.parse(storedUser) : null);
     };
     window.addEventListener("authChange", handleAuthChange);
@@ -42,7 +42,7 @@ const Header = ({ selectedCategory, setSelectedCategory, selectedAuthor, setSele
   }, []);
   // Đồng bộ khi chuyển route để đảm bảo header cập nhật ngay sau điều hướng
   useEffect(() => {
-    const storedUser = localStorage.getItem("user");
+    const storedUser = localStorage.getItem("clientUser");
     setUser(storedUser ? JSON.parse(storedUser) : null);
   }, [location.pathname]);
   useEffect(() => {
@@ -73,6 +73,8 @@ const Header = ({ selectedCategory, setSelectedCategory, selectedAuthor, setSele
 
   //  Đăng xuất
   const handleLogout = () => {
+    localStorage.removeItem("clientUser");
+    localStorage.removeItem("clientToken");
     localStorage.removeItem("user");
     localStorage.removeItem("token");
     if (user) localStorage.removeItem(`cart_${user.email}`);

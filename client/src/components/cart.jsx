@@ -5,8 +5,8 @@ const CartContext = createContext();
 export const useCart = () => useContext(CartContext);
 
 export function CartProvider({ children }) {
-  const savedUser = JSON.parse(localStorage.getItem("user") || "null");
-  const savedToken = localStorage.getItem("token");
+  const savedUser = JSON.parse(localStorage.getItem("clientUser") || "null");
+  const savedToken = localStorage.getItem("clientToken");
   const initialUserId = savedUser?._id || savedUser?.id || null;
   const derivedStudentId = savedUser?.studentId || savedUser?.studentCode || "";
   const [cart, setCart] = useState({ items: [], userId: initialUserId });

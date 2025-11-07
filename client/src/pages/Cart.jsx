@@ -6,8 +6,8 @@ import { ExclamationCircleOutlined, DeleteOutlined, ClearOutlined, CheckCircleOu
 const Cart = () => {
   const [loading, setLoading] = useState(false);
   const [cart, setCart] = useState({ items: [] });
-  const token = localStorage.getItem("token");
-  const user = JSON.parse(localStorage.getItem("user") || "null");
+  const token = localStorage.getItem("clientToken");
+  const user = JSON.parse(localStorage.getItem("clientUser") || "null");
   const items = Array.isArray(cart.items) ? cart.items : [];
   const isEmpty = items.length === 0;
   const fetchCart = async () => {

@@ -24,7 +24,7 @@ const BookEdit = () => {
   useEffect(() => {
     const fetchData = async () => {
       try {
-        const token = localStorage.getItem("token");
+        const token = localStorage.getItem("adminToken");
         const authConfig = token
           ? { headers: { Authorization: `Bearer ${token}` } }
           : undefined;
@@ -61,7 +61,7 @@ const BookEdit = () => {
         return setForm((prev) => ({ ...prev, bookCode: "" }));
       setLoadingCode(true);
       try {
-        const token = localStorage.getItem("token");
+        const token = localStorage.getItem("adminToken");
         const authConfig = token
           ? { headers: { Authorization: `Bearer ${token}` } }
           : undefined;
@@ -115,7 +115,7 @@ const BookEdit = () => {
     }
 
     try {
-      const token = localStorage.getItem("token");
+      const token = localStorage.getItem("adminToken");
       const headers = {
         "Content-Type": "multipart/form-data",
       };

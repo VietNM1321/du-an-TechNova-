@@ -6,7 +6,7 @@ import axios from "axios";
 const Profile = () => {
   const [user, setUser] = useState(() => {
     // ✅ Lấy sẵn user từ localStorage để hiển thị ngay
-    const stored = localStorage.getItem("user");
+    const stored = localStorage.getItem("clientUser");
     return stored ? JSON.parse(stored) : null;
   });
   const [borrowedBooks, setBorrowedBooks] = useState([]);
@@ -17,7 +17,7 @@ const Profile = () => {
 
   useEffect(() => {
     const fetchProfile = async () => {
-      const userData = JSON.parse(localStorage.getItem("user"));
+      const userData = JSON.parse(localStorage.getItem("clientUser"));
       if (!userData || !userData._id) {
         alert("Chưa đăng nhập!");
         return;

@@ -9,7 +9,7 @@ const SetPassword = () => {
 
   const fetchUsers = async () => {
     try {
-      const token = localStorage.getItem("token");
+      const token = localStorage.getItem("adminToken");
       if (!token) throw new Error("UNAUTHENTICATED");
       const res = await axios.get("http://localhost:5000/api/auth/users", {
         headers: { Authorization: `Bearer ${token}` },
@@ -42,7 +42,7 @@ const SetPassword = () => {
     setLoadingIds((prev) => [...prev, id]);
 
     try {
-      const token = localStorage.getItem("token");
+      const token = localStorage.getItem("adminToken");
       if (!token) throw new Error("UNAUTHENTICATED");
       const res = await axios.put(
         `http://localhost:5000/api/auth/setpassword/${id}`,

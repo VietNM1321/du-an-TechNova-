@@ -10,7 +10,7 @@ const AdminHeader = () => {
 
   useEffect(() => {
     // Lấy thông tin user từ localStorage
-    const storedUser = localStorage.getItem("user");
+    const storedUser = localStorage.getItem("adminUser");
     if (storedUser) {
       try {
         const user = JSON.parse(storedUser);
@@ -24,6 +24,8 @@ const AdminHeader = () => {
   }, []);
 
   const handleLogout = () => {
+    localStorage.removeItem("adminToken");
+    localStorage.removeItem("adminUser");
     localStorage.removeItem("token");
     localStorage.removeItem("user");
     navigate("/login"); // Điều hướng về trang đăng nhập

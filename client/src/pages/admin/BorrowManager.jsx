@@ -11,7 +11,7 @@ const BorrowManager = () => {
   const [compensationModal, setCompensationModal] = useState({ open: false, record: null });
   const [compensationAmount, setCompensationAmount] = useState("");
 
-  const token = localStorage.getItem("token");
+  const token = localStorage.getItem("adminToken");
 
   // 📦 Load danh sách đơn mượn
   const fetchBorrowings = async () => {

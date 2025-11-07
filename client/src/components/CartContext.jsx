@@ -9,8 +9,8 @@ export function CartProvider({ children }) {
   const [cart, setCart] = useState({ userId: null, items: [] });
 
   const API = "http://localhost:5000/api/cart";
-  const user = JSON.parse(localStorage.getItem("user"));
-  const userId = user?._id || null;
+  const user = JSON.parse(localStorage.getItem("clientUser"));
+  const userId = user?._id || user?.id || null;
 
   const fetchCart = useCallback(async () => {
     if (!userId) {
@@ -34,7 +34,7 @@ export function CartProvider({ children }) {
         bookId,
         quantity,
         fullName: user.fullName,
-        studentId: user.studentId,
+        studentId: user.studentId || user.studentCode || "",
         email: user.email,
         borrowDate,
         returnDate,

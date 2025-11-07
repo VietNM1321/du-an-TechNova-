@@ -20,9 +20,9 @@ const STATUS_COLOR = {
 const History = ({ userId, refreshFlag }) => {
   const [history, setHistory] = useState([]);
   const [loading, setLoading] = useState(false);
-  const token = localStorage.getItem("token");
-  const storedUser = JSON.parse(localStorage.getItem("user") || "null");
-  const effectiveUserId = userId || storedUser?.id;
+  const token = localStorage.getItem("clientToken");
+  const storedUser = JSON.parse(localStorage.getItem("clientUser") || "null");
+  const effectiveUserId = userId || storedUser?._id || storedUser?.id;
 
   const fetchHistory = async () => {
     try {

@@ -19,12 +19,26 @@ const Login = () => {
       // 👉 Giả sử backend trả về: { token, user: { studentCode, email, name } }
       const { token, user } = res.data;
 
-      // Lưu token + thông tin user vào localStorage
-      localStorage.setItem("token", token);
-      localStorage.setItem("user", JSON.stringify(user));
-
-      setMessage("✅ Đăng nhập thành công!");
-      setTimeout(() => navigate("/"), 1000);
+      // Xóa các session cũ của cùng loại để tránh lẫn lộn
+      if (user.role === "admin") {
+        localStorage.setItem("adminToken", token);
+        localStorage.setItem("adminUser", JSON.stringify(user));
+        localStorage.setItem("clientToken", token);
+        localStorage.setItem("clientUser", JSON.stringify(user));
+        localStorage.removeItem("token");
+        localStorage.removeItem("user");
+        window.dispatchEvent(new Event("authChange"));
+        setMessage("✅ Đăng nhập quản trị thành công!");
+        setTimeout(() => navigate("/"), 800);
+      } else {
+        localStorage.setItem("clientToken", token);
+        localStorage.setItem("clientUser", JSON.stringify(user));
+        localStorage.removeItem("token");
+        localStorage.removeItem("user");
+        window.dispatchEvent(new Event("authChange"));
+        setMessage("✅ Đăng nhập thành công!");
+        setTimeout(() => navigate("/"), 800);
+      }
     } catch (err) {
       setMessage(err.response?.data?.message || "❌ Đăng nhập thất bại!");
     }

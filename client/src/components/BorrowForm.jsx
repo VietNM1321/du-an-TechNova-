@@ -5,7 +5,7 @@ import { useCart } from "../components/cart";
 const BorrowForm = ({ book, onClose }) => {
   const { addToCart } = useCart();
 
-  const user = JSON.parse(localStorage.getItem("user")) || {};
+  const user = JSON.parse(localStorage.getItem("clientUser")) || {};
   const derivedStudentId = user.studentId || user.studentCode || "";
   const [formData, setFormData] = useState({
     fullName: user.fullName || "",
@@ -19,8 +19,8 @@ const BorrowForm = ({ book, onClose }) => {
     const ensureStudentId = async () => {
       if (formData.studentId) return;
 
-      const latestUser = JSON.parse(localStorage.getItem("user")) || {};
-      const token = localStorage.getItem("token");
+      const latestUser = JSON.parse(localStorage.getItem("clientUser")) || {};
+      const token = localStorage.getItem("clientToken");
       const userId = latestUser?._id || latestUser?.id;
       if (!token || !userId) return;
 
@@ -36,7 +36,7 @@ const BorrowForm = ({ book, onClose }) => {
             studentCode: fetchedCode,
             studentId: fetchedCode,
           };
-          localStorage.setItem("user", JSON.stringify(updatedUser));
+          localStorage.setItem("clientUser", JSON.stringify(updatedUser));
           setFormData((prev) => ({ ...prev, studentId: fetchedCode }));
         }
       } catch (error) {

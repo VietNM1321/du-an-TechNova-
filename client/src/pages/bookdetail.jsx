@@ -53,8 +53,8 @@ function BookDetail() {
   };
 
   const handleBorrowClick = () => {
-    const token = localStorage.getItem("token");
-    const user = localStorage.getItem("user");
+    const token = localStorage.getItem("clientToken");
+    const user = localStorage.getItem("clientUser");
     if (!token || !user) {
       alert("Vui lòng đăng nhập để mượn sách.");
       return;
