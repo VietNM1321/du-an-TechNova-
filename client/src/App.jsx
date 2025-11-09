@@ -35,6 +35,7 @@ import History from "./pages/History";
 import ClientLayout from "./layout/ClientLayout";
 import CourseManager from "./pages/admin/CourseManager";
 import ReviewManager from "./pages/admin/ReviewManager";
+import ChangePassword from "./pages/ChangePassword"
 
 const AdminRoute = ({ children }) => {
   const stored = localStorage.getItem("adminUser");
@@ -65,6 +66,7 @@ function App() {
           <Route path="search" element={<SearchResults />} />
           <Route path="profile/:id" element={<Profile />} />
           <Route path="/history" element={<History />} />
+          <Route path="/changepassword" element={<ChangePassword />} />
         </Route>
 
         {/* Admin routes */}

@@ -4,6 +4,8 @@ import nodemailer from "nodemailer";
 import dotenv from "dotenv";
 import User from "../models/User.js";
 import { verifyToken, requireRole } from "../middleware/auth.js";
+import Course from "../models/Course.js";
+
 
 dotenv.config();
 const router = express.Router();
@@ -33,31 +35,65 @@ const createDefaultAdmin = async () => {
 createDefaultAdmin();
 router.post("/register", async (req, res) => {
   try {
-    const { studentCode, email, fullName, course } = req.body;
-    if (!studentCode || !email || !fullName || !course)
+    const { studentCode, fullName, email, courseId } = req.body;
+
+    if (!studentCode || !fullName || !email || !courseId) {
       return res.status(400).json({ message: "Vui lòng nhập đầy đủ thông tin!" });
+    }
 
+    // ✅ Check email đã tồn tại chưa
     const existingUser = await User.findOne({ email });
-    if (existingUser)
+    if (existingUser) {
       return res.status(400).json({ message: "Email đã được đăng ký!" });
+    }
 
+    // ✅ Lấy khóa học đã chọn
+    const selectedCourse = await Course.findById(courseId);
+    if (!selectedCourse) {
+      return res.status(400).json({ message: "Khóa học không tồn tại!" });
+    }
+
+    // ✅ Validate studentCode phù hợp với min/max của khóa học
+    const codeNum = parseInt(studentCode.slice(2)); // lấy số cuối sau 'PH'
+    if (isNaN(codeNum)) {
+      return res.status(400).json({ message: "Mã sinh viên không hợp lệ!" });
+    }
+
+    if (codeNum < selectedCourse.minStudentCode || codeNum > selectedCourse.maxStudentCode) {
+      return res.status(400).json({
+        message: `Mã sinh viên không phù hợp với khóa học ${selectedCourse.courseName}. ` +
+                 `Phải từ PH${selectedCourse.minStudentCode
+                   .toString()
+                   .padStart(4, "0")} đến PH${selectedCourse.maxStudentCode
+                   .toString()
+                   .padStart(4, "0")}`
+      });
+    }
+
+    // ✅ Tạo user
     const newUser = new User({
       studentCode,
-      email,
       fullName,
-      course,
+      email,
+      course: selectedCourse.courseName,
       role: "student",
       active: true,
-      password: "",
+      password: "", // chưa có mật khẩu
     });
 
     await newUser.save();
+
+    // ✅ Thêm sinh viên vào khóa học
+    selectedCourse.students.push({ studentCode, fullName });
+    await selectedCourse.save();
+
     res.status(201).json({ message: "Đăng ký thành công!" });
-  } catch (error) {
-    console.error("❌ Lỗi đăng ký:", error);
+  } catch (err) {
+    console.error("❌ Lỗi đăng ký:", err);
     res.status(500).json({ message: "Lỗi server khi đăng ký!" });
   }
 });
+
 router.put("/setpassword/:id", verifyToken, requireRole("admin"), async (req, res) => {
   const { id } = req.params;
   const { password } = req.body;
@@ -85,7 +121,7 @@ router.put("/setpassword/:id", verifyToken, requireRole("admin"), async (req, re
     const mailOptions = {
       from: process.env.EMAIL_USER,
       to: user.email,
-      subject: "Mật khẩu đăng nhập hệ thống TechNova 📚",
+      subject: "Mật khẩu đăng nhập thư viện sách 📚",
       html: `
         <h3>Xin chào ${user.fullName} 👋</h3>
         <p>Bạn đã được cấp mật khẩu để đăng nhập hệ thống sinh viên.</p>
@@ -121,6 +157,24 @@ router.get("/users", verifyToken, requireRole("admin"), async (req, res) => {
     res.status(500).json({ message: "Lỗi server khi lấy danh sách sinh viên!" });
   }
 });
+router.put("/users/:id/toggle-active", verifyToken, requireRole("admin"), async (req, res) => {
+  try {
+    const { id } = req.params;
+    const user = await User.findById(id);
+    if (!user) return res.status(404).json({ message: "Không tìm thấy người dùng!" });
+
+    user.active = !user.active; // đổi trạng thái
+    await user.save();
+
+    res.json({
+      message: `Người dùng ${user.active ? "đã được mở khóa" : "đã bị khóa"} thành công!`,
+      user,
+    });
+  } catch (err) {
+    console.error("❌ Lỗi khi toggle active:", err);
+    res.status(500).json({ message: "Lỗi server!" });
+  }
+});
 router.post("/login", async (req, res) => {
   try {
     const { email, password } = req.body;
@@ -129,6 +183,11 @@ router.post("/login", async (req, res) => {
 
     const user = await User.findOne({ email });
     if (!user) return res.status(404).json({ message: "Không tìm thấy người dùng!" });
+
+    // ✅ Kiểm tra tài khoản có đang active không
+    if (!user.active) {
+      return res.status(403).json({ message: "Tài khoản của bạn đã bị khóa, không thể đăng nhập!" });
+    }
 
     if (user.password !== password)
       return res.status(400).json({ message: "Sai mật khẩu!" });
@@ -153,6 +212,35 @@ router.post("/login", async (req, res) => {
   } catch (error) {
     console.error("❌ Lỗi đăng nhập:", error);
     res.status(500).json({ message: "Lỗi server khi đăng nhập!" });
+  }
+});
+
+router.put("/changepassword", verifyToken, async (req, res) => {
+  try {
+    const { email, currentPassword, newPassword } = req.body;
+
+    if (!email || !currentPassword || !newPassword) {
+      return res.status(400).json({ message: "Vui lòng nhập đủ thông tin!" });
+    }
+
+    const user = await User.findOne({ email });
+    if (!user) {
+      return res.status(404).json({ message: "Không tìm thấy tài khoản!" });
+    }
+
+    // Kiểm tra mật khẩu hiện tại
+    if (user.password !== currentPassword) {
+      return res.status(400).json({ message: "Mật khẩu hiện tại không đúng!" });
+    }
+
+    // Cập nhật mật khẩu mới
+    user.password = newPassword;
+    await user.save();
+
+    res.json({ message: "✅ Đổi mật khẩu thành công!" });
+  } catch (error) {
+    console.error("❌ Lỗi đổi mật khẩu:", error);
+    res.status(500).json({ message: "Lỗi server khi đổi mật khẩu!" });
   }
 });
 
