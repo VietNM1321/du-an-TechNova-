@@ -9,6 +9,7 @@ import {
   PenTool,
   KeyRound,
   LogOut,
+  MessageSquare,
 } from "lucide-react";
 import AdminHeader from "../components/AdminHeader";
 import AdminFooter from "../components/AdminFooter";
@@ -20,6 +21,7 @@ const sidebarLinks = [
   { to: "/admin/author", label: "Quản lý tác giả", icon: <PenTool size={18} /> },
   { to: "/admin/users", label: "Quản lý người dùng", icon: <Users size={18} /> },
   { to: "/admin/borrowings", label: "Quản lý đơn mượn", icon: <FileText size={18} /> },
+  { to: "/admin/reviews", label: "Quản lý bình luận", icon: <MessageSquare size={18} /> },
   { to: "/admin/course", label: "Quản lý khóa học", icon: <BookOpen size={18} /> },
   { to: "/admin/setpassword", label: "Cấp mật khẩu", icon: <KeyRound size={18} /> },
   { to: "/admin/bookcode", label: "Quản lý mã sách", icon: <FileText size={18} /> },

@@ -8,11 +8,35 @@ router.get("/", async (req, res) => {
     const filter = {};
     if (req.query.bookId) filter.bookId = req.query.bookId;
 
-    const reviews = await Review.find(filter)
-      .populate("userId", "name email")
-      .populate("bookId", "title");
+    // Nếu có bookId, trả về tất cả reviews của sách đó (cho client)
+    if (req.query.bookId) {
+      const reviews = await Review.find(filter)
+        .populate("userId", "fullName email")
+        .populate("bookId", "title")
+        .sort({ createdAt: -1 }); // Sắp xếp mới nhất trước
 
-    res.json(reviews);
+      return res.json(reviews);
+    }
+
+    // Nếu không có bookId, trả về với pagination (cho admin)
+    const page = parseInt(req.query.page) || 1;
+    const limit = parseInt(req.query.limit) || 10;
+    const skip = (page - 1) * limit;
+
+    const total = await Review.countDocuments(filter);
+    const reviews = await Review.find(filter)
+      .populate("userId", "fullName email")
+      .populate("bookId", "title")
+      .sort({ createdAt: -1 }) // Sắp xếp mới nhất trước
+      .skip(skip)
+      .limit(limit);
+
+    res.json({
+      reviews,
+      currentPage: page,
+      totalPages: Math.ceil(total / limit),
+      totalItems: total,
+    });
   } catch (error) {
     res.status(500).json({ message: "Lỗi server khi lấy đánh giá", error });
   }
@@ -21,7 +45,7 @@ router.get("/", async (req, res) => {
 router.get("/:id", async (req, res) => {
   try {
     const review = await Review.findById(req.params.id)
-      .populate("userId", "name email")
+      .populate("userId", "fullName email")
       .populate("bookId", "title");
 
     if (!review) return res.status(404).json({ message: "Không tìm thấy đánh giá" });
@@ -34,14 +58,23 @@ router.get("/:id", async (req, res) => {
 
 router.post("/", async (req, res) => {
   try {
-    const { bookId, rating, comment } = req.body;
+    const { bookId, rating, comment, userId } = req.body;
 
     if (!bookId || !rating) {
       return res.status(400).json({ message: "bookId và rating là bắt buộc" });
     }
 
-    const newReview = new Review({ bookId, rating, comment });
+    const reviewData = { bookId, rating, comment };
+    if (userId) {
+      reviewData.userId = userId;
+    }
+
+    const newReview = new Review(reviewData);
     await newReview.save();
+
+    // Populate userId và bookId trước khi trả về
+    await newReview.populate("userId", "fullName email");
+    await newReview.populate("bookId", "title");
 
     res.status(201).json(newReview);
   } catch (error) {

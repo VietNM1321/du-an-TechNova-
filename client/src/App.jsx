@@ -34,6 +34,7 @@ import Users from "./pages/admin/Users";
 import History from "./pages/History";
 import ClientLayout from "./layout/ClientLayout";
 import CourseManager from "./pages/admin/CourseManager";
+import ReviewManager from "./pages/admin/ReviewManager";
 import ChangePassword from "./pages/ChangePassword"
 
 const AdminRoute = ({ children }) => {
@@ -97,6 +98,7 @@ function App() {
           <Route path="setpassword" element={<SetPassword />} />
           <Route path="users" element={<Users />} />
           <Route path="course" element={<CourseManager />} />
+          <Route path="reviews" element={<ReviewManager />} />
         </Route>
       </Routes>
     </Router>
