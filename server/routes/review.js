@@ -8,11 +8,35 @@ router.get("/", async (req, res) => {
     const filter = {};
     if (req.query.bookId) filter.bookId = req.query.bookId;
 
+    // Nếu có bookId, trả về tất cả reviews của sách đó (cho client)
+    if (req.query.bookId) {
+      const reviews = await Review.find(filter)
+        .populate("userId", "fullName email")
+        .populate("bookId", "title")
+        .sort({ createdAt: -1 }); // Sắp xếp mới nhất trước
+
+      return res.json(reviews);
+    }
+
+    // Nếu không có bookId, trả về với pagination (cho admin)
+    const page = parseInt(req.query.page) || 1;
+    const limit = parseInt(req.query.limit) || 10;
+    const skip = (page - 1) * limit;
+
+    const total = await Review.countDocuments(filter);
     const reviews = await Review.find(filter)
       .populate("userId", "fullName email")
-      .populate("bookId", "title");
+      .populate("bookId", "title")
+      .sort({ createdAt: -1 }) // Sắp xếp mới nhất trước
+      .skip(skip)
+      .limit(limit);
 
-    res.json(reviews);
+    res.json({
+      reviews,
+      currentPage: page,
+      totalPages: Math.ceil(total / limit),
+      totalItems: total,
+    });
   } catch (error) {
     res.status(500).json({ message: "Lỗi server khi lấy đánh giá", error });
   }
