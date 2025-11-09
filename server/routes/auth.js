@@ -4,6 +4,8 @@ import nodemailer from "nodemailer";
 import dotenv from "dotenv";
 import User from "../models/User.js";
 import { verifyToken, requireRole } from "../middleware/auth.js";
+import Course from "../models/Course.js";
+
 
 dotenv.config();
 const router = express.Router();
@@ -33,31 +35,65 @@ const createDefaultAdmin = async () => {
 createDefaultAdmin();
 router.post("/register", async (req, res) => {
   try {
-    const { studentCode, email, fullName, course } = req.body;
-    if (!studentCode || !email || !fullName || !course)
+    const { studentCode, fullName, email, courseId } = req.body;
+
+    if (!studentCode || !fullName || !email || !courseId) {
       return res.status(400).json({ message: "Vui lòng nhập đầy đủ thông tin!" });
+    }
 
+    // ✅ Check email đã tồn tại chưa
     const existingUser = await User.findOne({ email });
-    if (existingUser)
+    if (existingUser) {
       return res.status(400).json({ message: "Email đã được đăng ký!" });
+    }
 
+    // ✅ Lấy khóa học đã chọn
+    const selectedCourse = await Course.findById(courseId);
+    if (!selectedCourse) {
+      return res.status(400).json({ message: "Khóa học không tồn tại!" });
+    }
+
+    // ✅ Validate studentCode phù hợp với min/max của khóa học
+    const codeNum = parseInt(studentCode.slice(2)); // lấy số cuối sau 'PH'
+    if (isNaN(codeNum)) {
+      return res.status(400).json({ message: "Mã sinh viên không hợp lệ!" });
+    }
+
+    if (codeNum < selectedCourse.minStudentCode || codeNum > selectedCourse.maxStudentCode) {
+      return res.status(400).json({
+        message: `Mã sinh viên không phù hợp với khóa học ${selectedCourse.courseName}. ` +
+                 `Phải từ PH${selectedCourse.minStudentCode
+                   .toString()
+                   .padStart(4, "0")} đến PH${selectedCourse.maxStudentCode
+                   .toString()
+                   .padStart(4, "0")}`
+      });
+    }
+
+    // ✅ Tạo user
     const newUser = new User({
       studentCode,
-      email,
       fullName,
-      course,
+      email,
+      course: selectedCourse.courseName,
       role: "student",
       active: true,
-      password: "",
+      password: "", // chưa có mật khẩu
     });
 
     await newUser.save();
+
+    // ✅ Thêm sinh viên vào khóa học
+    selectedCourse.students.push({ studentCode, fullName });
+    await selectedCourse.save();
+
     res.status(201).json({ message: "Đăng ký thành công!" });
-  } catch (error) {
-    console.error("❌ Lỗi đăng ký:", error);
+  } catch (err) {
+    console.error("❌ Lỗi đăng ký:", err);
     res.status(500).json({ message: "Lỗi server khi đăng ký!" });
   }
 });
+
 router.put("/setpassword/:id", verifyToken, requireRole("admin"), async (req, res) => {
   const { id } = req.params;
   const { password } = req.body;
