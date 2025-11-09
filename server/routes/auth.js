@@ -85,7 +85,7 @@ router.put("/setpassword/:id", verifyToken, requireRole("admin"), async (req, re
     const mailOptions = {
       from: process.env.EMAIL_USER,
       to: user.email,
-      subject: "Mật khẩu đăng nhập hệ thống TechNova 📚",
+      subject: "Mật khẩu đăng nhập thư viện sách 📚",
       html: `
         <h3>Xin chào ${user.fullName} 👋</h3>
         <p>Bạn đã được cấp mật khẩu để đăng nhập hệ thống sinh viên.</p>
@@ -153,6 +153,34 @@ router.post("/login", async (req, res) => {
   } catch (error) {
     console.error("❌ Lỗi đăng nhập:", error);
     res.status(500).json({ message: "Lỗi server khi đăng nhập!" });
+  }
+});
+router.put("/changepassword", verifyToken, async (req, res) => {
+  try {
+    const { email, currentPassword, newPassword } = req.body;
+
+    if (!email || !currentPassword || !newPassword) {
+      return res.status(400).json({ message: "Vui lòng nhập đủ thông tin!" });
+    }
+
+    const user = await User.findOne({ email });
+    if (!user) {
+      return res.status(404).json({ message: "Không tìm thấy tài khoản!" });
+    }
+
+    // Kiểm tra mật khẩu hiện tại
+    if (user.password !== currentPassword) {
+      return res.status(400).json({ message: "Mật khẩu hiện tại không đúng!" });
+    }
+
+    // Cập nhật mật khẩu mới
+    user.password = newPassword;
+    await user.save();
+
+    res.json({ message: "✅ Đổi mật khẩu thành công!" });
+  } catch (error) {
+    console.error("❌ Lỗi đổi mật khẩu:", error);
+    res.status(500).json({ message: "Lỗi server khi đổi mật khẩu!" });
   }
 });
 

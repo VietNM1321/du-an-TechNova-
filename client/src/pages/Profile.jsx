@@ -1,11 +1,12 @@
 import { useState, useEffect } from "react";
+import { useNavigate } from "react-router-dom"; // <-- thêm
 import { motion, AnimatePresence } from "framer-motion";
 import { AlertCircle, CheckCircle, Loader2 } from "lucide-react";
 import axios from "axios";
 
 const Profile = () => {
+  const navigate = useNavigate(); // <-- thêm
   const [user, setUser] = useState(() => {
-    // ✅ Lấy sẵn user từ localStorage để hiển thị ngay
     const stored = localStorage.getItem("clientUser");
     return stored ? JSON.parse(stored) : null;
   });
@@ -79,11 +80,20 @@ const Profile = () => {
           <p className="text-gray-700 text-lg mt-2">
             <strong>Email:</strong> {user.email || "Không có"}
           </p>
+
+          {/* Nút Đổi mật khẩu */}
+          <button
+            onClick={() => navigate("/changepassword")}
+            className="mt-4 bg-yellow-500 text-white px-4 py-2 rounded-lg hover:bg-yellow-600 transition"
+          >
+            Đổi mật khẩu
+          </button>
         </div>
       ) : (
         <p className="text-gray-500">Chưa có thông tin người dùng.</p>
       )}
 
+      {/* Danh sách sách đã mượn */}
       <div className="bg-white shadow-md rounded-xl p-6 border border-gray-100">
         <h2 className="text-xl font-semibold mb-4 text-gray-800">
           Danh sách sách đã mượn
@@ -158,9 +168,7 @@ const Profile = () => {
             >
               <h3 className="text-lg font-semibold mb-4">
                 Báo mất/hỏng:{" "}
-                <span className="text-blue-600">
-                  {selectedBook.book?.title}
-                </span>
+                <span className="text-blue-600">{selectedBook.book?.title}</span>
               </h3>
 
               <div className="flex gap-3 mb-4">

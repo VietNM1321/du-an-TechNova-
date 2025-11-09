@@ -16,37 +16,28 @@ const Login = () => {
         password,
       });
 
-      // 👉 Giả sử backend trả về: { token, user: { studentCode, email, name } }
       const { token, user } = res.data;
 
-      // Xóa các session cũ của cùng loại để tránh lẫn lộn
       if (user.role === "admin") {
         localStorage.setItem("adminToken", token);
         localStorage.setItem("adminUser", JSON.stringify(user));
         localStorage.setItem("clientToken", token);
         localStorage.setItem("clientUser", JSON.stringify(user));
-        localStorage.removeItem("token");
-        localStorage.removeItem("user");
-        window.dispatchEvent(new Event("authChange"));
-        setMessage("✅ Đăng nhập quản trị thành công!");
-        setTimeout(() => navigate("/"), 800);
       } else {
         localStorage.setItem("clientToken", token);
         localStorage.setItem("clientUser", JSON.stringify(user));
-        localStorage.removeItem("token");
-        localStorage.removeItem("user");
-        window.dispatchEvent(new Event("authChange"));
-        setMessage("✅ Đăng nhập thành công!");
-        setTimeout(() => navigate("/"), 800);
       }
+
+      window.dispatchEvent(new Event("authChange"));
+      setMessage("✅ Đăng nhập thành công!");
+      setTimeout(() => navigate("/"), 800);
     } catch (err) {
       setMessage(err.response?.data?.message || "❌ Đăng nhập thất bại!");
     }
   };
 
-  const handleRegisterRedirect = () => {
-    navigate("/register");
-  };
+  const handleRegisterRedirect = () => navigate("/register");
+  const handleForgotPasswordRedirect = () => navigate("/setpassword");
 
   return (
     <div className="flex items-center justify-center min-h-screen bg-gradient-to-br from-blue-50 to-blue-100">
@@ -100,6 +91,16 @@ const Login = () => {
           >
             Đăng ký tài khoản mới
           </button>
+
+         
+          <p className="mt-2 text-center text-green-600 text-sm">
+            <span
+              onClick={handleForgotPasswordRedirect}
+              className="cursor-pointer hover:underline"
+            >
+              Quên mật khẩu?
+            </span>
+          </p>
         </form>
 
         {message && (
@@ -115,7 +116,7 @@ const Login = () => {
         )}
 
         <p className="text-center text-gray-500 text-sm mt-6">
-          © 2025 <span className="font-semibold text-blue-600">BookZone</span>.
+          © 2025 <span className="font-semibold text-blue-600">TechNova</span>.
           All rights reserved.
         </p>
       </div>
