@@ -6,11 +6,18 @@ const Users = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
 
+  // Lấy token admin từ localStorage
+  const adminToken = localStorage.getItem("adminToken");
+
   // 🔹 Lấy danh sách người dùng
   const fetchUsers = async () => {
     try {
       setLoading(true);
-      const res = await axios.get("http://localhost:5000/api/users");
+      const res = await axios.get("http://localhost:5000/api/users", {
+        headers: {
+          Authorization: `Bearer ${adminToken}`,
+        },
+      });
 
       // Đảm bảo dữ liệu là mảng
       const data = Array.isArray(res.data)
@@ -28,25 +35,43 @@ const Users = () => {
     }
   };
 
-  // 🔹 Thay đổi trạng thái hoạt động
+  // 🔹 Thay đổi trạng thái hoạt động (Khóa / Mở khóa)
   const toggleActive = async (id) => {
     try {
-      await axios.put(`http://localhost:5000/api/users/${id}/toggle-active`);
-      fetchUsers();
+      await axios.put(
+        `http://localhost:5000/api/users/${id}/toggle-active`,
+        {},
+        {
+          headers: {
+            Authorization: `Bearer ${adminToken}`,
+          },
+        }
+      );
+      fetchUsers(); // cập nhật lại danh sách
     } catch (err) {
       console.error("Lỗi khi thay đổi trạng thái:", err);
-      alert("Không thể thay đổi trạng thái người dùng");
+      alert(
+        err.response?.data?.message || "Không thể thay đổi trạng thái người dùng"
+      );
     }
   };
 
-  // 🔹 Xóa trạng thái “quên mật khẩu”
+  // 🔹 Xóa trạng thái quên mật khẩu
   const clearForgotStatus = async (id) => {
     try {
-      await axios.put(`http://localhost:5000/api/users/${id}/clear-forgot`);
+      await axios.put(
+        `http://localhost:5000/api/users/${id}/clear-forgot`,
+        {},
+        {
+          headers: {
+            Authorization: `Bearer ${adminToken}`,
+          },
+        }
+      );
       fetchUsers();
     } catch (err) {
       console.error("Lỗi khi xóa trạng thái quên mật khẩu:", err);
-      alert("Không thể xóa trạng thái");
+      alert(err.response?.data?.message || "Không thể xóa trạng thái");
     }
   };
 
@@ -100,7 +125,7 @@ const Users = () => {
                   )}
                 </td>
 
-                {/* ✅ Trạng thái quên mật khẩu */}
+                {/* Trạng thái quên mật khẩu */}
                 <td className="border p-2">
                   {u.forgotPassword ? (
                     <div className="flex flex-col items-center gap-1">
@@ -119,7 +144,7 @@ const Users = () => {
                   )}
                 </td>
 
-                {/* ✅ Nút khóa / mở khóa */}
+                {/* Nút khóa / mở khóa */}
                 <td className="border p-2">
                   <button
                     onClick={() => toggleActive(u._id)}

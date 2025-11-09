@@ -157,6 +157,24 @@ router.get("/users", verifyToken, requireRole("admin"), async (req, res) => {
     res.status(500).json({ message: "Lỗi server khi lấy danh sách sinh viên!" });
   }
 });
+router.put("/users/:id/toggle-active", verifyToken, requireRole("admin"), async (req, res) => {
+  try {
+    const { id } = req.params;
+    const user = await User.findById(id);
+    if (!user) return res.status(404).json({ message: "Không tìm thấy người dùng!" });
+
+    user.active = !user.active; // đổi trạng thái
+    await user.save();
+
+    res.json({
+      message: `Người dùng ${user.active ? "đã được mở khóa" : "đã bị khóa"} thành công!`,
+      user,
+    });
+  } catch (err) {
+    console.error("❌ Lỗi khi toggle active:", err);
+    res.status(500).json({ message: "Lỗi server!" });
+  }
+});
 router.post("/login", async (req, res) => {
   try {
     const { email, password } = req.body;
@@ -165,6 +183,11 @@ router.post("/login", async (req, res) => {
 
     const user = await User.findOne({ email });
     if (!user) return res.status(404).json({ message: "Không tìm thấy người dùng!" });
+
+    // ✅ Kiểm tra tài khoản có đang active không
+    if (!user.active) {
+      return res.status(403).json({ message: "Tài khoản của bạn đã bị khóa, không thể đăng nhập!" });
+    }
 
     if (user.password !== password)
       return res.status(400).json({ message: "Sai mật khẩu!" });
@@ -191,6 +214,7 @@ router.post("/login", async (req, res) => {
     res.status(500).json({ message: "Lỗi server khi đăng nhập!" });
   }
 });
+
 router.put("/changepassword", verifyToken, async (req, res) => {
   try {
     const { email, currentPassword, newPassword } = req.body;
