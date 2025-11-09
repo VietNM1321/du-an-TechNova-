@@ -9,7 +9,7 @@ router.get("/", async (req, res) => {
     if (req.query.bookId) filter.bookId = req.query.bookId;
 
     const reviews = await Review.find(filter)
-      .populate("userId", "name email")
+      .populate("userId", "fullName email")
       .populate("bookId", "title");
 
     res.json(reviews);
@@ -21,7 +21,7 @@ router.get("/", async (req, res) => {
 router.get("/:id", async (req, res) => {
   try {
     const review = await Review.findById(req.params.id)
-      .populate("userId", "name email")
+      .populate("userId", "fullName email")
       .populate("bookId", "title");
 
     if (!review) return res.status(404).json({ message: "Không tìm thấy đánh giá" });
@@ -34,14 +34,23 @@ router.get("/:id", async (req, res) => {
 
 router.post("/", async (req, res) => {
   try {
-    const { bookId, rating, comment } = req.body;
+    const { bookId, rating, comment, userId } = req.body;
 
     if (!bookId || !rating) {
       return res.status(400).json({ message: "bookId và rating là bắt buộc" });
     }
 
-    const newReview = new Review({ bookId, rating, comment });
+    const reviewData = { bookId, rating, comment };
+    if (userId) {
+      reviewData.userId = userId;
+    }
+
+    const newReview = new Review(reviewData);
     await newReview.save();
+
+    // Populate userId và bookId trước khi trả về
+    await newReview.populate("userId", "fullName email");
+    await newReview.populate("bookId", "title");
 
     res.status(201).json(newReview);
   } catch (error) {

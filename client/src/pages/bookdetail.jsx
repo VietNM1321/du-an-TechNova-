@@ -2,6 +2,8 @@ import React, { useEffect, useState } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import axios from "axios";
 import BorrowForm from "../components/BorrowForm";
+import ReviewList from "../components/ReviewList";
+import ReviewForm from "../components/ReviewForm";
 
 function BookDetail() {
   const { id } = useParams();
@@ -9,6 +11,8 @@ function BookDetail() {
   const [book, setBook] = useState(null);
   const [relatedBooks, setRelatedBooks] = useState([]);
   const [showBorrowForm, setShowBorrowForm] = useState(false);
+  const [reviews, setReviews] = useState([]);
+  const [loadingReviews, setLoadingReviews] = useState(false);
 
   const defaultImage = "https://cdn-icons-png.flaticon.com/512/2232/2232688.png";
   useEffect(() => {
@@ -61,6 +65,28 @@ function BookDetail() {
     }
     setShowBorrowForm(true);
   };
+
+  // Fetch reviews
+  const fetchReviews = async () => {
+    if (!id) return;
+    try {
+      setLoadingReviews(true);
+      const res = await axios.get(`http://localhost:5000/api/reviews?bookId=${id}`);
+      setReviews(res.data || []);
+    } catch (err) {
+      console.error("❌ Lỗi khi tải đánh giá:", err);
+      setReviews([]);
+    } finally {
+      setLoadingReviews(false);
+    }
+  };
+
+  // Load reviews khi component mount hoặc bookId thay đổi
+  useEffect(() => {
+    if (id) {
+      fetchReviews();
+    }
+  }, [id]);
 
   if (!book) {
     return (
@@ -195,6 +221,12 @@ function BookDetail() {
               </div>
             )}
           </div>
+
+          {/* Review Form - Form để thêm đánh giá */}
+          <ReviewForm bookId={id} onReviewAdded={fetchReviews} />
+
+          {/* Review List - Danh sách đánh giá */}
+          <ReviewList reviews={reviews} loading={loadingReviews} />
 
           {showBorrowForm && (
             <BorrowForm book={book} onClose={() => setShowBorrowForm(false)} />
