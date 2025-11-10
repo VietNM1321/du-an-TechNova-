@@ -15,6 +15,7 @@ import borrowings from "./routes/borrowings.js";
 import cartRoutes from "./routes/cart.js";
 import bookcodeRoutes from "./routes/bookcode.js";
 import courseRoutes from "./routes/courseRoutes.js";
+import notificationRoutes from "./routes/notification.js";
 
 dotenv.config();
 const app = express();
@@ -38,6 +39,7 @@ app.use("/api/reviews", reviewRoutes);
 app.use("/api/users", userRoutes);
 app.use("/api/category", categoryRoutes);
 app.use("/api/courses", courseRoutes);
+app.use("/api/notifications", notificationRoutes);
 
 // 404 handler
 app.use((req, res) => {

@@ -32,10 +32,16 @@ import EditCategory from "./pages/admin/Editcategory";
 import SetPassword from "./pages/admin/SetPassword";
 import Users from "./pages/admin/Users";
 import History from "./pages/History";
-import ClientLayout from "./layout/ClientLayout";
+import ClientLayout from "./layout/clientlayout";
 import CourseManager from "./pages/admin/CourseManager";
 import ReviewManager from "./pages/admin/ReviewManager";
 import ChangePassword from "./pages/ChangePassword"
+import NotificationList from "./pages/admin/NotificationList";
+import AddNotification from "./pages/admin/AddNotification";
+import EditNotification from "./pages/admin/EditNotification";
+import NotificationDetail from "./pages/NotificationDetail"; 
+
+
 
 const AdminRoute = ({ children }) => {
   const stored = localStorage.getItem("adminUser");
@@ -99,6 +105,12 @@ function App() {
           <Route path="users" element={<Users />} />
           <Route path="course" element={<CourseManager />} />
           <Route path="reviews" element={<ReviewManager />} />
+          <Route path="notifications" element={<NotificationList />} />
+          <Route path="notifications/add" element={<AddNotification />} />
+          <Route path="notifications/edit/:id" element={<EditNotification />} />
+          <Route path="notification/:id" element={<NotificationDetail />} />
+
+
         </Route>
       </Routes>
     </Router>
