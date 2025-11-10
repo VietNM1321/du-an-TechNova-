@@ -7,9 +7,26 @@ const router = express.Router();
 
 router.get("/", async (req, res) => {
   try {
+    // Tìm kiếm theo tên/mô tả
+    const { q, sort, order } = req.query;
+    const textFilter = q && q.trim()
+      ? {
+          $or: [
+            { name: { $regex: q.trim(), $options: "i" } },
+            { description: { $regex: q.trim(), $options: "i" } },
+          ],
+        }
+      : {};
+
     // Nếu có query param all=true, trả về tất cả danh mục
     if (req.query.all === "true") {
-      const categories = await Category.find();
+      const categories = await Category.find(textFilter).sort(
+        sort
+          ? {
+              [sort]: (order || "desc").toLowerCase() === "asc" ? 1 : -1,
+            }
+          : { createdAt: -1 }
+      );
       return res.json({
         categories,
         totalItems: categories.length,
@@ -19,7 +36,13 @@ router.get("/", async (req, res) => {
     // Nếu có limit lớn (>= 1000), trả về tất cả
     const limit = parseInt(req.query.limit) || 5;
     if (limit >= 1000) {
-      const categories = await Category.find();
+      const categories = await Category.find(textFilter).sort(
+        sort
+          ? {
+              [sort]: (order || "desc").toLowerCase() === "asc" ? 1 : -1,
+            }
+          : { createdAt: -1 }
+      );
       return res.json({
         categories,
         totalItems: categories.length,
@@ -30,8 +53,17 @@ router.get("/", async (req, res) => {
     const page = parseInt(req.query.page) || 1;
     const skip = (page - 1) * limit;
 
-    const total = await Category.countDocuments();
-    const categories = await Category.find().skip(skip).limit(limit);
+    const total = await Category.countDocuments(textFilter);
+    const categories = await Category.find(textFilter)
+      .skip(skip)
+      .limit(limit)
+      .sort(
+        sort
+          ? {
+              [sort]: (order || "desc").toLowerCase() === "asc" ? 1 : -1,
+            }
+          : { createdAt: -1 }
+      );
 
     res.json({
       categories,
