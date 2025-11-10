@@ -34,7 +34,7 @@ const Header = ({ selectedCategory, setSelectedCategory, selectedAuthor, setSele
   const navigate = useNavigate();
   const location = useLocation();
 
-  // Load user và giỏ hàng
+  // Load user & cart
   useEffect(() => {
     const storedUser = localStorage.getItem("clientUser");
     if (storedUser) {
@@ -45,7 +45,7 @@ const Header = ({ selectedCategory, setSelectedCategory, selectedAuthor, setSele
     }
   }, []);
 
-  // Lắng nghe đăng nhập/đăng xuất
+  // Listen auth changes
   useEffect(() => {
     const handleAuthChange = () => {
       const storedUser = localStorage.getItem("clientUser");
@@ -59,13 +59,13 @@ const Header = ({ selectedCategory, setSelectedCategory, selectedAuthor, setSele
     };
   }, []);
 
-  // Đồng bộ khi chuyển route
+  // Update user on route change
   useEffect(() => {
     const storedUser = localStorage.getItem("clientUser");
     setUser(storedUser ? JSON.parse(storedUser) : null);
   }, [location.pathname]);
 
-  // Click outside để đóng menu/notification
+  // Close dropdowns on outside click
   useEffect(() => {
     const handleClickOutside = (e) => {
       if (userMenuRef.current && !userMenuRef.current.contains(e.target)) setUserMenuOpen(false);
@@ -96,6 +96,7 @@ const Header = ({ selectedCategory, setSelectedCategory, selectedAuthor, setSele
   }, []);
 
   const totalItems = cartItems?.reduce((sum, item) => sum + item.quantity, 0) || 0;
+  const isAdmin = user?.role === "admin";
 
   const handleLogout = () => {
     localStorage.removeItem("clientUser");
@@ -128,8 +129,6 @@ const Header = ({ selectedCategory, setSelectedCategory, selectedAuthor, setSele
     setMenuOpen(false);
   };
 
-  const isAdmin = user?.role === "admin";
-
   return (
     <header className="w-full bg-white shadow-md border-b border-gray-200 font-sans">
       {/* Hotline */}
@@ -139,36 +138,42 @@ const Header = ({ selectedCategory, setSelectedCategory, selectedAuthor, setSele
         </marquee>
       </div>
 
-      {/* Logo + Search + Notification + Cart + User */}
-      <div className="flex items-center justify-between px-6 py-3 space-x-6">
-        <Link to="/" className="flex items-center gap-2">
+      {/* Main header */}
+      <div className="flex items-center justify-between px-4 md:px-6 py-3 gap-4 flex-wrap">
+        {/* Logo */}
+        <Link to="/" className="flex items-center gap-2 flex-shrink-0">
           <img src={logo} alt="logo" className="h-12 w-auto" />
+          <h1 className="text-lg font-semibold text-gray-800">Trường học</h1>
         </Link>
 
-        <div className="flex items-center gap-4 flex-1 max-w-xl">
-          {/* Search */}
-          <form onSubmit={handleSearch} className="flex flex-1 border border-gray-300 rounded-full items-center px-4 py-2">
-            <Search className="text-gray-500 mr-2" size={20} />
-            <input
-              type="text"
-              placeholder="Tìm kiếm sản phẩm..."
-              className="flex-1 outline-none text-gray-700"
-              value={searchTerm}
-              onChange={(e) => setSearchTerm(e.target.value)}
-            />
-            <button
-              type="submit"
-              className="bg-red-600 hover:bg-red-700 text-white px-4 py-1.5 rounded-full ml-2 transition"
-            >
-              Tìm
-            </button>
-          </form>
+        {/* Search */}
+        <form
+          onSubmit={handleSearch}
+          className="flex-1 max-w-xl border border-gray-300 rounded-full items-center px-4 py-2 flex"
+        >
+          <Search className="text-gray-500 mr-2" size={20} />
+          <input
+            type="text"
+            placeholder="Tìm kiếm sản phẩm..."
+            className="flex-1 outline-none text-gray-700"
+            value={searchTerm}
+            onChange={(e) => setSearchTerm(e.target.value)}
+          />
+          <button
+            type="submit"
+            className="bg-red-600 hover:bg-red-700 text-white px-4 py-1.5 rounded-full ml-2 transition"
+          >
+            Tìm
+          </button>
+        </form>
 
-          {/* Notification */}
+        {/* Bell + Cart + User */}
+        <div className="flex items-center gap-4 md:gap-6 flex-shrink-0">
+          {/* Bell */}
           <div ref={notifRef} className="relative">
             <button
               onClick={() => setNotifOpen((prev) => !prev)}
-              className="relative text-gray-700 hover:text-red-700 transition"
+              className="text-gray-700 hover:text-red-700 transition relative"
             >
               <Bell size={24} />
               {notifications.length > 0 && (
@@ -189,10 +194,15 @@ const Header = ({ selectedCategory, setSelectedCategory, selectedAuthor, setSele
                   {notifications.length === 0 ? (
                     <p className="p-4 text-gray-500 text-sm">Không có thông báo</p>
                   ) : (
-                    notifications.map((notif) => (
-                      <div key={notif._id} className="p-3 border-b border-gray-100 hover:bg-gray-50 cursor-pointer">
+                    notifications.map((notif, index) => (
+                      <div
+                        key={notif._id || index}
+                        className="p-3 border-b border-gray-100 hover:bg-gray-50 cursor-pointer"
+                        onClick={() => console.log("Clicked notification:", notif)}
+                      >
                         <p className="font-semibold text-gray-800">{notif.title}</p>
                         <p className="text-gray-500 text-sm">{new Date(notif.date).toLocaleDateString()}</p>
+                        {notif.content && <p className="text-gray-600 text-sm mt-1">{notif.content}</p>}
                       </div>
                     ))
                   )}
@@ -200,24 +210,24 @@ const Header = ({ selectedCategory, setSelectedCategory, selectedAuthor, setSele
               )}
             </AnimatePresence>
           </div>
-        </div>
 
-        {/* Cart + User */}
-        <div className="flex items-center gap-5">
-          {!isAdmin && (
-            <Link to="/cart" className="relative text-gray-700 hover:text-red-700 transition">
-              <ShoppingCart size={24} />
-              {totalItems > 0 && (
-                <span className="absolute -top-2 -right-2 bg-red-600 text-white text-xs w-5 h-5 rounded-full flex items-center justify-center font-semibold">
-                  {totalItems}
-                </span>
-              )}
-            </Link>
-          )}
+          {/* Cart */}
+          <Link to="/cart" className="relative text-gray-700 hover:text-red-700 transition">
+            <ShoppingCart size={24} />
+            {totalItems > 0 && (
+              <span className="absolute -top-2 -right-2 bg-red-600 text-white text-xs w-5 h-5 rounded-full flex items-center justify-center font-semibold">
+                {totalItems}
+              </span>
+            )}
+          </Link>
 
+          {/* User menu */}
           {user ? (
             <div ref={userMenuRef} className="relative">
-              <button onClick={() => setUserMenuOpen((prev) => !prev)} className="text-gray-700 hover:text-red-700 font-medium">
+              <button
+                onClick={() => setUserMenuOpen((prev) => !prev)}
+                className="text-gray-700 hover:text-red-700 font-medium whitespace-nowrap"
+              >
                 {isAdmin ? "Admin" : user.fullName || user.name || user.email || "Tài khoản"}
               </button>
               <AnimatePresence>
@@ -246,7 +256,10 @@ const Header = ({ selectedCategory, setSelectedCategory, selectedAuthor, setSele
                       </Link>
                     </li>
                     <li>
-                      <button onClick={handleLogout} className="w-full text-left flex items-center gap-2 px-4 py-2 hover:bg-gray-100">
+                      <button
+                        onClick={handleLogout}
+                        className="w-full text-left flex items-center gap-2 px-4 py-2 hover:bg-gray-100"
+                      >
                         <LogOut size={16} /> Đăng xuất
                       </button>
                     </li>
@@ -255,16 +268,19 @@ const Header = ({ selectedCategory, setSelectedCategory, selectedAuthor, setSele
               </AnimatePresence>
             </div>
           ) : (
-            <Link to="/login" className="bg-red-600 hover:bg-red-700 text-white font-medium px-4 py-2 rounded-lg">
+            <Link
+              to="/login"
+              className="bg-red-600 hover:bg-red-700 text-white font-medium px-4 py-2 rounded-lg whitespace-nowrap"
+            >
               Đăng nhập
             </Link>
           )}
         </div>
       </div>
 
-      {/* Navigation + Dropdown Danh mục */}
-      <nav className="relative flex items-center bg-gray-100 py-3 px-6 text-gray-800 font-medium border-t border-gray-200">
-        <div ref={menuRef} className="relative">
+      {/* Nav menu */}
+      <nav className="relative flex items-center bg-gray-100 py-3 px-4 md:px-6 text-gray-800 font-medium border-t border-gray-200 overflow-x-auto">
+        <div ref={menuRef} className="relative flex-shrink-0">
           <button
             onClick={() => setMenuOpen((prev) => !prev)}
             className="flex items-center gap-2 text-red-600 font-semibold hover:opacity-80 transition"
@@ -296,7 +312,6 @@ const Header = ({ selectedCategory, setSelectedCategory, selectedAuthor, setSele
                     ))}
                   </ul>
                 </div>
-
                 <div className="p-3">
                   <h3 className="font-semibold text-red-600 flex items-center gap-2 mb-2">
                     <PenTool size={18} /> Danh mục tác giả
@@ -318,7 +333,7 @@ const Header = ({ selectedCategory, setSelectedCategory, selectedAuthor, setSele
           </AnimatePresence>
         </div>
 
-        <div className="flex items-center gap-6 ml-8">
+        <div className="flex items-center gap-6 ml-6">
           <Link to="/" className="hover:text-red-600 transition">
             Trang chủ
           </Link>
