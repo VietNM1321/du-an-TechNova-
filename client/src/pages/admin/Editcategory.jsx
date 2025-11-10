@@ -1,12 +1,10 @@
 import React, { useEffect, useState } from "react";
 import axios from "axios";
 import { useNavigate, useParams } from "react-router-dom";
-
 const EditCategory = () => {
   const [form, setForm] = useState({ name: "", description: "" });
   const { id } = useParams();
   const navigate = useNavigate();
-
   useEffect(() => {
     const fetchCategory = async () => {
       try {
@@ -19,7 +17,6 @@ const EditCategory = () => {
     };
     fetchCategory();
   }, [id]);
-
   const handleSubmit = async (e) => {
     e.preventDefault();
     try {
@@ -31,7 +28,6 @@ const EditCategory = () => {
       alert("❌ Lỗi khi cập nhật!");
     }
   };
-
   return (
     <div className="max-w-3xl mx-auto mt-10 bg-white shadow-lg rounded-xl p-8">
       <h2 className="text-2xl font-bold text-yellow-600 mb-6 text-center">
@@ -51,7 +47,6 @@ const EditCategory = () => {
             className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-yellow-400"
           />
         </div>
-
         <div className="mb-4">
           <label className="block font-semibold mb-1 text-gray-700">
             Mô tả
@@ -63,7 +58,6 @@ const EditCategory = () => {
             className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-yellow-400"
           />
         </div>
-
         <div className="flex justify-between">
           <button
             type="button"

@@ -7,7 +7,6 @@ const BookCodeAdd = () => {
   const [categories, setCategories] = useState([]);
   const [form, setForm] = useState({ category: "", prefix: "" });
   const navigate = useNavigate();
-
   const fetchCategories = async () => {
     try {
       const res = await axios.get("http://localhost:5000/api/category?limit=1000");
@@ -16,11 +15,9 @@ const BookCodeAdd = () => {
       console.error("Lỗi lấy danh mục:", err);
     }
   };
-
   useEffect(() => {
     fetchCategories();
-  }, []);
-
+  }, [])
   const handleSubmit = async (e) => {
     e.preventDefault();
     if (!form.category || !form.prefix) {
@@ -36,7 +33,6 @@ const BookCodeAdd = () => {
       alert("❌ Thêm thất bại, có thể mã đã tồn tại!");
     }
   };
-
   return (
     <div className="max-w-2xl mx-auto mt-12 p-6 bg-white rounded-xl shadow-lg border border-gray-200">
       <h2 className="text-2xl font-semibold mb-6">Thêm BookCode mới</h2>

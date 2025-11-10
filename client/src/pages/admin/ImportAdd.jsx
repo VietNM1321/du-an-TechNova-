@@ -2,7 +2,6 @@ import React, { useEffect, useState } from "react";
 import axios from "axios";
 import { toast } from "react-toastify";
 import { useNavigate } from "react-router-dom";
-
 const ImportAdd = () => {
   const [categories, setCategories] = useState([]);
   const [books, setBooks] = useState([]);
@@ -11,7 +10,6 @@ const ImportAdd = () => {
   const [quantity, setQuantity] = useState("");
   const [selectedRole, setSelectedRole] = useState("");
   const navigate = useNavigate();
-
   useEffect(() => {
     const fetchCategories = async () => {
       try {
@@ -23,15 +21,12 @@ const ImportAdd = () => {
     };
     fetchCategories();
   }, []);
-
-  const handleCategoryChange = async (e) => {
+  const handleCategoryChange = async (e) => { // lấy dan mục và sách trongh đb
     const categoryId = e.target.value;
     setSelectedCategory(categoryId);
     setBooks([]);
     setSelectedBook("");
-
-    if (!categoryId) return;
-
+    if (!categoryId) return
     try {
       const res = await axios.get(
         `http://localhost:5000/api/books?limit=1000&category=${categoryId}`
@@ -41,14 +36,12 @@ const ImportAdd = () => {
       toast.error("Không tìm thấy sách trong danh mục này");
     }
   };
-
   const handleSubmit = async (e) => {
     e.preventDefault();
     if (!selectedBook || !quantity || !selectedRole) {
       toast.warn("Vui lòng nhập đủ thông tin!");
       return;
     }
-
     try {
       await axios.post("http://localhost:5000/api/imports", {
         bookId: selectedBook,

@@ -1,13 +1,11 @@
 import React, { useEffect, useState } from "react";
 import axios from "axios";
 import { useParams, useNavigate } from "react-router-dom";
-
 const BookCodeEdit = () => {
   const { id } = useParams();
   const [categories, setCategories] = useState([]);
   const [form, setForm] = useState({ category: "", prefix: "" });
   const navigate = useNavigate();
-
   const fetchCategories = async () => {
     try {
       const res = await axios.get("http://localhost:5000/api/category?limit=1000");
@@ -16,7 +14,6 @@ const BookCodeEdit = () => {
       console.error("Lỗi lấy danh mục:", err);
     }
   };
-
   const fetchBookCode = async () => {
     try {
       const res = await axios.get(`http://localhost:5000/api/bookcodes/${id}`);
@@ -28,12 +25,10 @@ const BookCodeEdit = () => {
       navigate("/admin/bookcode");
     }
   };
-
   useEffect(() => {
     fetchCategories();
     fetchBookCode();
   }, []);
-
   const handleSubmit = async (e) => {
     e.preventDefault();
     try {
@@ -45,7 +40,6 @@ const BookCodeEdit = () => {
       alert(err.response?.data?.message || "❌ Cập nhật thất bại!");
     }
   };
-
   return (
     <div className="max-w-2xl mx-auto mt-12 p-6 bg-white rounded-xl shadow-lg border border-gray-200">
       <h2 className="text-2xl font-semibold mb-6">Sửa BookCode</h2>

@@ -20,7 +20,7 @@ import BorrowManager from "./pages/admin/BorrowManager";
 import AuthorManager from "./pages/admin/AuthorManager";
 import BookEdit from "./pages/admin/BookEdit";
 import BookCode from "./pages/admin/BookCode";
-import BookCodeAdd from "./pages/admin/BookcodeAdd";
+import BookCodeAdd from "./pages/admin/BookCodeAdd";
 import BookCodeEdit from "./pages/admin/BookCodeEdit";
 import AuthorAdd from "./pages/admin/AuthorAdd";
 import BookAdd from "./pages/admin/BookAdd";

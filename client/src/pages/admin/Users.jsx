@@ -4,12 +4,8 @@ import axios from "axios";
 const Users = () => {
   const [users, setUsers] = useState([]); // danh sách người dùng
   const [loading, setLoading] = useState(true);
-  const [error, setError] = useState("");
-
-  // Lấy token admin từ localStorage
+  const [error, setError] = useState("")
   const adminToken = localStorage.getItem("adminToken");
-
-  // 🔹 Lấy danh sách người dùng
   const fetchUsers = async () => {
     try {
       setLoading(true);
@@ -18,14 +14,11 @@ const Users = () => {
           Authorization: `Bearer ${adminToken}`,
         },
       });
-
-      // Đảm bảo dữ liệu là mảng
-      const data = Array.isArray(res.data)
+      const data = Array.isArray(res.data) // Đảm bảo dữ liệu là mảng
         ? res.data
         : Array.isArray(res.data.users)
         ? res.data.users
         : [];
-
       setUsers(data);
     } catch (err) {
       console.error("Lỗi khi fetch users:", err);
@@ -34,8 +27,6 @@ const Users = () => {
       setLoading(false);
     }
   };
-
-  // 🔹 Thay đổi trạng thái hoạt động (Khóa / Mở khóa)
   const toggleActive = async (id) => {
     try {
       await axios.put(
@@ -47,7 +38,7 @@ const Users = () => {
           },
         }
       );
-      fetchUsers(); // cập nhật lại danh sách
+      fetchUsers();
     } catch (err) {
       console.error("Lỗi khi thay đổi trạng thái:", err);
       alert(
@@ -55,8 +46,6 @@ const Users = () => {
       );
     }
   };
-
-  // 🔹 Xóa trạng thái quên mật khẩu
   const clearForgotStatus = async (id) => {
     try {
       await axios.put(

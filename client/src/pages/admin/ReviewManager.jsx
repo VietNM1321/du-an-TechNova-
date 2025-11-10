@@ -1,7 +1,6 @@
 import React, { useEffect, useState } from "react";
 import axios from "axios";
 import { Star, Search, Trash2, Eye } from "lucide-react";
-
 const ReviewManager = () => {
   const [reviews, setReviews] = useState([]);
   const [loading, setLoading] = useState(false);
@@ -10,12 +9,10 @@ const ReviewManager = () => {
   const [searchTerm, setSearchTerm] = useState("");
   const [filterRating, setFilterRating] = useState("all");
   const [selectedReview, setSelectedReview] = useState(null);
-  const API = "http://localhost:5000/api/reviews";
-
   const fetchReviews = async (pageNum = 1) => {
     try {
       setLoading(true);
-      const res = await axios.get(`${API}?page=${pageNum}&limit=10`);
+      const res = await axios.get(`http://localhost:5000/api/reviews?page=${pageNum}&limit=10`);
       // Backend có thể trả về với pagination hoặc mảng trực tiếp
       if (res.data.reviews) {
         setReviews(res.data.reviews || []);
@@ -36,7 +33,6 @@ const ReviewManager = () => {
       setLoading(false);
     }
   };
-
   useEffect(() => {
     fetchReviews(page);
   }, [page]);
@@ -44,7 +40,7 @@ const ReviewManager = () => {
   const handleDelete = async (id) => {
     if (window.confirm("Bạn có chắc muốn xóa đánh giá này?")) {
       try {
-        await axios.delete(`${API}/${id}`);
+        await axios.delete(`http://localhost:5000/api/reviews/${id}`);
         alert("✅ Xóa đánh giá thành công!");
         fetchReviews(page);
       } catch (err) {
@@ -54,15 +50,12 @@ const ReviewManager = () => {
       }
     }
   };
-
-  const handlePrev = () => {
+  const handlePrev = () => { // phân trang
     if (page > 1) setPage(page - 1);
   };
-
   const handleNext = () => {
     if (page < totalPages) setPage(page + 1);
   };
-
   // Format thời gian
   const formatTime = (dateString) => {
     if (!dateString) return "";
@@ -75,8 +68,7 @@ const ReviewManager = () => {
       minute: "2-digit",
     });
   };
-
-  // Render sao
+  // lấy sao
   const renderStars = (rating) => {
     return Array.from({ length: 5 }, (_, index) => (
       <Star
@@ -90,8 +82,6 @@ const ReviewManager = () => {
       />
     ));
   };
-
-  // Lọc reviews
   const filteredReviews = reviews.filter((review) => {
     const matchesSearch =
       !searchTerm ||
@@ -104,14 +94,11 @@ const ReviewManager = () => {
 
     return matchesSearch && matchesRating;
   });
-
   return (
     <div className="max-w-7xl mx-auto">
       <div className="flex justify-between items-center mb-6">
         <h2 className="text-3xl font-bold text-blue-700">💬 Quản lý Đánh giá và Bình luận</h2>
       </div>
-
-      {/* Bộ lọc và tìm kiếm */}
       <div className="bg-white p-4 rounded-lg shadow-md mb-6 flex flex-wrap gap-4 items-center">
         <div className="flex-1 min-w-[200px]">
           <div className="relative">
@@ -147,8 +134,6 @@ const ReviewManager = () => {
           🔄 Làm mới
         </button>
       </div>
-
-      {/* Bảng danh sách */}
       {loading ? (
         <div className="text-center py-12">
           <div className="inline-block animate-spin text-4xl">⏳</div>
@@ -284,8 +269,6 @@ const ReviewManager = () => {
           </button>
         </div>
       )}
-
-      {/* Modal xem chi tiết bình luận */}
       {selectedReview && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
           <div className="bg-white rounded-lg shadow-xl max-w-2xl w-full mx-4 p-6">

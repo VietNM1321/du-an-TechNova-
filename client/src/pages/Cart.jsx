@@ -3,7 +3,6 @@ import axios from "axios";
 import { Table, Button, InputNumber, message, Space, Modal, Typography } from "antd";
 import { ExclamationCircleOutlined, DeleteOutlined, ClearOutlined, CheckCircleOutlined } from "@ant-design/icons";
 import { useNavigate } from "react-router-dom";
-
 const Cart = () => {
   const [loading, setLoading] = useState(false);
   const [cart, setCart] = useState({ items: [] });
@@ -13,7 +12,7 @@ const Cart = () => {
   const items = Array.isArray(cart.items) ? cart.items : [];
   const isEmpty = items.length === 0;
   const isAdmin = user?.role === "admin";
-  const fetchCart = async () => {
+  const fetchCart = async () => { // gọi giỏ hàng và middelware auth phải đăng nhập mới có hiện giỏ hàng
     try {
       if (!token) throw new Error("UNAUTHENTICATED");
       if (isAdmin) {
@@ -28,7 +27,7 @@ const Cart = () => {
       setCart({ ...data, items: normalizedItems });
       console.log("Cart fetched:", data);
     } catch (err) {
-      console.error("❌ Lỗi fetch cart:", err);
+      console.error("❌ Lỗi khi lấy cart:", err);
       if (err.message === "UNAUTHENTICATED" || err.response?.status === 401) {
         message.warning("Vui lòng đăng nhập để xem giỏ sách.");
         return;
@@ -37,7 +36,6 @@ const Cart = () => {
       setCart({ items: [] });
     }
   };
-
   useEffect(() => {
     fetchCart();
   }, [token, isAdmin]);
@@ -133,7 +131,6 @@ const Cart = () => {
       message.warning("Vui lòng đăng nhập để mượn sách.");
       return;
     }
-
     Modal.confirm({
       title: "Xác nhận mượn sách",
       icon: <ExclamationCircleOutlined />,
@@ -177,7 +174,6 @@ const Cart = () => {
       },
     });
   };
-
   const handleRemoveItem = async (record) => {
     try {
       if (isAdmin) {
@@ -200,7 +196,6 @@ const Cart = () => {
       message.error("Không thể xóa sản phẩm.");
     }
   };
-
   const handleClearAll = async () => {
     Modal.confirm({
       title: "Xóa tất cả giỏ hàng?",
@@ -227,7 +222,6 @@ const Cart = () => {
       },
     });
   };
-
   if (isAdmin) {
     return (
       <div className="min-h-screen bg-gradient-to-b from-slate-50 to-white">
@@ -243,7 +237,6 @@ const Cart = () => {
       </div>
     );
   }
-
   return (
     <div className="min-h-screen bg-gradient-to-b from-slate-50 to-white">
       <div className="container mx-auto px-4 py-6">

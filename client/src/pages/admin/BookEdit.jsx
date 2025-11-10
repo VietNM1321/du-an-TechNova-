@@ -2,11 +2,13 @@ import React, { useEffect, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import axios from "axios";
 import { Upload, BookOpen } from "lucide-react";
-
 const BookEdit = () => {
   const { id } = useParams();
   const navigate = useNavigate();
-
+  const [categories, setCategories] = useState([]);
+  const [authors, setAuthors] = useState([]);
+  const [newFiles, setNewFiles] = useState([]);
+  const [loadingCode, setLoadingCode] = useState(false);
   const [form, setForm] = useState({
     title: "",
     description: "",
@@ -17,10 +19,6 @@ const BookEdit = () => {
     quantity: "",
     bookCode: "",
   });
-  const [categories, setCategories] = useState([]);
-  const [authors, setAuthors] = useState([]);
-  const [newFiles, setNewFiles] = useState([]);
-  const [loadingCode, setLoadingCode] = useState(false);
   useEffect(() => {
     const fetchData = async () => {
       try {
@@ -28,7 +26,6 @@ const BookEdit = () => {
         const authConfig = token
           ? { headers: { Authorization: `Bearer ${token}` } }
           : undefined;
-
         const [catRes, authorRes, bookRes] = await Promise.all([
           axios.get("http://localhost:5000/api/category?limit=1000", authConfig),
           axios.get("http://localhost:5000/api/authors?limit=1000", authConfig),
@@ -37,7 +34,6 @@ const BookEdit = () => {
 
         setCategories(catRes.data.categories || catRes.data);
         setAuthors(authorRes.data.authors || authorRes.data);
-
         const data = bookRes.data;
         setForm({
           title: data.title || "",
@@ -87,7 +83,7 @@ const BookEdit = () => {
     fetchBookCode();
   }, [form.category]);
 
-  const handleFileChange = (e) => setNewFiles(Array.from(e.target.files));
+  const handleFileChange = (e) => setNewFiles(Array.from(e.target.files)); // xử lý cọn ảnh
   const handleSubmit = async (e) => {
     e.preventDefault();
     if (
@@ -124,11 +120,8 @@ const BookEdit = () => {
       const res = await axios.put(
         `http://localhost:5000/api/books/${id}`,
         formData,
-        {
-          headers,
-        }
-      );
-
+        {headers,}  
+      )
       alert(res.data.message || "✅ Cập nhật sách thành công!");
       navigate("/admin/bookmanager", {
         state: { updatedBook: res.data.book },
@@ -138,7 +131,6 @@ const BookEdit = () => {
       alert("❌ Cập nhật thất bại!");
     }
   };
-
   return (
     <div className="max-w-4xl mx-auto mt-10 p-8 bg-white rounded-2xl shadow-xl border border-gray-200">
       <h2 className="text-3xl font-bold text-blue-600 mb-6 text-center">

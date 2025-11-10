@@ -11,7 +11,6 @@ import {
   message,
   Popconfirm,
 } from "antd";
-
 const CourseManager = () => {
   const [courses, setCourses] = useState([]);
   const [loading, setLoading] = useState(false);
@@ -20,8 +19,6 @@ const CourseManager = () => {
   const [form] = Form.useForm();
 
   const API_URL = "http://localhost:5000/api/courses";
-
-  // 🟢 Lấy danh sách khóa học
   const fetchCourses = async () => {
     setLoading(true);
     try {
@@ -33,20 +30,15 @@ const CourseManager = () => {
       setLoading(false);
     }
   };
-
   useEffect(() => {
     fetchCourses();
   }, []);
-
-  // 🟢 Mở modal thêm/sửa
   const openModal = (course = null) => {
     setEditingCourse(course);
     if (course) form.setFieldsValue(course);
     else form.resetFields();
     setIsModalOpen(true);
   };
-
-  // 🟢 Thêm / sửa khóa học
   const handleSubmit = async (values) => {
     try {
       if (editingCourse) {
@@ -62,8 +54,6 @@ const CourseManager = () => {
       message.error(err.response?.data?.message || "Lỗi khi lưu khóa học!");
     }
   };
-
-  // 🗑️ Xóa khóa học
   const handleDelete = async (id) => {
     try {
       await axios.delete(`${API_URL}/${id}`);
@@ -73,7 +63,6 @@ const CourseManager = () => {
       message.error("Lỗi khi xóa khóa học!");
     }
   };
-
   const columns = [
     {
       title: "Tên khóa học",
@@ -116,7 +105,6 @@ const CourseManager = () => {
       ),
     },
   ];
-
   return (
     <div className="p-4 bg-white rounded-lg shadow">
       <h2 className="text-2xl font-semibold mb-4">📘 Quản lý khóa học</h2>

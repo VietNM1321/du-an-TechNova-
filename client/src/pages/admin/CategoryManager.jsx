@@ -1,17 +1,14 @@
 import React, { useEffect, useState } from "react";
 import axios from "axios";
 import { useNavigate } from "react-router-dom";
-
 const CategoryManager = () => {
   const [categories, setCategories] = useState([]);
   const [page, setPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
-  const navigate = useNavigate();
-  const API = "http://localhost:5000/api/category";
-
+  const navigate = useNavigate()
   const fetchCategories = async (pageNum = 1) => {
     try {
-      const res = await axios.get(`${API}?page=${pageNum}&limit=5`);
+      const res = await axios.get(`http://localhost:5000/api/category?page=${pageNum}&limit=5`); // lấy dữ liệu khi load tang
       setCategories(res.data.categories || []);
       setTotalPages(res.data.totalPages || 1);
       setPage(res.data.currentPage || 1);
@@ -20,13 +17,11 @@ const CategoryManager = () => {
       setCategories([]);
     }
   };
-
   useEffect(() => {
     fetchCategories(page);
   }, [page]);
   useEffect(() => {
   const { updatedBook, updatedProducts } = location.state || {};
-
   if (updatedBook) {
     setBooks(prev =>
       prev.map(b =>
@@ -46,11 +41,10 @@ const CategoryManager = () => {
     window.history.replaceState({}, document.title);
   }
 }, [location.state]);
-
   const handleDelete = async (id) => {
     if (window.confirm("Bạn có chắc muốn xóa danh mục này?")) {
       try {
-        const res = await axios.delete(`${API}/${id}`);
+        const res = await axios.delete(`http://localhost:5000/api/category/${id}`);
         alert(res.data.message || "✅ Xóa thành công!");
         fetchCategories(page);
       } catch (err) {
@@ -61,15 +55,12 @@ const CategoryManager = () => {
       }
     }
   };
-
-  const handlePrev = () => {
+  const handlePrev = () => { // phân trang
     if (page > 1) setPage(page - 1);
-  };
-
+  }
   const handleNext = () => {
     if (page < totalPages) setPage(page + 1);
   };
-
   return (
     <div className="max-w-6xl mx-auto bg-white p-8 rounded-2xl shadow-lg mt-1">
       <div className="flex justify-between items-center mb-6">

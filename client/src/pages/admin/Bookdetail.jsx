@@ -8,7 +8,6 @@ const BookDetail = () => {
   const [book, setBook] = useState(null);
   const [imports, setImports] = useState([]);
   const [borrowCount, setBorrowCount] = useState(0);
-
   useEffect(() => {
     const fetchData = async () => {
       try {
@@ -22,15 +21,12 @@ const BookDetail = () => {
     };
     fetchData();
   }, [id]);
-
-  if (!book) return <div className="p-8 text-center">⏳ Đang tải dữ liệu...</div>;
-
+  if (!book) return <div className="p-8 text-center">⏳ Đang tải dữ liệu...</div>; // render khi dữ liệu chưa có
   return (
     <div className="max-w-3xl mx-auto bg-white p-8 mt-6 rounded-xl shadow">
       <h2 className="text-2xl font-bold text-blue-700 mb-4">
         📘 Chi tiết sách: {book.title}
       </h2>
-
       <div className="flex gap-6">
         <img
             src={book.images?.[0]}
@@ -47,7 +43,6 @@ const BookDetail = () => {
             <p className="text-gray-500 text-base"><span className="font-semibold">Ngày thêm sách:</span> {new Date(book.createdAt).toLocaleDateString("vi-VN")}</p>
         </div>
         </div>
-
         <hr className="my-6" />
         <h3 className="text-lg font-semibold text-gray-800 mb-3">📦 Lịch sử nhập kho</h3>
         {imports.length > 0 ? (

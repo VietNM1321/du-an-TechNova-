@@ -10,10 +10,7 @@ const AddAuthor = () => {
     dateOfDeath: "",
     image: null,
   });
-
   const navigate = useNavigate();
-  const API = "http://localhost:5000/api/authors";
-
   const handleChange = (e) => {
     const { name, value, files } = e.target;
     setForm({ ...form, [name]: files ? files[0] : value });
@@ -24,7 +21,7 @@ const AddAuthor = () => {
     try {
       const formData = new FormData();
       Object.keys(form).forEach((key) => formData.append(key, form[key]));
-      await axios.post(API, formData, {
+      await axios.post("http://localhost:5000/api/authors", formData, {
         headers: { "Content-Type": "multipart/form-data" },
       });
       alert("✅ Thêm tác giả thành công!");

@@ -9,14 +9,10 @@ const BookLManager = () => {
   const [totalPages, setTotalPages] = useState(1);
   const navigate = useNavigate();
   const location = useLocation();
-
-  const API = "http://localhost:5000/api/books";
-
   const fetchBooks = async (pageNum = 1) => {
     try {
-      const res = await axios.get(`${API}?page=${pageNum}&limit=5`);
+      const res = await axios.get(`http://localhost:5000/api/books?page=${pageNum}&limit=5`);
       const data = res.data;
-
       if (Array.isArray(data)) {
         setBooks(data);
         setTotalPages(1);
@@ -31,7 +27,6 @@ const BookLManager = () => {
       setBooks([]);
     }
   };
-
   // Cập nhật dữ liệu khi có sách mới được edit
   useEffect(() => {
     if (location.state?.updatedBook) {
@@ -46,15 +41,13 @@ const BookLManager = () => {
       window.history.replaceState({}, document.title);
     }
   }, [location.state]);
-
   useEffect(() => {
     fetchBooks(page);
   }, [page]);
-
   const handleDelete = async (id) => {
     if (window.confirm("🗑️ Bạn có chắc muốn xóa sách này không?")) {
       try {
-        await axios.delete(`${API}/${id}`);
+        await axios.delete(`http://localhost:5000/api/books/${id}`);
         fetchBooks(page);
       } catch (err) {
         console.error("❌ Xóa thất bại:", err);
@@ -62,7 +55,6 @@ const BookLManager = () => {
       }
     }
   };
-
   return (
     <div className="max-w-6xl mx-auto bg-gradient-to-b from-gray-50 to-white p-8 rounded-2xl shadow-lg mt-4 border border-gray-200">
       <div className="flex items-center justify-between mb-8">

@@ -2,9 +2,7 @@ import React, { useEffect, useState } from "react";
 import axios from "axios";
 import { Table, Tag, Button, Space, Modal, Input, message } from "antd";
 import { BookOutlined, ExclamationCircleOutlined, DollarOutlined } from "@ant-design/icons";
-
 const { confirm } = Modal;
-
 const BorrowManager = () => {
   const [borrowings, setBorrowings] = useState([]);
   const [loading, setLoading] = useState(false);
@@ -12,7 +10,6 @@ const BorrowManager = () => {
   const [compensationAmount, setCompensationAmount] = useState("");
 
   const token = localStorage.getItem("adminToken");
-
   // 📦 Load danh sách đơn mượn
   const fetchBorrowings = async () => {
     setLoading(true);
@@ -28,7 +25,6 @@ const BorrowManager = () => {
       setLoading(false);
     }
   };
-
   useEffect(() => {
     fetchBorrowings();
   }, []);
@@ -58,7 +54,6 @@ const BorrowManager = () => {
       },
     });
   };
-
   // 💰 Nhập tiền đền
   const handleCompensation = async () => {
     if (!compensationAmount) {
@@ -85,8 +80,7 @@ const BorrowManager = () => {
       console.error(error);
       message.error("Không nhập được tiền đền!");
     }
-  };
-
+  }
   const columns = [
     {
       title: "Mã đơn",
@@ -126,9 +120,7 @@ const BorrowManager = () => {
         if (thumb && !thumb.startsWith("http")) {
           thumb = `http://localhost:5000/${thumb}`;
         }
-
         const placeholder = "https://via.placeholder.com/40x60?text=?";
-
         return (
           <div className="flex items-center gap-2">
             <img
@@ -250,7 +242,7 @@ const BorrowManager = () => {
         pagination={{ pageSize: 8 }}
       />
 
-      {/* Modal Nhập tiền đền có preview ảnh */}
+      {/* Modal Nhập tiền đền có ảnh */}
       <Modal
         title="💰 Nhập tiền đền"
         open={compensationModal.open}
@@ -263,7 +255,7 @@ const BorrowManager = () => {
           Nhập số tiền đền cho đơn <b>{compensationModal.record?._id?.slice(-8)}</b>:
         </p>
 
-        {/* Preview ảnh hỏng/mất */}
+        {/* ảnh hỏng/mất */}
         {compensationModal.record?.damageImage && (
           <div className="mb-2">
             <img

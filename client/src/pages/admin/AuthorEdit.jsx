@@ -6,7 +6,7 @@ const EditAuthor = () => {
   const { id } = useParams();
   const navigate = useNavigate();
   const API = "http://localhost:5000/api/authors";
-  const [form, setForm] = useState({
+  const [form, setForm] = useState({ // khai báo form lưu dữ liệu
     name: "",
     bio: "",
     dateOfBirth: "",
@@ -17,7 +17,7 @@ const EditAuthor = () => {
   useEffect(() => {
     const fetchAuthor = async () => {
       try {
-        const res = await axios.get(`${API}/${id}`);
+        const res = await axios.get(`http://localhost:5000/api/authors/${id}`);
         const data = res.data;
         setForm({
           name: data.name,
@@ -54,7 +54,7 @@ const EditAuthor = () => {
     if (form.image) formData.append("image", form.image);
 
     try {
-      await axios.put(`${API}/${id}`, formData, {
+      await axios.put(`http://localhost:5000/api/authors/${id}`, formData, {
         headers: { "Content-Type": "multipart/form-data" },
       });
       alert("✅ Cập nhật tác giả thành công!");
@@ -70,7 +70,6 @@ const EditAuthor = () => {
       <h2 className="text-2xl font-bold text-blue-700 mb-6">
         ✏️ Chỉnh sửa tác giả
       </h2>
-
       <form onSubmit={handleSubmit} className="grid grid-cols-1 md:grid-cols-2 gap-4">
         <div>
           <label className="block mb-1 text-sm font-semibold text-gray-600">

@@ -7,12 +7,9 @@ const BookCodeManager = () => {
   const [page, setPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
   const navigate = useNavigate();
-  const API = "http://localhost:5000/api/bookcodes";
-
-  // Lấy danh sách bookcode với phân trang
   const fetchBookCodes = async (pageNum = 1) => {
     try {
-      const res = await axios.get(`${API}?page=${pageNum}&limit=5`);
+      const res = await axios.get(`http://localhost:5000/api/bookcodes?page=${pageNum}&limit=5`);
       setBookCodes(res.data.bookcodes || []);
       setTotalPages(res.data.pages || 1);
       setPage(res.data.page || 1);
@@ -25,12 +22,10 @@ const BookCodeManager = () => {
   useEffect(() => {
     fetchBookCodes(page);
   }, [page]);
-
-  // Xóa BookCode
   const handleDelete = async (id) => {
     if (window.confirm("Bạn có chắc muốn xóa BookCode này?")) {
       try {
-        const res = await axios.delete(`${API}/${id}`);
+        const res = await axios.delete(`http://localhost:5000/api/bookcodes/${id}`);
         alert(res.data.message || "✅ Xóa thành công!");
         fetchBookCodes(page);
       } catch (err) {

@@ -7,11 +7,9 @@ const AuthorManager = () => {
   const [page, setPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
   const navigate = useNavigate();
-  const API = "http://localhost:5000/api/authors";
-
   const fetchAuthors = async (pageNum = 1) => {
     try {
-      const res = await axios.get(`${API}?page=${pageNum}&limit=5`);
+      const res = await axios.get(`http://localhost:5000/api/authors?page=${pageNum}&limit=5`);
       setAuthors(res.data.authors || []);
       setTotalPages(res.data.totalPages || 1);
       setPage(res.data.currentPage || 1);
@@ -28,7 +26,7 @@ const AuthorManager = () => {
   const handleDelete = async (id) => {
     if (window.confirm("Bạn có chắc muốn xóa tác giả này?")) {
       try {
-        const res = await axios.delete(`${API}/${id}`);
+        const res = await axios.delete(`http://localhost:5000/api/authors/${id}`);
         alert(res.data.message || "✅ Xóa thành công!");
         fetchAuthors(page);
       } catch (err) {
