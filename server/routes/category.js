@@ -7,8 +7,27 @@ const router = express.Router();
 
 router.get("/", async (req, res) => {
   try {
-    const page = parseInt(req.query.page) || 1;
+    // Nếu có query param all=true, trả về tất cả danh mục
+    if (req.query.all === "true") {
+      const categories = await Category.find();
+      return res.json({
+        categories,
+        totalItems: categories.length,
+      });
+    }
+
+    // Nếu có limit lớn (>= 1000), trả về tất cả
     const limit = parseInt(req.query.limit) || 5;
+    if (limit >= 1000) {
+      const categories = await Category.find();
+      return res.json({
+        categories,
+        totalItems: categories.length,
+      });
+    }
+
+    // Phân trang bình thường
+    const page = parseInt(req.query.page) || 1;
     const skip = (page - 1) * limit;
 
     const total = await Category.countDocuments();

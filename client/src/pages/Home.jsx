@@ -3,7 +3,7 @@ import "slick-carousel/slick/slick-theme.css";
 import React, { useEffect, useState, useRef } from "react";
 import axios from "axios";
 import Slider from "react-slick";
-import { ChevronLeft, ChevronRight, ChevronsLeft, ChevronsRight } from "lucide-react";
+import { ChevronLeft, ChevronRight } from "lucide-react";
 import bannerImg from "../assets/benner3.png";
 import BookCard from "../components/bookcard";
 import SectionTitle from "../components/sectiontitle";
@@ -12,28 +12,68 @@ function Home() {
   const [categories, setCategories] = useState([]);
   const [selectedCategory, setSelectedCategory] = useState("");
   const [currentPage, setCurrentPage] = useState(1);
-  const itemsPerPage = 5;
+  const itemsPerPage = 5; // Mỗi trang 5 danh mục
   const sliderRefs = useRef({});
+  const [isLoading, setIsLoading] = useState(false);
 
+  // Hàm fetch dữ liệu - có thể gọi lại nhiều lần
+  const fetchData = async (silent = false) => {
+    try {
+      if (!silent) setIsLoading(true);
+      // Lấy TẤT CẢ danh mục (không phân trang) bằng cách set limit lớn
+      const resCat = await axios.get("http://localhost:5000/api/category?limit=1000");
+      const cats = resCat.data.categories || [];
+      
+      const dataWithBooks = await Promise.all(
+        cats.map(async (cat) => {
+          const resBooks = await axios.get(
+            `http://localhost:5000/api/books?category=${cat.name}`
+          );
+          return { ...cat, books: resBooks.data.books || [] };
+        })
+      );
+      
+      setCategories(dataWithBooks);
+      if (!silent) {
+        console.log("✅ Đã cập nhật dữ liệu:", dataWithBooks.length, "danh mục");
+      }
+    } catch (err) {
+      console.error("❌ Lỗi khi tải dữ liệu:", err);
+    } finally {
+      if (!silent) setIsLoading(false);
+    }
+  };
+
+  // Fetch dữ liệu lần đầu khi component mount
   useEffect(() => {
-    const fetchData = async () => {
-      try {
-        const resCat = await axios.get("http://localhost:5000/api/category");
-        const cats = resCat.data.categories || [];
-        const dataWithBooks = await Promise.all(
-          cats.map(async (cat) => {
-            const resBooks = await axios.get(
-              `http://localhost:5000/api/books?category=${cat.name}`
-            );
-            return { ...cat, books: resBooks.data.books || [] };
-          })
-        );
-        setCategories(dataWithBooks);
-      } catch (err) {
-        console.error("Lỗi khi tải dữ liệu:", err);
+    fetchData();
+  }, []);
+
+  // Tự động cập nhật dữ liệu mỗi 5 giây (polling)
+  useEffect(() => {
+    const intervalId = setInterval(() => {
+      // Chỉ fetch khi tab đang active
+      if (document.visibilityState === 'visible') {
+        console.log("🔄 Tự động cập nhật dữ liệu...");
+        fetchData(true); // silent = true để không hiển thị loading
+      }
+    }, 5000); // 5 giây
+
+    // Cleanup interval khi component unmount
+    return () => clearInterval(intervalId);
+  }, []);
+
+  // Cập nhật dữ liệu khi tab trở lại active
+  useEffect(() => {
+    const handleVisibilityChange = () => {
+      if (document.visibilityState === 'visible') {
+        console.log("👁️ Tab đã active, cập nhật dữ liệu...");
+        fetchData(true);
       }
     };
-    fetchData();
+
+    document.addEventListener('visibilitychange', handleVisibilityChange);
+    return () => document.removeEventListener('visibilitychange', handleVisibilityChange);
   }, []);
 
   const nextSlide = (id) => sliderRefs.current[id]?.slickNext();
@@ -44,11 +84,20 @@ function Home() {
     ? categories.filter((cat) => cat.name === selectedCategory)
     : categories;
 
-  // Tính toán phân trang
+  // Tính toán phân trang - Tự động tăng theo số danh mục (cứ 5 danh mục = 1 trang)
   const totalPages = Math.ceil(filteredCategories.length / itemsPerPage);
   const startIndex = (currentPage - 1) * itemsPerPage;
   const endIndex = startIndex + itemsPerPage;
   const displayedCategories = filteredCategories.slice(startIndex, endIndex);
+
+  // Debug: Log số lượng danh mục để kiểm tra
+  useEffect(() => {
+    console.log("📊 Tổng số danh mục:", filteredCategories.length);
+    console.log("📄 Tổng số trang (tự động tính):", totalPages);
+    console.log("📑 Trang hiện tại:", currentPage);
+    console.log("📋 Danh mục hiển thị:", displayedCategories.length);
+    console.log("🔢 Công thức: Math.ceil(" + filteredCategories.length + " / " + itemsPerPage + ") = " + totalPages);
+  }, [filteredCategories.length, totalPages, currentPage, displayedCategories.length, itemsPerPage]);
 
   // Reset về trang 1 khi thay đổi category filter
   useEffect(() => {
@@ -208,109 +257,26 @@ function Home() {
             );
           })}
 
-          {/* Phân trang - Hiển thị khi có từ 5 danh mục trở lên */}
-          {filteredCategories.length >= itemsPerPage && (
+          {/* Phân trang - Tự động tăng theo số danh mục (cứ 5 danh mục = 1 trang) */}
+          {filteredCategories.length > itemsPerPage && totalPages > 1 && (
             <div className="container mx-auto px-4 mb-10 mt-8">
-              <div className="bg-white/90 backdrop-blur-xl rounded-2xl shadow-xl ring-1 ring-slate-200 p-6">
-                <div className="flex items-center justify-center gap-2 flex-wrap">
-                {/* Nút về trang đầu */}
-                <button
-                  onClick={() => handlePageChange(1)}
-                  disabled={currentPage === 1}
-                  className={`px-3 py-2 rounded-lg font-medium transition-all duration-200 ${
-                    currentPage === 1
-                      ? "bg-slate-200 text-slate-400 cursor-not-allowed"
-                      : "bg-white text-slate-700 hover:bg-blue-50 hover:text-blue-600 ring-1 ring-slate-200 hover:ring-blue-300 shadow-sm"
-                  }`}
-                  title="Trang đầu"
-                >
-                  <ChevronsLeft size={20} />
-                </button>
-
-                {/* Nút trang trước */}
-                <button
-                  onClick={() => handlePageChange(currentPage - 1)}
-                  disabled={currentPage === 1}
-                  className={`px-3 py-2 rounded-lg font-medium transition-all duration-200 ${
-                    currentPage === 1
-                      ? "bg-slate-200 text-slate-400 cursor-not-allowed"
-                      : "bg-white text-slate-700 hover:bg-blue-50 hover:text-blue-600 ring-1 ring-slate-200 hover:ring-blue-300 shadow-sm"
-                  }`}
-                  title="Trang trước"
-                >
-                  <ChevronLeft size={20} />
-                </button>
-
-                {/* Hiển thị số trang */}
-                {Array.from({ length: totalPages }, (_, i) => i + 1).map((page) => {
-                  // Chỉ hiển thị một số trang xung quanh trang hiện tại
-                  if (
-                    page === 1 ||
-                    page === totalPages ||
-                    (page >= currentPage - 1 && page <= currentPage + 1)
-                  ) {
-                    return (
-                      <button
-                        key={page}
-                        onClick={() => handlePageChange(page)}
-                        className={`px-4 py-2 rounded-lg font-semibold transition-all duration-200 ${
-                          currentPage === page
-                            ? "bg-gradient-to-r from-blue-600 to-blue-700 text-white shadow-lg ring-2 ring-blue-300 scale-105"
-                            : "bg-white text-slate-700 hover:bg-blue-50 hover:text-blue-600 ring-1 ring-slate-200 hover:ring-blue-300 shadow-sm"
-                        }`}
-                      >
-                        {page}
-                      </button>
-                    );
-                  } else if (page === currentPage - 2 || page === currentPage + 2) {
-                    return (
-                      <span key={page} className="px-2 text-slate-400">
-                        ...
-                      </span>
-                    );
-                  }
-                  return null;
-                })}
-
-                {/* Nút trang sau */}
-                <button
-                  onClick={() => handlePageChange(currentPage + 1)}
-                  disabled={currentPage === totalPages}
-                  className={`px-3 py-2 rounded-lg font-medium transition-all duration-200 ${
-                    currentPage === totalPages
-                      ? "bg-slate-200 text-slate-400 cursor-not-allowed"
-                      : "bg-white text-slate-700 hover:bg-blue-50 hover:text-blue-600 ring-1 ring-slate-200 hover:ring-blue-300 shadow-sm"
-                  }`}
-                  title="Trang sau"
-                >
-                  <ChevronRight size={20} />
-                </button>
-
-                {/* Nút đến trang cuối */}
-                <button
-                  onClick={() => handlePageChange(totalPages)}
-                  disabled={currentPage === totalPages}
-                  className={`px-3 py-2 rounded-lg font-medium transition-all duration-200 ${
-                    currentPage === totalPages
-                      ? "bg-slate-200 text-slate-400 cursor-not-allowed"
-                      : "bg-white text-slate-700 hover:bg-blue-50 hover:text-blue-600 ring-1 ring-slate-200 hover:ring-blue-300 shadow-sm"
-                  }`}
-                  title="Trang cuối"
-                >
-                  <ChevronsRight size={20} />
-                </button>
-              </div>
-
-                {/* Hiển thị thông tin trang */}
-                <div className="text-center mt-4 text-slate-600 text-sm w-full">
-                  <span className="font-medium">
-                    Trang {currentPage} / {totalPages}
-                  </span>
-                  <span className="mx-2">•</span>
-                  <span>
-                    Hiển thị {startIndex + 1} - {Math.min(endIndex, filteredCategories.length)} trong tổng số {filteredCategories.length} danh mục
-                  </span>
-                </div>
+              <div className="flex items-center justify-center gap-3 flex-wrap">
+                {Array.from({ length: totalPages }, (_, i) => i + 1).map((page) => (
+                  <button
+                    key={page}
+                    onClick={() => {
+                      console.log("🖱️ Chuyển sang trang:", page);
+                      handlePageChange(page);
+                    }}
+                    className={`w-12 h-12 rounded-full font-bold text-lg transition-all duration-200 flex items-center justify-center ${
+                      currentPage === page
+                        ? "bg-gradient-to-r from-blue-600 to-blue-700 text-white shadow-lg ring-2 ring-blue-400 scale-110"
+                        : "bg-white text-slate-700 hover:bg-blue-50 hover:text-blue-600 ring-1 ring-slate-300 hover:ring-blue-400 shadow-sm hover:shadow-md hover:scale-105"
+                    }`}
+                  >
+                    {page}
+                  </button>
+                ))}
               </div>
             </div>
           )}
