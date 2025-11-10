@@ -1,23 +1,62 @@
 import React, { useEffect, useState } from "react";
 import axios from "axios";
-import { Table, Tag, Button, Space, Modal, Input, message } from "antd";
+import { Table, Tag, Button, Space, Modal, Input, message, Select, DatePicker } from "antd";
+import dayjs from "dayjs";
 import { BookOutlined, ExclamationCircleOutlined, DollarOutlined } from "@ant-design/icons";
 const { confirm } = Modal;
 const BorrowManager = () => {
   const [borrowings, setBorrowings] = useState([]);
   const [loading, setLoading] = useState(false);
+  const [page, setPage] = useState(1);
+  const [limit, setLimit] = useState(10);
+  const [totalItems, setTotalItems] = useState(0);
+  const [query, setQuery] = useState("");
+  const [status, setStatus] = useState("");
+  const [borrowFrom, setBorrowFrom] = useState(null);
+  const [borrowTo, setBorrowTo] = useState(null);
+  const [dueFrom, setDueFrom] = useState(null);
+  const [dueTo, setDueTo] = useState(null);
+  const [sort, setSort] = useState("borrowDate");
+  const [order, setOrder] = useState("desc");
+  const [typingTimer, setTypingTimer] = useState(null);
   const [compensationModal, setCompensationModal] = useState({ open: false, record: null });
   const [compensationAmount, setCompensationAmount] = useState("");
 
   const token = localStorage.getItem("adminToken");
   // 📦 Load danh sách đơn mượn
-  const fetchBorrowings = async () => {
+  const fetchBorrowings = async (pageNum = 1, params = {}) => {
     setLoading(true);
     try {
-      const res = await axios.get("http://localhost:5000/api/borrowings", {
+      const q = params.q ?? query;
+      const s = params.sort ?? sort;
+      const o = params.order ?? order;
+      const l = params.limit ?? limit;
+      const st = params.status ?? status;
+      const bf = params.borrowFrom ?? borrowFrom;
+      const bt = params.borrowTo ?? borrowTo;
+      const df = params.dueFrom ?? dueFrom;
+      const dt = params.dueTo ?? dueTo;
+
+      const parts = [
+        `page=${pageNum}`,
+        `limit=${l}`,
+        q ? `q=${encodeURIComponent(q)}` : "",
+        st ? `status=${encodeURIComponent(st)}` : "",
+        bf ? `borrowFrom=${encodeURIComponent(bf)}` : "",
+        bt ? `borrowTo=${encodeURIComponent(bt)}` : "",
+        df ? `dueFrom=${encodeURIComponent(df)}` : "",
+        dt ? `dueTo=${encodeURIComponent(dt)}` : "",
+        s ? `sort=${encodeURIComponent(s)}` : "",
+        o ? `order=${encodeURIComponent(o)}` : "",
+      ].filter(Boolean);
+
+      const res = await axios.get(`http://localhost:5000/api/borrowings?${parts.join("&")}`, {
         headers: { Authorization: `Bearer ${token}` },
       });
-      setBorrowings(res.data);
+      const payload = res.data || {};
+      setBorrowings(payload.borrowings || []);
+      setTotalItems(payload.totalItems || 0);
+      setPage(payload.currentPage || pageNum);
     } catch (error) {
       console.error("❌ Lỗi tải borrowings:", error);
       message.error("Không tải được danh sách đơn mượn!");
@@ -26,8 +65,34 @@ const BorrowManager = () => {
     }
   };
   useEffect(() => {
-    fetchBorrowings();
-  }, []);
+    fetchBorrowings(page);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [page, limit, status, sort, order, borrowFrom, borrowTo, dueFrom, dueTo]);
+
+  const onChangeQuery = (e) => {
+    const value = e.target.value;
+    setQuery(value);
+    if (typingTimer) clearTimeout(typingTimer);
+    const timer = setTimeout(() => {
+      setPage(1);
+      fetchBorrowings(1, { q: value });
+    }, 400);
+    setTypingTimer(timer);
+  };
+
+  const onClearFilters = () => {
+    setQuery("");
+    setStatus("");
+    setBorrowFrom(null);
+    setBorrowTo(null);
+    setDueFrom(null);
+    setDueTo(null);
+    setSort("borrowDate");
+    setOrder("desc");
+    setLimit(10);
+    setPage(1);
+    fetchBorrowings(1, { q: "" });
+  };
 
   // ✅ Xác nhận trả sách
   const handleReturn = (record) => {
@@ -231,7 +296,110 @@ const BorrowManager = () => {
         <h2 className="text-xl font-semibold flex items-center gap-2">
           <BookOutlined /> Quản lý đơn mượn sách
         </h2>
-        <Button onClick={fetchBorrowings}>Làm mới</Button>
+        <Button onClick={() => fetchBorrowings(page)}>Làm mới</Button>
+      </div>
+
+      <div className="grid grid-cols-1 md:grid-cols-6 gap-3 mb-4">
+        <div className="md:col-span-2">
+          <label className="block text-sm font-medium text-gray-700 mb-1">Tìm kiếm</label>
+          <Input
+            value={query}
+            onChange={onChangeQuery}
+            placeholder="Tên/email người mượn, tên sách, ISBN..."
+          />
+        </div>
+        <div>
+          <label className="block text-sm font-medium text-gray-700 mb-1">Trạng thái</label>
+          <Select
+            value={status}
+            onChange={(v) => { setStatus(v); setPage(1); }}
+            allowClear
+            placeholder="Tất cả"
+            options={[
+              { value: "borrowed", label: "Đang mượn" },
+              { value: "returned", label: "Đã trả" },
+              { value: "overdue", label: "Quá hạn" },
+              { value: "damaged", label: "Hỏng" },
+              { value: "lost", label: "Mất" },
+              { value: "compensated", label: "Đã nhập tiền đền" },
+            ]}
+            className="w-full"
+          />
+        </div>
+        <div>
+          <label className="block text-sm font-medium text-gray-700 mb-1">Mượn từ</label>
+          <DatePicker
+            value={borrowFrom ? dayjs(borrowFrom) : null}
+            onChange={(d) => { setBorrowFrom(d ? d.format("YYYY-MM-DD") : null); setPage(1); }}
+            className="w-full"
+          />
+        </div>
+        <div>
+          <label className="block text-sm font-medium text-gray-700 mb-1">Mượn đến</label>
+          <DatePicker
+            value={borrowTo ? dayjs(borrowTo) : null}
+            onChange={(d) => { setBorrowTo(d ? d.format("YYYY-MM-DD") : null); setPage(1); }}
+            className="w-full"
+          />
+        </div>
+        <div>
+          <label className="block text-sm font-medium text-gray-700 mb-1">Hẹn trả từ</label>
+          <DatePicker
+            value={dueFrom ? dayjs(dueFrom) : null}
+            onChange={(d) => { setDueFrom(d ? d.format("YYYY-MM-DD") : null); setPage(1); }}
+            className="w-full"
+          />
+        </div>
+        <div>
+          <label className="block text-sm font-medium text-gray-700 mb-1">Hẹn trả đến</label>
+          <DatePicker
+            value={dueTo ? dayjs(dueTo) : null}
+            onChange={(d) => { setDueTo(d ? d.format("YYYY-MM-DD") : null); setPage(1); }}
+            className="w-full"
+          />
+        </div>
+        <div>
+          <label className="block text-sm font-medium text-gray-700 mb-1">Sắp xếp theo</label>
+          <Select
+            value={sort}
+            onChange={(v) => { setSort(v); setPage(1); }}
+            options={[
+              { value: "borrowDate", label: "Ngày mượn" },
+              { value: "dueDate", label: "Hẹn trả" },
+              { value: "status", label: "Trạng thái" },
+              { value: "createdAt", label: "Ngày tạo" },
+            ]}
+            className="w-full"
+          />
+        </div>
+        <div>
+          <label className="block text-sm font-medium text-gray-700 mb-1">Thứ tự</label>
+          <Select
+            value={order}
+            onChange={(v) => { setOrder(v); setPage(1); }}
+            options={[
+              { value: "desc", label: "Giảm dần" },
+              { value: "asc", label: "Tăng dần" },
+            ]}
+            className="w-full"
+          />
+        </div>
+        <div>
+          <label className="block text-sm font-medium text-gray-700 mb-1">Mỗi trang</label>
+          <Select
+            value={limit}
+            onChange={(v) => { setLimit(v); setPage(1); }}
+            options={[
+              { value: 10, label: "10" },
+              { value: 20, label: "20" },
+              { value: 50, label: "50" },
+            ]}
+            className="w-full"
+          />
+        </div>
+        <div className="flex items-end">
+          <Button onClick={onClearFilters}>Đặt lại</Button>
+        </div>
       </div>
 
       <Table
@@ -239,7 +407,20 @@ const BorrowManager = () => {
         columns={columns}
         dataSource={borrowings}
         loading={loading}
-        pagination={{ pageSize: 8 }}
+        pagination={{
+          current: page,
+          pageSize: limit,
+          total: totalItems,
+          onChange: (p, ps) => {
+            if (ps !== limit) {
+              setLimit(ps);
+              setPage(1);
+            } else {
+              setPage(p);
+            }
+          },
+          showSizeChanger: true,
+        }}
       />
 
       {/* Modal Nhập tiền đền có ảnh */}

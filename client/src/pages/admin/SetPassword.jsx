@@ -1,11 +1,15 @@
 import { useEffect, useState } from "react";
 import axios from "axios";
+import { Input, Select, Space, Button, Row, Col, Form } from "antd";
+import { SearchOutlined } from "@ant-design/icons";
 
 const SetPassword = () => {
   const [users, setUsers] = useState([]);
+  const [filteredUsers, setFilteredUsers] = useState([]);
   const [passwords, setPasswords] = useState({});
   const [loading, setLoading] = useState(true);
   const [loadingIds, setLoadingIds] = useState([]);
+  const [searchForm] = Form.useForm();
 
   const fetchUsers = async () => {
     try {
@@ -15,6 +19,7 @@ const SetPassword = () => {
         headers: { Authorization: `Bearer ${token}` },
       });
       setUsers(res.data);
+      setFilteredUsers(res.data);
     } catch (err) {
       console.error("Lỗi khi tải danh sách:", err);
       if (err.response?.status === 401 || err.message === "UNAUTHENTICATED") {
@@ -77,6 +82,38 @@ const SetPassword = () => {
     }
   };
 
+  const handleSearch = (values) => {
+    let filtered = [...users];
+    
+    if (values.searchText) {
+      const searchLower = values.searchText.toLowerCase();
+      filtered = filtered.filter(user => 
+        (user.studentCode && user.studentCode.toLowerCase().includes(searchLower)) ||
+        (user.name && user.name.toLowerCase().includes(searchLower)) ||
+        (user.email && user.email.toLowerCase().includes(searchLower))
+      );
+    }
+
+    if (values.passwordStatus) {
+      if (values.passwordStatus === 'withPassword') {
+        filtered = filtered.filter(user => user.password);
+      } else if (values.passwordStatus === 'withoutPassword') {
+        filtered = filtered.filter(user => !user.password);
+      }
+    }
+
+    if (values.courseFilter) {
+      filtered = filtered.filter(user => 
+        user.course && user.course.toLowerCase() === values.courseFilter.toLowerCase()
+      );
+    }
+
+    setFilteredUsers(filtered);
+  };
+
+  // Lấy danh sách khóa học duy nhất để làm bộ lọc
+  const uniqueCourses = [...new Set(users.map(user => user.course).filter(Boolean))];
+
   if (loading) return <p>Đang tải dữ liệu...</p>;
 
   return (
@@ -84,6 +121,55 @@ const SetPassword = () => {
       <h2 className="text-xl font-bold mb-4 text-green-600">
         Cấp mật khẩu cho sinh viên
       </h2>
+
+      <Form
+        form={searchForm}
+        onFinish={handleSearch}
+        className="mb-4"
+      >
+        <Row gutter={16}>
+          <Col span={8}>
+            <Form.Item name="searchText">
+              <Input
+                placeholder="Tìm theo mã SV, họ tên, email"
+                prefix={<SearchOutlined />}
+                allowClear
+              />
+            </Form.Item>
+          </Col>
+          <Col span={6}>
+            <Form.Item name="passwordStatus">
+              <Select placeholder="Trạng thái mật khẩu" allowClear>
+                <Select.Option value="withPassword">Đã có mật khẩu</Select.Option>
+                <Select.Option value="withoutPassword">Chưa có mật khẩu</Select.Option>
+              </Select>
+            </Form.Item>
+          </Col>
+          <Col span={6}>
+            <Form.Item name="courseFilter">
+              <Select placeholder="Lọc theo khóa học" allowClear>
+                {uniqueCourses.map(course => (
+                  <Select.Option key={course} value={course}>{course}</Select.Option>
+                ))}
+              </Select>
+            </Form.Item>
+          </Col>
+          <Col span={4}>
+            <Space>
+              <Button type="primary" htmlType="submit">
+                🔍 Tìm kiếm
+              </Button>
+              <Button onClick={() => {
+                searchForm.resetFields();
+                setFilteredUsers(users);
+              }}>
+                ↺ Đặt lại
+              </Button>
+            </Space>
+          </Col>
+        </Row>
+      </Form>
+
       <table className="w-full border border-gray-300">
         <thead>
           <tr className="bg-green-100 text-left">
@@ -96,7 +182,7 @@ const SetPassword = () => {
           </tr>
         </thead>
         <tbody>
-          {users.map((u) => (
+          {filteredUsers.map((u) => (
             <tr key={u._id} className="hover:bg-gray-50">
               <td className="border px-4 py-2">{u.studentCode}</td>
               <td className="border px-4 py-2">{u.fullName}</td>

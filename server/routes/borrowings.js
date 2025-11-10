@@ -97,20 +97,91 @@ router.post("/", verifyToken, async (req, res) => {
 // ==================== Lấy danh sách đơn mượn ====================
 router.get("/", verifyToken, async (req, res) => {
   try {
-    const borrowings = await Borrowing.find()
-      .sort({ borrowDate: -1 })
+    const page = parseInt(req.query.page) || 1;
+    const limit = parseInt(req.query.limit) || 10;
+    const skip = (page - 1) * limit;
+
+    const {
+      q,
+      status,
+      user,
+      book,
+      borrowFrom,
+      borrowTo,
+      dueFrom,
+      dueTo,
+      sort,
+      order,
+    } = req.query;
+
+    const filter = {};
+
+    if (user) filter.user = user;
+    if (book) filter.book = book;
+
+    if (status && ["borrowed", "returned", "damaged", "lost", "compensated", "overdue"].includes(status)) {
+      // 'overdue' sẽ được tính sau; ở đây tạm lưu để lọc sau khi fetch
+      if (status !== "overdue") {
+        filter.status = status;
+      }
+    }
+
+    if (borrowFrom || borrowTo) {
+      filter.borrowDate = {};
+      if (borrowFrom) filter.borrowDate.$gte = new Date(borrowFrom);
+      if (borrowTo) filter.borrowDate.$lte = new Date(borrowTo);
+    }
+
+    if (dueFrom || dueTo) {
+      filter.dueDate = {};
+      if (dueFrom) filter.dueDate.$gte = new Date(dueFrom);
+      if (dueTo) filter.dueDate.$lte = new Date(dueTo);
+    }
+
+    // Text search across snapshots and refs
+    if (q && q.trim()) {
+      const text = q.trim();
+      filter.$or = [
+        { "userSnapshot.fullName": { $regex: text, $options: "i" } },
+        { "userSnapshot.email": { $regex: text, $options: "i" } },
+        { "userSnapshot.studentId": { $regex: text, $options: "i" } },
+        { "bookSnapshot.title": { $regex: text, $options: "i" } },
+        { "bookSnapshot.isbn": { $regex: text, $options: "i" } },
+      ];
+    }
+
+    const total = await Borrowing.countDocuments(filter);
+    const sortSpec =
+      sort
+        ? { [sort]: (order || "desc").toLowerCase() === "asc" ? 1 : -1 }
+        : { borrowDate: -1 };
+
+    let borrowings = await Borrowing.find(filter)
+      .sort(sortSpec)
+      .skip(skip)
+      .limit(limit)
       .populate({ path: "book", populate: { path: "author", select: "name" } })
       .populate("user");
 
     const now = new Date();
-    const updated = borrowings.map((b) => {
+    let updated = borrowings.map((b) => {
       let status = b.status;
       if (status === STATUS_ENUM.BORROWED && new Date(b.dueDate) < now)
         status = STATUS_ENUM.OVERDUE;
       return { ...b._doc, status };
     });
 
-    res.json(updated);
+    // Nếu lọc theo overdue, áp dụng sau khi cập nhật trạng thái tạm thời
+    if (status === "overdue") {
+      updated = updated.filter((b) => b.status === "overdue");
+    }
+
+    res.json({
+      borrowings: updated,
+      currentPage: page,
+      totalPages: Math.ceil(total / limit),
+      totalItems: total,
+    });
   } catch (err) {
     console.error("❌ Lỗi lấy danh sách borrowings:", err);
     res.status(500).json({ message: "Lỗi server khi lấy danh sách mượn sách!" });

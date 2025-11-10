@@ -7,11 +7,46 @@ const BookLManager = () => {
   const [books, setBooks] = useState([]);
   const [page, setPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
+  const [limit, setLimit] = useState(5);
+  const [query, setQuery] = useState("");
+  const [categories, setCategories] = useState([]);
+  const [authors, setAuthors] = useState([]);
+  const [categoryId, setCategoryId] = useState("");
+  const [authorId, setAuthorId] = useState("");
+  const [yearFrom, setYearFrom] = useState("");
+  const [yearTo, setYearTo] = useState("");
+  const [availableMin, setAvailableMin] = useState("");
+  const [sort, setSort] = useState("createdAt");
+  const [order, setOrder] = useState("desc");
+  const [typingTimer, setTypingTimer] = useState(null);
   const navigate = useNavigate();
   const location = useLocation();
-  const fetchBooks = async (pageNum = 1) => {
+  const fetchBooks = async (pageNum = 1, params = {}) => {
     try {
-      const res = await axios.get(`http://localhost:5000/api/books?page=${pageNum}&limit=5`);
+      const q = params.q ?? query;
+      const s = params.sort ?? sort;
+      const o = params.order ?? order;
+      const l = params.limit ?? limit;
+      const c = params.category ?? categoryId;
+      const a = params.author ?? authorId;
+      const yf = params.yearFrom ?? yearFrom;
+      const yt = params.yearTo ?? yearTo;
+      const av = params.availableMin ?? availableMin;
+
+      const parts = [
+        `page=${pageNum}`,
+        `limit=${l}`,
+        q ? `q=${encodeURIComponent(q)}` : "",
+        s ? `sort=${encodeURIComponent(s)}` : "",
+        o ? `order=${encodeURIComponent(o)}` : "",
+        c ? `category=${encodeURIComponent(c)}` : "",
+        a ? `author=${encodeURIComponent(a)}` : "",
+        yf ? `yearFrom=${encodeURIComponent(yf)}` : "",
+        yt ? `yearTo=${encodeURIComponent(yt)}` : "",
+        av !== "" ? `availableMin=${encodeURIComponent(av)}` : "",
+      ].filter(Boolean);
+
+      const res = await axios.get(`http://localhost:5000/api/books?${parts.join("&")}`);
       const data = res.data;
       if (Array.isArray(data)) {
         setBooks(data);
@@ -42,8 +77,47 @@ const BookLManager = () => {
     }
   }, [location.state]);
   useEffect(() => {
-    fetchBooks(page);
-  }, [page]);
+    const init = async () => {
+      try {
+        const [catRes, authorRes] = await Promise.all([
+          axios.get("http://localhost:5000/api/category?limit=1000"),
+          axios.get("http://localhost:5000/api/authors?limit=1000"),
+        ]);
+        setCategories(catRes.data.categories || catRes.data || []);
+        setAuthors(authorRes.data.authors || authorRes.data || []);
+      } catch (e) {
+        // ignore
+      }
+      fetchBooks(page);
+    };
+    init();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [page, limit, sort, order, categoryId, authorId, yearFrom, yearTo, availableMin]);
+
+  const onChangeQuery = (e) => {
+    const value = e.target.value;
+    setQuery(value);
+    if (typingTimer) clearTimeout(typingTimer);
+    const timer = setTimeout(() => {
+      setPage(1);
+      fetchBooks(1, { q: value });
+    }, 400);
+    setTypingTimer(timer);
+  };
+
+  const onClearFilters = () => {
+    setQuery("");
+    setCategoryId("");
+    setAuthorId("");
+    setYearFrom("");
+    setYearTo("");
+    setAvailableMin("");
+    setSort("createdAt");
+    setOrder("desc");
+    setLimit(5);
+    setPage(1);
+    fetchBooks(1, { q: "" });
+  };
   const handleDelete = async (id) => {
     if (window.confirm("🗑️ Bạn có chắc muốn xóa sách này không?")) {
       try {
@@ -74,6 +148,116 @@ const BookLManager = () => {
             className="bg-green-600 hover:bg-green-700 text-white py-2 px-4 rounded-lg"
           >
             🔁 Trả sách
+          </button>
+        </div>
+      </div>
+
+      <div className="grid grid-cols-1 md:grid-cols-6 gap-3 mb-4">
+        <div className="md:col-span-2">
+          <label className="block text-sm font-medium text-gray-700 mb-1">Tìm kiếm</label>
+          <input
+            type="text"
+            value={query}
+            onChange={onChangeQuery}
+            placeholder="Tên, mô tả hoặc mã sách..."
+            className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-400"
+          />
+        </div>
+        <div>
+          <label className="block text-sm font-medium text-gray-700 mb-1">Thể loại</label>
+          <select
+            value={categoryId}
+            onChange={(e) => { setCategoryId(e.target.value); setPage(1); }}
+            className="w-full border border-gray-300 rounded-lg px-3 py-2"
+          >
+            <option value="">Tất cả</option>
+            {categories.map(c => <option key={c._id} value={c._id}>{c.name}</option>)}
+          </select>
+        </div>
+        <div>
+          <label className="block text-sm font-medium text-gray-700 mb-1">Tác giả</label>
+          <select
+            value={authorId}
+            onChange={(e) => { setAuthorId(e.target.value); setPage(1); }}
+            className="w-full border border-gray-300 rounded-lg px-3 py-2"
+          >
+            <option value="">Tất cả</option>
+            {authors.map(a => <option key={a._id} value={a._id}>{a.name}</option>)}
+          </select>
+        </div>
+        <div>
+          <label className="block text-sm font-medium text-gray-700 mb-1">Năm từ</label>
+          <input
+            type="number"
+            value={yearFrom}
+            onChange={(e) => { setYearFrom(e.target.value); setPage(1); }}
+            className="w-full border border-gray-300 rounded-lg px-3 py-2"
+            placeholder="VD: 2010"
+          />
+        </div>
+        <div>
+          <label className="block text-sm font-medium text-gray-700 mb-1">Năm đến</label>
+          <input
+            type="number"
+            value={yearTo}
+            onChange={(e) => { setYearTo(e.target.value); setPage(1); }}
+            className="w-full border border-gray-300 rounded-lg px-3 py-2"
+            placeholder="VD: 2024"
+          />
+        </div>
+        <div>
+          <label className="block text-sm font-medium text-gray-700 mb-1">Sẵn có tối thiểu</label>
+          <input
+            type="number"
+            value={availableMin}
+            onChange={(e) => { setAvailableMin(e.target.value); setPage(1); }}
+            className="w-full border border-gray-300 rounded-lg px-3 py-2"
+            placeholder="0"
+            min="0"
+          />
+        </div>
+        <div>
+          <label className="block text-sm font-medium text-gray-700 mb-1">Sắp xếp theo</label>
+          <select
+            value={sort}
+            onChange={(e) => { setSort(e.target.value); setPage(1); }}
+            className="w-full border border-gray-300 rounded-lg px-3 py-2"
+          >
+            <option value="createdAt">Ngày tạo</option>
+            <option value="title">Tên sách</option>
+            <option value="publishedYear">Năm</option>
+            <option value="available">Sẵn có</option>
+          </select>
+        </div>
+        <div>
+          <label className="block text-sm font-medium text-gray-700 mb-1">Thứ tự</label>
+          <select
+            value={order}
+            onChange={(e) => { setOrder(e.target.value); setPage(1); }}
+            className="w-full border border-gray-300 rounded-lg px-3 py-2"
+          >
+            <option value="desc">Giảm dần</option>
+            <option value="asc">Tăng dần</option>
+          </select>
+        </div>
+        <div>
+          <label className="block text-sm font-medium text-gray-700 mb-1">Mỗi trang</label>
+          <select
+            value={limit}
+            onChange={(e) => { setLimit(parseInt(e.target.value)); setPage(1); }}
+            className="w-full border border-gray-300 rounded-lg px-3 py-2"
+          >
+            <option value={5}>5</option>
+            <option value={10}>10</option>
+            <option value={20}>20</option>
+          </select>
+        </div>
+        <div className="flex items-end">
+          <button
+            onClick={onClearFilters}
+            className="border border-gray-300 px-4 py-2 rounded-lg hover:bg-gray-100"
+          >
+            Đặt lại
           </button>
         </div>
       </div>
