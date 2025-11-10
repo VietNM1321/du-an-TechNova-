@@ -2,14 +2,40 @@ import mongoose from "mongoose";
 
 const notificationSchema = new mongoose.Schema(
   {
-    title: { type: String, required: true },
-    description: { type: String },
-    date: { type: Date, required: true }, // ngày admin chọn
-    image: { type: String },
-    wordFile: { type: String },
-    excelFile: { type: String },
+    userId: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "User",
+      required: true,
+    },
+    type: {
+      type: String,
+      required: true,
+      enum: ["review", "borrow", "return", "system", "reminder"], // loại thông báo
+    },
+    title: {
+      type: String,
+      required: true,
+    },
+    message: {
+      type: String,
+      required: true,
+    },
+    isRead: {
+      type: Boolean,
+      default: false,
+    },
+    data: {
+      image: { type: String },      // đường dẫn ảnh
+      wordFile: { type: String },   // đường dẫn file Word
+      excelFile: { type: String },  // đường dẫn file Excel
+      extra: mongoose.Schema.Types.Mixed, // lưu thêm dữ liệu tùy ý
+    },
   },
-  { timestamps: true }
+  {
+    timestamps: true, // createdAt, updatedAt tự động
+    versionKey: false,
+  }
 );
 
-export default mongoose.model("Notification", notificationSchema);
+const Notification = mongoose.model("Notification", notificationSchema);
+export default Notification;

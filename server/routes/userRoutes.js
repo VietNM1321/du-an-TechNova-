@@ -129,5 +129,17 @@ router.post("/:borrowingId/report", async (req, res) => {
     res.status(500).json({ message: err.message });
   }
 });
+// Thêm vào routes/user.js (sau các route hiện tại)
+router.get("/code/:code", async (req, res) => {
+  try {
+    const { code } = req.params;
+    const user = await User.findOne({ studentCode: code }).select("_id studentCode fullName email");
+    if (!user) return res.status(404).json({ message: "Không tìm thấy sinh viên" });
+    res.json(user);
+  } catch (error) {
+    console.error("❌ Lỗi tìm sinh viên theo mã:", error);
+    res.status(500).json({ message: "Lỗi server" });
+  }
+});
 
 export default router;

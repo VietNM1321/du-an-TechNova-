@@ -1,12 +1,12 @@
 import express from "express";
 import multer from "multer";
-import Notification from "../models/Notification.js"; // nhớ tạo model Notification.js
-import path from "path";
+import Notification from "../models/Notification.js";
+import User from "../models/User.js";
 import fs from "fs";
 
 const router = express.Router();
 
-// ========== CẤU HÌNH MULTER ==========
+// Multer config
 const storage = multer.diskStorage({
   destination: (req, file, cb) => {
     const folder = "uploads/notifications";
@@ -14,16 +14,24 @@ const storage = multer.diskStorage({
     cb(null, folder);
   },
   filename: (req, file, cb) => {
-    cb(
-      null,
-      Date.now() + "-" + file.originalname.replace(/\s+/g, "_")
-    );
+    cb(null, Date.now() + "-" + file.originalname.replace(/\s+/g, "_"));
   },
 });
-
 const upload = multer({ storage });
+const normalizePath = (filePath) => filePath.replace(/\\/g, "/");
 
-// ========== 🟢 TẠO THÔNG BÁO ==========
+// 🔹 Lấy danh sách tất cả thông báo
+router.get("/", async (req, res) => {
+  try {
+    const notifications = await Notification.find().sort({ createdAt: -1 });
+    res.json(notifications);
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ message: "Lỗi khi lấy danh sách thông báo" });
+  }
+});
+
+// 🟢 Tạo thông báo
 router.post(
   "/",
   upload.fields([
@@ -33,52 +41,51 @@ router.post(
   ]),
   async (req, res) => {
     try {
-      const { title, description, date } = req.body; // date được admin nhập thủ công (YYYY-MM-DD)
-      const image = req.files?.image ? req.files.image[0].path : "";
-      const wordFile = req.files?.wordFile ? req.files.wordFile[0].path : "";
-      const excelFile = req.files?.excelFile ? req.files.excelFile[0].path : "";
+      let { title, message: msg, type, userId, studentCode, date } = req.body;
+
+      if (type === "reminder") {
+        if (!studentCode) return res.status(400).json({ message: "studentCode bắt buộc với reminder" });
+        const user = await User.findOne({ studentCode });
+        if (!user) return res.status(404).json({ message: "Không tìm thấy sinh viên với mã này" });
+        userId = user._id;
+      }
+
+      if (!userId) return res.status(400).json({ message: "userId hoặc studentCode là bắt buộc" });
 
       const newNotification = new Notification({
         title,
-        description,
-        date: date ? new Date(date) : new Date(), // dùng ngày admin nhập hoặc mặc định hôm nay
-        image,
-        wordFile,
-        excelFile,
+        message: msg,
+        type,
+        userId,
+        createdAt: date ? new Date(date) : new Date(),
+        data: {
+          image: req.files?.image ? normalizePath(req.files.image[0].path) : "",
+          wordFile: req.files?.wordFile ? normalizePath(req.files.wordFile[0].path) : "",
+          excelFile: req.files?.excelFile ? normalizePath(req.files.excelFile[0].path) : "",
+        },
       });
 
       await newNotification.save();
       res.status(201).json(newNotification);
     } catch (err) {
       console.error(err);
-      res.status(500).json({ message: "Lỗi khi tạo thông báo" });
+      res.status(500).json({ message: "Lỗi khi tạo thông báo", error: err.message });
     }
   }
 );
 
-// ========== 🔵 LẤY TẤT CẢ THÔNG BÁO ==========
-router.get("/", async (req, res) => {
-  try {
-    const notifications = await Notification.find().sort({ date: -1 });
-    res.json(notifications);
-  } catch (err) {
-    res.status(500).json({ message: "Lỗi khi lấy danh sách thông báo" });
-  }
-});
-
-// ========== 🟣 XEM CHI TIẾT THÔNG BÁO ==========
+// 🟣 Xem chi tiết
 router.get("/:id", async (req, res) => {
   try {
     const notification = await Notification.findById(req.params.id);
-    if (!notification)
-      return res.status(404).json({ message: "Không tìm thấy thông báo" });
+    if (!notification) return res.status(404).json({ message: "Không tìm thấy thông báo" });
     res.json(notification);
   } catch (err) {
     res.status(500).json({ message: "Lỗi khi xem chi tiết thông báo" });
   }
 });
 
-// ========== 🟠 CẬP NHẬT THÔNG BÁO ==========
+// 🟠 Cập nhật
 router.put(
   "/:id",
   upload.fields([
@@ -88,22 +95,18 @@ router.put(
   ]),
   async (req, res) => {
     try {
-      const { title, description, date } = req.body;
+      const { title, message, type } = req.body;
       const notification = await Notification.findById(req.params.id);
-      if (!notification)
-        return res.status(404).json({ message: "Không tìm thấy thông báo" });
+      if (!notification) return res.status(404).json({ message: "Không tìm thấy thông báo" });
 
-      // Cập nhật các trường cơ bản
       notification.title = title || notification.title;
-      notification.description = description || notification.description;
-      notification.date = date ? new Date(date) : notification.date;
+      notification.message = message || notification.message;
+      notification.type = type || notification.type;
 
-      // Cập nhật file nếu có upload mới
-      if (req.files?.image) notification.image = req.files.image[0].path;
-      if (req.files?.wordFile)
-        notification.wordFile = req.files.wordFile[0].path;
-      if (req.files?.excelFile)
-        notification.excelFile = req.files.excelFile[0].path;
+      notification.data = notification.data || {};
+      if (req.files?.image) notification.data.image = normalizePath(req.files.image[0].path);
+      if (req.files?.wordFile) notification.data.wordFile = normalizePath(req.files.wordFile[0].path);
+      if (req.files?.excelFile) notification.data.excelFile = normalizePath(req.files.excelFile[0].path);
 
       await notification.save();
       res.json(notification);
@@ -113,13 +116,11 @@ router.put(
   }
 );
 
-// ========== 🔴 XÓA THÔNG BÁO ==========
+// 🔴 Xóa
 router.delete("/:id", async (req, res) => {
   try {
     const notification = await Notification.findByIdAndDelete(req.params.id);
-    if (!notification)
-      return res.status(404).json({ message: "Không tìm thấy thông báo" });
-
+    if (!notification) return res.status(404).json({ message: "Không tìm thấy thông báo" });
     res.json({ message: "Đã xóa thông báo thành công" });
   } catch (err) {
     res.status(500).json({ message: "Lỗi khi xóa thông báo" });

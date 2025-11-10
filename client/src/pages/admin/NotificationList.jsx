@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from "react";
-import { Table, Button, message, Space } from "antd";
+import { Table, Button, message, Space, Image } from "antd";
 import { useNavigate } from "react-router-dom";
 import axios from "axios";
 
@@ -23,7 +23,6 @@ const NotificationList = () => {
 
   const handleDelete = async (id) => {
     if (!window.confirm("Bạn có chắc muốn xóa thông báo này?")) return;
-
     try {
       await axios.delete(`http://localhost:5000/api/notifications/${id}`);
       message.success("Xóa thông báo thành công!");
@@ -39,28 +38,50 @@ const NotificationList = () => {
   }, []);
 
   const columns = [
-    { 
-      title: "Tiêu đề", 
-      dataIndex: "title", 
-      key: "title"
+    {
+      title: "Tiêu đề",
+      dataIndex: "title",
+      key: "title",
+      render: (text, record) => (
+        <span
+          className="cursor-pointer text-blue-600 hover:underline"
+          onClick={() => navigate(`/admin/notifications/edit/${record._id}`)}
+        >
+          {text}
+        </span>
+      ),
     },
-    { 
-      title: "Ngày thông báo", 
-      dataIndex: "date", 
-      key: "date",
-      render: (date) => new Date(date).toLocaleDateString()
+    {
+      title: "Ngày tạo",
+      dataIndex: "createdAt",
+      key: "createdAt",
+      render: date => new Date(date).toLocaleString(),
+    },
+    {
+      title: "Ảnh minh họa",
+      dataIndex: ["data","image"],
+      key: "image",
+      render: img => img ? <Image src={`http://localhost:5000/${img}`} width={80} /> : "-"
+    },
+    {
+      title: "File Word",
+      dataIndex: ["data","wordFile"],
+      key: "wordFile",
+      render: file => file ? <a href={`http://localhost:5000/${file}`} target="_blank" rel="noreferrer">Tải Word</a> : "-"
+    },
+    {
+      title: "File Excel",
+      dataIndex: ["data","excelFile"],
+      key: "excelFile",
+      render: file => file ? <a href={`http://localhost:5000/${file}`} target="_blank" rel="noreferrer">Tải Excel</a> : "-"
     },
     {
       title: "Hành động",
       key: "action",
       render: (_, record) => (
-        <Space size="middle">
-          <Button type="link" onClick={() => navigate(`/admin/notifications/edit/${record._id}`)}>
-            Sửa
-          </Button>
-          <Button type="link" danger onClick={() => handleDelete(record._id)}>
-            Xóa
-          </Button>
+        <Space>
+          <Button type="link" onClick={() => navigate(`/admin/notifications/edit/${record._id}`)}>Sửa</Button>
+          <Button type="link" danger onClick={() => handleDelete(record._id)}>Xóa</Button>
         </Space>
       ),
     },
@@ -69,11 +90,7 @@ const NotificationList = () => {
   return (
     <div>
       <h2 className="text-2xl font-bold mb-4">📄 Danh sách thông báo</h2>
-      <Button
-        type="primary"
-        className="mb-4"
-        onClick={() => navigate("/admin/notifications/add")}
-      >
+      <Button type="primary" className="mb-4" onClick={() => navigate("/admin/notifications/add")}>
         Thêm thông báo
       </Button>
       <Table

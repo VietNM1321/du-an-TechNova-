@@ -8,13 +8,12 @@ import {
   LogOut,
   LayoutDashboard,
   History,
-  BookOpen,
-  PenTool,
   Bell,
 } from "lucide-react";
 import { Link, useNavigate, useLocation } from "react-router-dom";
 import logo from "../assets/logo.png";
 import axios from "axios";
+import NotificationDetail from "./NotificationDetail";
 
 const Header = ({ selectedCategory, setSelectedCategory, selectedAuthor, setSelectedAuthor }) => {
   const [searchTerm, setSearchTerm] = useState("");
@@ -22,10 +21,8 @@ const Header = ({ selectedCategory, setSelectedCategory, selectedAuthor, setSele
   const [userMenuOpen, setUserMenuOpen] = useState(false);
   const [menuOpen, setMenuOpen] = useState(false);
   const [notifOpen, setNotifOpen] = useState(false);
-  const [categories, setCategories] = useState([]);
-  const [authors, setAuthors] = useState([]);
-  const [cartItems, setCartItems] = useState([]);
   const [notifications, setNotifications] = useState([]);
+  const [cartItems, setCartItems] = useState([]);
 
   const userMenuRef = useRef(null);
   const menuRef = useRef(null);
@@ -34,7 +31,6 @@ const Header = ({ selectedCategory, setSelectedCategory, selectedAuthor, setSele
   const navigate = useNavigate();
   const location = useLocation();
 
-  // Load user & cart
   useEffect(() => {
     const storedUser = localStorage.getItem("clientUser");
     if (storedUser) {
@@ -45,7 +41,6 @@ const Header = ({ selectedCategory, setSelectedCategory, selectedAuthor, setSele
     }
   }, []);
 
-  // Listen auth changes
   useEffect(() => {
     const handleAuthChange = () => {
       const storedUser = localStorage.getItem("clientUser");
@@ -59,13 +54,6 @@ const Header = ({ selectedCategory, setSelectedCategory, selectedAuthor, setSele
     };
   }, []);
 
-  // Update user on route change
-  useEffect(() => {
-    const storedUser = localStorage.getItem("clientUser");
-    setUser(storedUser ? JSON.parse(storedUser) : null);
-  }, [location.pathname]);
-
-  // Close dropdowns on outside click
   useEffect(() => {
     const handleClickOutside = (e) => {
       if (userMenuRef.current && !userMenuRef.current.contains(e.target)) setUserMenuOpen(false);
@@ -76,27 +64,19 @@ const Header = ({ selectedCategory, setSelectedCategory, selectedAuthor, setSele
     return () => document.removeEventListener("mousedown", handleClickOutside);
   }, []);
 
-  // Fetch categories, authors, notifications
   useEffect(() => {
     const fetchData = async () => {
       try {
-        const [catRes, authRes, notifRes] = await Promise.all([
-          axios.get("http://localhost:5000/api/category"),
-          axios.get("http://localhost:5000/api/authors"),
-          axios.get("http://localhost:5000/api/notifications"),
-        ]);
-        setCategories(catRes.data);
-        setAuthors(authRes.data);
+        const notifRes = await axios.get("http://localhost:5000/api/notifications");
         setNotifications(notifRes.data || []);
       } catch (err) {
-        console.error("Lỗi khi tải dữ liệu:", err);
+        console.error("Lỗi khi tải thông báo:", err);
       }
     };
     fetchData();
   }, []);
 
   const totalItems = cartItems?.reduce((sum, item) => sum + item.quantity, 0) || 0;
-  const isAdmin = user?.role === "admin";
 
   const handleLogout = () => {
     localStorage.removeItem("clientUser");
@@ -115,30 +95,17 @@ const Header = ({ selectedCategory, setSelectedCategory, selectedAuthor, setSele
     setSearchTerm("");
   };
 
-  const handleSelectCategory = (category) => {
-    setSelectedCategory(category);
-    setSelectedAuthor(null);
-    navigate(`/category/${category._id}`);
-    setMenuOpen(false);
-  };
-
-  const handleSelectAuthor = (author) => {
-    setSelectedAuthor(author);
-    setSelectedCategory(null);
-    navigate(`/author/${author._id}`);
-    setMenuOpen(false);
-  };
+  const isAdmin = user?.role === "admin";
 
   return (
     <header className="w-full bg-white shadow-md border-b border-gray-200 font-sans">
-      {/* Hotline */}
+      {/* Top Hotline */}
       <div className="bg-red-600 text-white text-sm py-1">
         <marquee behavior="scroll" direction="left" scrollamount="6">
           📞 Hotline: 0938 424 289
         </marquee>
       </div>
 
-      {/* Main header */}
       <div className="flex items-center justify-between px-4 md:px-6 py-3 gap-4 flex-wrap">
         {/* Logo */}
         <Link to="/" className="flex items-center gap-2 flex-shrink-0">
@@ -149,7 +116,7 @@ const Header = ({ selectedCategory, setSelectedCategory, selectedAuthor, setSele
         {/* Search */}
         <form
           onSubmit={handleSearch}
-          className="flex-1 max-w-xl border border-gray-300 rounded-full items-center px-4 py-2 flex"
+          className="flex flex-1 border border-gray-300 rounded-full items-center px-4 py-2 max-w-xl"
         >
           <Search className="text-gray-500 mr-2" size={20} />
           <input
@@ -168,7 +135,7 @@ const Header = ({ selectedCategory, setSelectedCategory, selectedAuthor, setSele
         </form>
 
         {/* Bell + Cart + User */}
-        <div className="flex items-center gap-4 md:gap-6 flex-shrink-0">
+        <div className="flex items-center gap-4 relative">
           {/* Bell */}
           <div ref={notifRef} className="relative">
             <button
@@ -177,35 +144,22 @@ const Header = ({ selectedCategory, setSelectedCategory, selectedAuthor, setSele
             >
               <Bell size={24} />
               {notifications.length > 0 && (
-                <span className="absolute -top-1 -right-1 bg-red-600 text-white text-xs w-4 h-4 rounded-full flex items-center justify-center font-semibold">
+                <span className="absolute -top-2 -right-2 bg-red-600 text-white text-xs w-5 h-5 rounded-full flex items-center justify-center font-semibold">
                   {notifications.length}
                 </span>
               )}
             </button>
 
+            {/* NotificationDetail Popup */}
             <AnimatePresence>
               {notifOpen && (
                 <motion.div
                   initial={{ opacity: 0, y: -10 }}
                   animate={{ opacity: 1, y: 0 }}
                   exit={{ opacity: 0, y: -10 }}
-                  className="absolute right-0 mt-3 bg-white border border-gray-200 shadow-xl rounded-lg w-80 max-h-96 overflow-auto z-50"
+                  className="absolute right-0 mt-3 z-50 w-full max-w-md"
                 >
-                  {notifications.length === 0 ? (
-                    <p className="p-4 text-gray-500 text-sm">Không có thông báo</p>
-                  ) : (
-                    notifications.map((notif, index) => (
-                      <div
-                        key={notif._id || index}
-                        className="p-3 border-b border-gray-100 hover:bg-gray-50 cursor-pointer"
-                        onClick={() => console.log("Clicked notification:", notif)}
-                      >
-                        <p className="font-semibold text-gray-800">{notif.title}</p>
-                        <p className="text-gray-500 text-sm">{new Date(notif.date).toLocaleDateString()}</p>
-                        {notif.content && <p className="text-gray-600 text-sm mt-1">{notif.content}</p>}
-                      </div>
-                    ))
-                  )}
+                  <NotificationDetail show={notifOpen} onClose={() => setNotifOpen(false)} />
                 </motion.div>
               )}
             </AnimatePresence>
@@ -221,12 +175,12 @@ const Header = ({ selectedCategory, setSelectedCategory, selectedAuthor, setSele
             )}
           </Link>
 
-          {/* User menu */}
+          {/* User Menu */}
           {user ? (
             <div ref={userMenuRef} className="relative">
               <button
                 onClick={() => setUserMenuOpen((prev) => !prev)}
-                className="text-gray-700 hover:text-red-700 font-medium whitespace-nowrap"
+                className="text-gray-700 hover:text-red-700 font-medium flex items-center gap-1"
               >
                 {isAdmin ? "Admin" : user.fullName || user.name || user.email || "Tài khoản"}
               </button>
@@ -268,19 +222,16 @@ const Header = ({ selectedCategory, setSelectedCategory, selectedAuthor, setSele
               </AnimatePresence>
             </div>
           ) : (
-            <Link
-              to="/login"
-              className="bg-red-600 hover:bg-red-700 text-white font-medium px-4 py-2 rounded-lg whitespace-nowrap"
-            >
+            <Link to="/login" className="bg-red-600 hover:bg-red-700 text-white font-medium px-4 py-2 rounded-lg">
               Đăng nhập
             </Link>
           )}
         </div>
       </div>
 
-      {/* Nav menu */}
-      <nav className="relative flex items-center bg-gray-100 py-3 px-4 md:px-6 text-gray-800 font-medium border-t border-gray-200 overflow-x-auto">
-        <div ref={menuRef} className="relative flex-shrink-0">
+      {/* Menu danh mục / nav */}
+      <nav className="relative flex items-center bg-gray-100 py-3 px-4 md:px-6 text-gray-800 font-medium border-t border-gray-200 flex-wrap">
+        <div ref={menuRef} className="relative">
           <button
             onClick={() => setMenuOpen((prev) => !prev)}
             className="flex items-center gap-2 text-red-600 font-semibold hover:opacity-80 transition"
@@ -294,46 +245,16 @@ const Header = ({ selectedCategory, setSelectedCategory, selectedAuthor, setSele
                 initial={{ opacity: 0, y: -10 }}
                 animate={{ opacity: 1, y: 0 }}
                 exit={{ opacity: 0, y: -10 }}
-                className="absolute left-0 mt-3 bg-white shadow-xl border border-gray-200 rounded-lg z-50 grid grid-cols-1 divide-y divide-gray-200"
+                className="absolute left-0 mt-3 bg-white shadow-xl border border-gray-200 rounded-lg z-50 w-64"
               >
-                <div className="p-3">
-                  <h3 className="font-semibold text-red-600 flex items-center gap-2 mb-2">
-                    <BookOpen size={18} /> Danh mục sách
-                  </h3>
-                  <ul>
-                    {categories.map((cat) => (
-                      <li
-                        key={cat._id}
-                        className="px-3 py-1 hover:bg-gray-100 cursor-pointer rounded-md"
-                        onClick={() => handleSelectCategory(cat)}
-                      >
-                        {cat.name}
-                      </li>
-                    ))}
-                  </ul>
-                </div>
-                <div className="p-3">
-                  <h3 className="font-semibold text-red-600 flex items-center gap-2 mb-2">
-                    <PenTool size={18} /> Danh mục tác giả
-                  </h3>
-                  <ul>
-                    {authors.map((author) => (
-                      <li
-                        key={author._id}
-                        className="px-3 py-1 hover:bg-gray-100 cursor-pointer rounded-md"
-                        onClick={() => handleSelectAuthor(author)}
-                      >
-                        {author.name}
-                      </li>
-                    ))}
-                  </ul>
-                </div>
+                {/* Bạn có thể map category / author ở đây */}
+                <p className="p-4 text-gray-500">Danh mục sẽ được hiển thị ở đây</p>
               </motion.div>
             )}
           </AnimatePresence>
         </div>
 
-        <div className="flex items-center gap-6 ml-6">
+        <div className="flex items-center gap-6 ml-8 flex-wrap">
           <Link to="/" className="hover:text-red-600 transition">
             Trang chủ
           </Link>

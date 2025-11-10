@@ -39,7 +39,7 @@ import ChangePassword from "./pages/ChangePassword"
 import NotificationList from "./pages/admin/NotificationList";
 import AddNotification from "./pages/admin/AddNotification";
 import EditNotification from "./pages/admin/EditNotification";
-import NotificationDetail from "./pages/NotificationDetail"; 
+import NotificationDetail from "./components/NotificationDetail"; 
 
 
 
@@ -73,6 +73,7 @@ function App() {
           <Route path="profile/:id" element={<Profile />} />
           <Route path="/history" element={<History />} />
           <Route path="/changepassword" element={<ChangePassword />} />
+          <Route path="notification/:id" element={<NotificationDetail />} />
         </Route>
 
         {/* Admin routes */}
