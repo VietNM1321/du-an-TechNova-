@@ -95,20 +95,33 @@ function ReviewForm({ bookId, onReviewAdded }) {
 
   if (!isLoggedIn) {
     return (
-      <div className="mt-8 bg-white/80 backdrop-blur rounded-2xl shadow-xl ring-1 ring-slate-100 p-6">
-        <h2 className="text-2xl font-bold text-slate-900 mb-4 flex items-center gap-2">
-          ✍️ Đánh giá sách này
-        </h2>
-        <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
-          <p className="text-blue-800 text-sm">
-            🔒 Vui lòng{" "}
-            <a
-              href="/login"
-              className="font-semibold underline hover:text-blue-900"
-            >
-              đăng nhập
-            </a>{" "}
-            để đánh giá và bình luận về cuốn sách này.
+      <div className="bg-gradient-to-br from-white to-slate-50 rounded-2xl shadow-xl ring-1 ring-slate-200 p-5">
+        <div className="mb-4">
+          <div className="flex items-center gap-2.5 mb-2">
+            <div className="w-10 h-10 rounded-full bg-gradient-to-br from-blue-500 to-purple-600 flex items-center justify-center text-white text-lg font-bold shadow-md">
+              ✍️
+            </div>
+            <h2 className="text-xl font-bold text-slate-900">
+              Đánh giá sách
+            </h2>
+          </div>
+          <p className="text-xs text-slate-500 ml-12.5">
+            Chia sẻ cảm nhận của bạn
+          </p>
+        </div>
+        <div className="bg-gradient-to-r from-blue-50 to-indigo-50 border-l-4 border-blue-500 rounded-xl p-4 shadow-sm">
+          <p className="text-blue-800 text-xs font-medium flex items-start gap-2">
+            <span>🔒</span>
+            <span>
+              Vui lòng{" "}
+              <a
+                href="/login"
+                className="font-bold underline hover:text-blue-900 transition-colors"
+              >
+                đăng nhập
+              </a>{" "}
+              để đánh giá và bình luận.
+            </span>
           </p>
         </div>
       </div>
@@ -116,30 +129,45 @@ function ReviewForm({ bookId, onReviewAdded }) {
   }
 
   return (
-    <div className="mt-8 bg-white/80 backdrop-blur rounded-2xl shadow-xl ring-1 ring-slate-100 p-6">
-      <h2 className="text-2xl font-bold text-slate-900 mb-4 flex items-center gap-2">
-        ✍️ Đánh giá sách này
-      </h2>
+    <div className="bg-gradient-to-br from-white to-slate-50 rounded-2xl shadow-xl ring-1 ring-slate-200 p-5">
+      <div className="mb-5">
+        <div className="flex items-center gap-2.5 mb-2">
+          <div className="w-10 h-10 rounded-full bg-gradient-to-br from-blue-500 to-purple-600 flex items-center justify-center text-white text-lg font-bold shadow-md">
+            ✍️
+          </div>
+          <h2 className="text-xl font-bold text-slate-900">
+            Đánh giá sách
+          </h2>
+        </div>
+        <p className="text-xs text-slate-500 ml-12">
+          Chia sẻ cảm nhận của bạn
+        </p>
+      </div>
 
       <form onSubmit={handleSubmit} className="space-y-4">
-        <div>
-          <label className="block text-sm font-medium text-slate-700 mb-2">
-            Đánh giá của bạn <span className="text-red-500">*</span>
+        <div className="bg-white rounded-xl p-4 border border-slate-200 shadow-sm">
+          <label className="block text-xs font-semibold text-slate-700 mb-2.5">
+            Đánh giá <span className="text-red-500">*</span>
           </label>
-          <div className="flex items-center gap-2">
-            {renderStars()}
+          <div className="flex flex-col gap-2">
+            <div className="flex items-center justify-center gap-1 bg-slate-50 rounded-lg p-2">
+              {renderStars()}
+            </div>
             {rating > 0 && (
-              <span className="text-sm text-slate-600 ml-2">
-                ({rating}/5 sao)
-              </span>
+              <div className="flex items-center justify-center gap-1.5">
+                <span className="text-base font-bold text-slate-900">
+                  {rating}
+                </span>
+                <span className="text-xs text-slate-500">/ 5 sao</span>
+              </div>
             )}
           </div>
         </div>
 
-        <div>
+        <div className="bg-white rounded-xl p-4 border border-slate-200 shadow-sm">
           <label
             htmlFor="comment"
-            className="block text-sm font-medium text-slate-700 mb-2"
+            className="block text-xs font-semibold text-slate-700 mb-2.5"
           >
             Bình luận (tùy chọn)
           </label>
@@ -147,32 +175,36 @@ function ReviewForm({ bookId, onReviewAdded }) {
             id="comment"
             value={comment}
             onChange={(e) => setComment(e.target.value)}
-            placeholder="Chia sẻ suy nghĩ của bạn về cuốn sách này..."
+            placeholder="Chia sẻ suy nghĩ của bạn..."
             rows={4}
             disabled={loading}
-            className="w-full px-4 py-3 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition disabled:bg-slate-100 disabled:cursor-not-allowed resize-none"
+            className="w-full px-3 py-2.5 text-sm border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition-all disabled:bg-slate-50 disabled:cursor-not-allowed resize-none text-slate-700 placeholder-slate-400"
           />
         </div>
 
         {error && (
-          <div className="bg-red-50 border border-red-200 rounded-lg p-3">
-            <p className="text-red-800 text-sm">{error}</p>
+          <div className="bg-red-50 border-l-4 border-red-500 rounded-lg p-3 shadow-sm">
+            <p className="text-red-800 text-xs font-medium flex items-center gap-1.5">
+              <span>⚠️</span>
+              <span>{error}</span>
+            </p>
           </div>
         )}
 
         <button
           type="submit"
           disabled={!rating || loading}
-          className="w-full bg-blue-600 text-white font-semibold py-3 px-6 rounded-lg hover:bg-blue-700 transition disabled:bg-slate-400 disabled:cursor-not-allowed flex items-center justify-center gap-2"
+          className="w-full bg-gradient-to-r from-blue-600 to-blue-700 text-white font-semibold py-2.5 px-4 rounded-xl hover:from-blue-700 hover:to-blue-800 transition-all duration-200 disabled:from-slate-400 disabled:to-slate-500 disabled:cursor-not-allowed flex items-center justify-center gap-2 shadow-md hover:shadow-lg transform hover:-translate-y-0.5 disabled:transform-none text-sm"
         >
           {loading ? (
             <>
               <span className="animate-spin">⏳</span>
-              Đang gửi...
+              <span>Đang gửi...</span>
             </>
           ) : (
             <>
-              📤 Gửi đánh giá
+              <span>📤</span>
+              <span>Gửi đánh giá</span>
             </>
           )}
         </button>
