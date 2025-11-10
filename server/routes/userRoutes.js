@@ -5,18 +5,60 @@ import Borrowings from "../models/borrowings.js";
 const router = express.Router();
 
 /* ============================================================
-   🟢 LẤY DANH SÁCH NGƯỜI DÙNG
+   🟢 LẤY DANH SÁCH NGƯỜI DÙNG (có tìm kiếm/bộ lọc/phân trang)
    ============================================================ */
 router.get("/", async (req, res) => {
   try {
-    const users = await User.find()
-      .select("studentCode name email active role createdAt")
-      .sort({ createdAt: -1 });
+    const page = parseInt(req.query.page) || 1;
+    const limit = parseInt(req.query.limit) || 10;
+    const skip = (page - 1) * limit;
+
+    const { q, role, active, dateFrom, dateTo, sort, order } = req.query;
+    const filter = {};
+
+    if (q && q.trim()) {
+      const text = q.trim();
+      filter.$or = [
+        { fullName: { $regex: text, $options: "i" } },
+        { email: { $regex: text, $options: "i" } },
+        { studentCode: { $regex: text, $options: "i" } },
+        { phone: { $regex: text, $options: "i" } },
+      ];
+    }
+
+    if (role) {
+      filter.role = role;
+    }
+
+    if (active === "true" || active === "false") {
+      filter.active = active === "true";
+    }
+
+    if (dateFrom || dateTo) {
+      filter.createdAt = {};
+      if (dateFrom) filter.createdAt.$gte = new Date(dateFrom);
+      if (dateTo) filter.createdAt.$lte = new Date(dateTo);
+    }
+
+    const total = await User.countDocuments(filter);
+    const sortSpec =
+      sort
+        ? { [sort]: (order || "desc").toLowerCase() === "asc" ? 1 : -1 }
+        : { createdAt: -1 };
+
+    const users = await User.find(filter)
+      .select("studentCode fullName email active role createdAt")
+      .sort(sortSpec)
+      .skip(skip)
+      .limit(limit);
 
     res.status(200).json({
       success: true,
       message: "Lấy danh sách người dùng thành công",
       users,
+      currentPage: page,
+      totalPages: Math.ceil(total / limit),
+      totalItems: total,
     });
   } catch (error) {
     console.error("❌ Lỗi lấy danh sách người dùng:", error);
