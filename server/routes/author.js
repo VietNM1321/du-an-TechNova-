@@ -26,8 +26,30 @@ router.get("/", async (req, res) => {
     const limit = parseInt(req.query.limit) || 10;
     const skip = (page - 1) * limit;
 
-    const total = await Author.countDocuments();
-    const authors = await Author.find().skip(skip).limit(limit);
+    const { q, sort, order, bornFrom, bornTo } = req.query;
+    const filter = {};
+
+    if (q && q.trim()) {
+      const text = q.trim();
+      filter.$or = [
+        { name: { $regex: text, $options: "i" } },
+        { bio: { $regex: text, $options: "i" } },
+      ];
+    }
+
+    if (bornFrom || bornTo) {
+      filter.dateOfBirth = {};
+      if (bornFrom) filter.dateOfBirth.$gte = new Date(bornFrom);
+      if (bornTo) filter.dateOfBirth.$lte = new Date(bornTo);
+    }
+
+    const total = await Author.countDocuments(filter);
+    const sortSpec =
+      sort
+        ? { [sort]: (order || "desc").toLowerCase() === "asc" ? 1 : -1 }
+        : { createdAt: -1 };
+
+    const authors = await Author.find(filter).skip(skip).limit(limit).sort(sortSpec);
 
     res.json({
       authors,
