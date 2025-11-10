@@ -10,20 +10,53 @@ import {
   Space,
   message,
   Popconfirm,
+  Row,
+  Col,
+  Select,
 } from "antd";
+import { SearchOutlined } from "@ant-design/icons";
 const CourseManager = () => {
   const [courses, setCourses] = useState([]);
   const [loading, setLoading] = useState(false);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingCourse, setEditingCourse] = useState(null);
+  const [searchForm] = Form.useForm();
   const [form] = Form.useForm();
+  const [filteredCourses, setFilteredCourses] = useState([]);
 
   const API_URL = "http://localhost:5000/api/courses";
+  
+  const handleSearch = (values) => {
+    let filtered = [...courses];
+    
+    if (values.searchText) {
+      const searchLower = values.searchText.toLowerCase();
+      filtered = filtered.filter(
+        course => 
+          course.courseName.toLowerCase().includes(searchLower) ||
+          course.courseCode.toLowerCase().includes(searchLower)
+      );
+    }
+    
+    if (values.studentCodeRange) {
+      if (values.studentCodeRange === 'below2000') {
+        filtered = filtered.filter(course => course.maxStudentCode < 2000);
+      } else if (values.studentCodeRange === '2000to4000') {
+        filtered = filtered.filter(course => course.minStudentCode >= 2000 && course.maxStudentCode <= 4000);
+      } else if (values.studentCodeRange === 'above4000') {
+        filtered = filtered.filter(course => course.minStudentCode > 4000);
+      }
+    }
+    
+    setFilteredCourses(filtered);
+  };
+
   const fetchCourses = async () => {
     setLoading(true);
     try {
       const res = await axios.get(API_URL);
       setCourses(res.data);
+      setFilteredCourses(res.data);
     } catch (err) {
       message.error("Lỗi khi tải danh sách khóa học!");
     } finally {
@@ -117,9 +150,50 @@ const CourseManager = () => {
         ➕ Thêm khóa học
       </Button>
 
+      <Form
+        form={searchForm}
+        onFinish={handleSearch}
+        style={{ marginBottom: "20px" }}
+      >
+        <Row gutter={16}>
+          <Col span={8}>
+            <Form.Item name="searchText">
+              <Input
+                placeholder="Tìm theo tên hoặc mã khóa học"
+                prefix={<SearchOutlined />}
+                allowClear
+              />
+            </Form.Item>
+          </Col>
+          <Col span={8}>
+            <Form.Item name="studentCodeRange">
+              <Select placeholder="Lọc theo mã sinh viên" allowClear>
+                <Select.Option value="below2000">Dưới PH2000</Select.Option>
+                <Select.Option value="2000to4000">PH2000 - PH4000</Select.Option>
+                <Select.Option value="above4000">Trên PH4000</Select.Option>
+              </Select>
+            </Form.Item>
+          </Col>
+          <Col span={8}>
+            <Button type="primary" htmlType="submit">
+              🔍 Tìm kiếm
+            </Button>
+            <Button 
+              style={{ marginLeft: 8 }}
+              onClick={() => {
+                searchForm.resetFields();
+                setFilteredCourses(courses);
+              }}
+            >
+              ↺ Đặt lại
+            </Button>
+          </Col>
+        </Row>
+      </Form>
+
       <Table
         rowKey="_id"
-        dataSource={courses}
+        dataSource={filteredCourses}
         columns={columns}
         loading={loading}
         bordered
