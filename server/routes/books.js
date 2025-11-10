@@ -25,6 +25,37 @@ const upload = multer({ storage });
 router.get("/", async (req, res) => {
   try {
     const filter = {};
+
+    // Tìm kiếm toàn văn đơn giản theo tiêu đề/mô tả/mã
+    const { q, author, yearFrom, yearTo, availableMin, sort, order } = req.query;
+    if (q && q.trim()) {
+      const text = q.trim();
+      filter.$or = [
+        { title: { $regex: text, $options: "i" } },
+        { description: { $regex: text, $options: "i" } },
+        { code: { $regex: text, $options: "i" } },
+      ];
+    }
+
+    // Lọc theo tác giả
+    if (author && mongoose.Types.ObjectId.isValid(author)) {
+      filter.author = author;
+    }
+
+    // Lọc theo khoảng năm xuất bản
+    if (yearFrom || yearTo) {
+      filter.publishedYear = {};
+      if (yearFrom) filter.publishedYear.$gte = Number(yearFrom);
+      if (yearTo) filter.publishedYear.$lte = Number(yearTo);
+    }
+
+    // Lọc theo số lượng sẵn có tối thiểu
+    if (availableMin !== undefined) {
+      const min = Number(availableMin);
+      if (!Number.isNaN(min)) {
+        filter.available = { $gte: min };
+      }
+    }
     if (req.query.category) {
       if (mongoose.Types.ObjectId.isValid(req.query.category)) {
         filter.category = req.query.category;
@@ -41,12 +72,17 @@ router.get("/", async (req, res) => {
     const skip = (page - 1) * limit;
 
     const totalBooks = await Book.countDocuments(filter);
+    const sortSpec =
+      sort
+        ? { [sort]: (order || "desc").toLowerCase() === "asc" ? 1 : -1 }
+        : { createdAt: -1 };
+
     const books = await Book.find(filter)
       .populate("category", "name")
       .populate("author", "name")
       .skip(skip)
       .limit(limit)
-      .sort({ createdAt: -1 });
+      .sort(sortSpec);
 
     res.json({
       books,
