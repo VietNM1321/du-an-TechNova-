@@ -14,8 +14,11 @@ const BookList = () => {
       .then((res) => setAuthors(Array.isArray(res.data) ? res.data : []))
       .catch((err) => console.error("Lỗi lấy tác giả:", err));
 
-    axios.get("http://localhost:5000/api/category")
-      .then((res) => setCategories(Array.isArray(res.data) ? res.data : []))
+    axios.get("http://localhost:5000/api/category?sort=createdAt&order=asc")
+      .then((res) => {
+        const cats = res.data.categories || res.data;
+        setCategories(Array.isArray(cats) ? cats : []);
+      })
       .catch((err) => console.error("Lỗi lấy danh mục:", err));
   }, []);
 

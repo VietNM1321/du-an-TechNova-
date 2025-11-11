@@ -9,7 +9,7 @@ const BookCodeAdd = () => {
   const navigate = useNavigate();
   const fetchCategories = async () => {
     try {
-      const res = await axios.get("http://localhost:5000/api/category?limit=1000");
+      const res = await axios.get("http://localhost:5000/api/category?limit=1000&sort=createdAt&order=asc");
       setCategories(res.data.categories || res.data);
     } catch (err) {
       console.error("Lỗi lấy danh mục:", err);

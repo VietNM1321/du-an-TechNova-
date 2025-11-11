@@ -79,12 +79,18 @@ const Header = ({ selectedCategory, setSelectedCategory, selectedAuthor, setSele
   const totalItems = cartItems?.reduce((sum, item) => sum + item.quantity, 0) || 0;
 
   const handleLogout = () => {
+    // Xóa tất cả token và user info (cả client và admin)
     localStorage.removeItem("clientUser");
     localStorage.removeItem("clientToken");
+    localStorage.removeItem("adminToken");
+    localStorage.removeItem("adminUser");
+    localStorage.removeItem("token");
+    localStorage.removeItem("user");
     if (user) localStorage.removeItem(`cart_${user.email}`);
     setUser(null);
     setCartItems([]);
     window.dispatchEvent(new Event("authChange"));
+    window.dispatchEvent(new Event("storage"));
     navigate("/login");
   };
 

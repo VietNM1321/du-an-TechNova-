@@ -21,7 +21,8 @@ function Home() {
     try {
       if (!silent) setIsLoading(true);
       // Lấy TẤT CẢ danh mục (không phân trang) bằng cách set limit lớn
-      const resCat = await axios.get("http://localhost:5000/api/category?limit=1000");
+      // Sắp xếp theo createdAt tăng dần để danh mục mới hiển thị ở dưới
+      const resCat = await axios.get("http://localhost:5000/api/category?limit=1000&sort=createdAt&order=asc");
       const cats = resCat.data.categories || [];
       
       const dataWithBooks = await Promise.all(

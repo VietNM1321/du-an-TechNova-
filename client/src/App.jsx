@@ -1,3 +1,4 @@
+import React from "react";
 import { BrowserRouter as Router, Routes, Route, Navigate } from "react-router-dom";
 import Home from "./pages/Home";
 import Login from "./pages/Login";
@@ -44,10 +45,33 @@ import NotificationDetail from "./components/NotificationDetail";
 
 
 const AdminRoute = ({ children }) => {
-  const stored = localStorage.getItem("adminUser");
-  const adminUser = stored ? JSON.parse(stored) : null;
-  const adminToken = localStorage.getItem("adminToken");
-  if (!adminToken || !adminUser || adminUser.role !== "admin") {
+  const [isAuthenticated, setIsAuthenticated] = React.useState(() => {
+    const stored = localStorage.getItem("adminUser");
+    const adminUser = stored ? JSON.parse(stored) : null;
+    const adminToken = localStorage.getItem("adminToken");
+    return !!(adminToken && adminUser && adminUser.role === "admin");
+  });
+
+  React.useEffect(() => {
+    const checkAuth = () => {
+      const stored = localStorage.getItem("adminUser");
+      const adminUser = stored ? JSON.parse(stored) : null;
+      const adminToken = localStorage.getItem("adminToken");
+      setIsAuthenticated(!!(adminToken && adminUser && adminUser.role === "admin"));
+    };
+
+    // Listen for auth changes (when logout happens in same tab)
+    window.addEventListener("authChange", checkAuth);
+    // Listen for storage changes (when logout happens in other tabs)
+    window.addEventListener("storage", checkAuth);
+
+    return () => {
+      window.removeEventListener("authChange", checkAuth);
+      window.removeEventListener("storage", checkAuth);
+    };
+  }, []);
+
+  if (!isAuthenticated) {
     return <Navigate to="/login" replace />;
   }
   return children;

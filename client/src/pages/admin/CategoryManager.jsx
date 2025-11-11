@@ -8,7 +8,7 @@ const CategoryManager = () => {
   const [limit, setLimit] = useState(5);
   const [query, setQuery] = useState("");
   const [sort, setSort] = useState("createdAt");
-  const [order, setOrder] = useState("desc");
+  const [order, setOrder] = useState("asc");
   const [typingTimer, setTypingTimer] = useState(null);
   const navigate = useNavigate()
   const fetchCategories = async (pageNum = 1, params = {}) => {
@@ -30,9 +30,7 @@ const CategoryManager = () => {
   };
   useEffect(() => {
     fetchCategories(page);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [page, limit, sort, order]);
-
   const onChangeQuery = (e) => {
     const value = e.target.value;
     setQuery(value);
@@ -43,11 +41,10 @@ const CategoryManager = () => {
     }, 400);
     setTypingTimer(timer);
   };
-
   const onClearFilters = () => {
     setQuery("");
     setSort("createdAt");
-    setOrder("desc");
+    setOrder("asc");
     setLimit(5);
     setPage(1);
     fetchCategories(1, { q: "" });
@@ -134,8 +131,8 @@ const CategoryManager = () => {
             onChange={(e) => { setOrder(e.target.value); setPage(1); }}
             className="border border-gray-300 rounded-lg px-3 py-2"
           >
-            <option value="desc">Giảm dần</option>
             <option value="asc">Tăng dần</option>
+            <option value="desc">Giảm dần</option>
           </select>
         </div>
         <div>

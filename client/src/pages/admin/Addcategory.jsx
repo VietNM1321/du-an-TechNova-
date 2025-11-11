@@ -1,20 +1,15 @@
 import React, { useState } from "react";
 import axios from "axios";
 import { useNavigate } from "react-router-dom";
-
 const AddCategory = () => {
   const [form, setForm] = useState({ name: "", description: "" });
   const [loading, setLoading] = useState(false);
   const navigate = useNavigate();
-
-  const handleChange = (e) => {
-    setForm({ ...form, [e.target.name]: e.target.value });
+  const handleChange = (e) => { setForm({ ...form, [e.target.name]: e.target.value });
   };
-
   const handleSubmit = async (e) => {
     e.preventDefault();
     console.log("Submitting form:", form);
-
     if (!form.name) {
       alert("❌ Tên danh mục không được để trống!");
       return;
@@ -32,13 +27,11 @@ const AddCategory = () => {
       setLoading(false);
     }
   };
-
   return (
     <div className="max-w-3xl mx-auto mt-10 bg-white shadow-lg rounded-xl p-8">
       <h2 className="text-2xl font-bold text-blue-700 mb-6 text-center">
         ➕ Thêm danh mục mới
       </h2>
-
       <form onSubmit={handleSubmit}>
         <div className="mb-4">
           <label className="block font-semibold mb-1 text-gray-700">Tên danh mục</label>
@@ -86,5 +79,4 @@ const AddCategory = () => {
     </div>
   );
 };
-
 export default AddCategory;

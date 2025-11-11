@@ -27,7 +27,7 @@ const BookEdit = () => {
           ? { headers: { Authorization: `Bearer ${token}` } }
           : undefined;
         const [catRes, authorRes, bookRes] = await Promise.all([
-          axios.get("http://localhost:5000/api/category?limit=1000", authConfig),
+          axios.get("http://localhost:5000/api/category?limit=1000&sort=createdAt&order=asc", authConfig),
           axios.get("http://localhost:5000/api/authors?limit=1000", authConfig),
           axios.get(`http://localhost:5000/api/books/${id}`, authConfig),
         ]);

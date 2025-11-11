@@ -23,9 +23,9 @@ router.get("/", async (req, res) => {
       const categories = await Category.find(textFilter).sort(
         sort
           ? {
-              [sort]: (order || "desc").toLowerCase() === "asc" ? 1 : -1,
+              [sort]: (order || "asc").toLowerCase() === "asc" ? 1 : -1,
             }
-          : { createdAt: -1 }
+          : { createdAt: 1 }
       );
       return res.json({
         categories,
@@ -39,9 +39,9 @@ router.get("/", async (req, res) => {
       const categories = await Category.find(textFilter).sort(
         sort
           ? {
-              [sort]: (order || "desc").toLowerCase() === "asc" ? 1 : -1,
+              [sort]: (order || "asc").toLowerCase() === "asc" ? 1 : -1,
             }
-          : { createdAt: -1 }
+          : { createdAt: 1 }
       );
       return res.json({
         categories,
@@ -60,9 +60,9 @@ router.get("/", async (req, res) => {
       .sort(
         sort
           ? {
-              [sort]: (order || "desc").toLowerCase() === "asc" ? 1 : -1,
+              [sort]: (order || "asc").toLowerCase() === "asc" ? 1 : -1,
             }
-          : { createdAt: -1 }
+          : { createdAt: 1 }
       );
 
     res.json({

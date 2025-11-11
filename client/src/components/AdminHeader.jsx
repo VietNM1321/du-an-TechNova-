@@ -24,11 +24,20 @@ const AdminHeader = () => {
   }, []);
 
   const handleLogout = () => {
+    // Xóa tất cả token và user info
     localStorage.removeItem("adminToken");
     localStorage.removeItem("adminUser");
+    localStorage.removeItem("clientToken");
+    localStorage.removeItem("clientUser");
     localStorage.removeItem("token");
     localStorage.removeItem("user");
-    navigate("/login"); // Điều hướng về trang đăng nhập
+    
+    // Dispatch event để các component khác biết đã logout
+    window.dispatchEvent(new Event("authChange"));
+    window.dispatchEvent(new Event("storage"));
+    
+    // Force reload để đảm bảo tất cả state được reset
+    window.location.href = "/login";
   };
 
   return (

@@ -2,7 +2,6 @@ import React, { useEffect, useState } from "react";
 import axios from "axios";
 import { PlusCircle, Upload, BookOpen } from "lucide-react";
 import { useNavigate } from "react-router-dom";
-
 const BookAdd = () => {
   const navigate = useNavigate();
   const [previewBookCode, setPreviewBookCode] = useState("");
@@ -24,7 +23,7 @@ const BookAdd = () => {
     const fetchData = async () => {
       try {
         const [catRes, authorRes] = await Promise.all([
-          axios.get("http://localhost:5000/api/category?limit=1000"),
+          axios.get("http://localhost:5000/api/category?limit=1000&sort=createdAt&order=asc"),
           axios.get("http://localhost:5000/api/authors?limit=1000"),
         ]);
         setCategories(catRes.data.categories || catRes.data);

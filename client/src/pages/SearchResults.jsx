@@ -20,7 +20,7 @@ const SearchResults = () => {
       try {
         const [authorRes, categoryRes] = await Promise.all([
           axios.get("http://localhost:5000/api/authors"),
-          axios.get("http://localhost:5000/api/category"),
+          axios.get("http://localhost:5000/api/category?sort=createdAt&order=asc"),
         ]);
 
         const authorData = Array.isArray(authorRes.data)

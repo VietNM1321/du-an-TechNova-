@@ -1,33 +1,19 @@
 import React, { useEffect, useState } from "react";
 import axios from "axios";
 import { useNavigate, useParams } from "react-router-dom";
-
 const EditAuthor = () => {
   const { id } = useParams();
   const navigate = useNavigate();
   const API = "http://localhost:5000/api/authors";
-  const [form, setForm] = useState({ // khai báo form lưu dữ liệu
-    name: "",
-    bio: "",
-    dateOfBirth: "",
-    dateOfDeath: "",
-    image: null,
-    currentImage: "",
-  });
+  const [form, setForm] = useState({ name: "", bio: "", dateOfBirth: "", dateOfDeath: "", image: null, currentImage: "", }); // khai báo form lưu dữ liệu
   useEffect(() => {
     const fetchAuthor = async () => {
       try {
         const res = await axios.get(`http://localhost:5000/api/authors/${id}`);
         const data = res.data;
-        setForm({
-          name: data.name,
-          bio: data.bio || "",
-          dateOfBirth: data.dateOfBirth
-            ? data.dateOfBirth.split("T")[0]
-            : "",
-          dateOfDeath: data.dateOfDeath
-            ? data.dateOfDeath.split("T")[0]
-            : "",
+        setForm({ name: data.name, bio: data.bio || "",
+          dateOfBirth: data.dateOfBirth ? data.dateOfBirth.split("T")[0] : "",
+          dateOfDeath: data.dateOfDeath ? data.dateOfDeath.split("T")[0] : "",
           image: null,
           currentImage: data.image || "",
         });
@@ -45,14 +31,12 @@ const EditAuthor = () => {
   };
   const handleSubmit = async (e) => {
     e.preventDefault();
-
     const formData = new FormData();
     formData.append("name", form.name);
     formData.append("bio", form.bio);
     formData.append("dateOfBirth", form.dateOfBirth);
     formData.append("dateOfDeath", form.dateOfDeath);
     if (form.image) formData.append("image", form.image);
-
     try {
       await axios.put(`http://localhost:5000/api/authors/${id}`, formData, {
         headers: { "Content-Type": "multipart/form-data" },
@@ -64,7 +48,6 @@ const EditAuthor = () => {
       alert("Không thể cập nhật tác giả!");
     }
   };
-
   return (
     <div className="max-w-3xl mx-auto bg-white p-8 rounded-2xl shadow-lg mt-10">
       <h2 className="text-2xl font-bold text-blue-700 mb-6">
@@ -81,8 +64,7 @@ const EditAuthor = () => {
             value={form.name}
             onChange={handleChange}
             required
-            className="w-full border border-gray-300 rounded-lg p-2"
-          />
+            className="w-full border border-gray-300 rounded-lg p-2"/>
         </div>
         <div>
           <label className="block mb-1 text-sm font-semibold text-gray-600">
@@ -93,14 +75,12 @@ const EditAuthor = () => {
             name="image"
             accept="image/*"
             onChange={handleChange}
-            className="w-full border border-gray-300 rounded-lg p-2"
-          />
+            className="w-full border border-gray-300 rounded-lg p-2"/>
           {form.currentImage && (
             <img
               src={`http://localhost:5000/${form.currentImage}`}
               alt="Ảnh hiện tại"
-              className="mt-2 w-24 h-24 object-cover rounded-full border mx-auto"
-            />
+              className="mt-2 w-24 h-24 object-cover rounded-full border mx-auto"/>
           )}
         </div>
         <div>
@@ -112,8 +92,7 @@ const EditAuthor = () => {
             name="dateOfBirth"
             value={form.dateOfBirth}
             onChange={handleChange}
-            className="w-full border border-gray-300 rounded-lg p-2"
-          />
+            className="w-full border border-gray-300 rounded-lg p-2"/>
         </div>
         <div>
           <label className="block mb-1 text-sm font-semibold text-gray-600">
@@ -139,19 +118,16 @@ const EditAuthor = () => {
             className="w-full border border-gray-300 rounded-lg p-2"
           ></textarea>
         </div>
-
         <div className="md:col-span-2 flex justify-between mt-4">
           <button
             type="button"
             onClick={() => navigate("/admin/author")}
-            className="bg-gray-400 hover:bg-gray-500 text-white px-4 py-2 rounded-lg"
-          >
+            className="bg-gray-400 hover:bg-gray-500 text-white px-4 py-2 rounded-lg">
             ⬅️ Quay lại
           </button>
           <button
             type="submit"
-            className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg"
-          >
+            className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg">
             💾 Lưu thay đổi
           </button>
         </div>
