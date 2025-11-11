@@ -5,12 +5,12 @@ const notificationSchema = new mongoose.Schema(
     userId: {
       type: mongoose.Schema.Types.ObjectId,
       ref: "User",
-      required: true,
+      required: false,
     },
     type: {
       type: String,
       required: true,
-      enum: ["review", "borrow", "return", "system", "reminder"], // loại thông báo
+      enum: ["general", "review", "borrow", "return", "system", "reminder"], 
     },
     title: {
       type: String,
@@ -25,14 +25,14 @@ const notificationSchema = new mongoose.Schema(
       default: false,
     },
     data: {
-      image: { type: String },      // đường dẫn ảnh
-      wordFile: { type: String },   // đường dẫn file Word
-      excelFile: { type: String },  // đường dẫn file Excel
-      extra: mongoose.Schema.Types.Mixed, // lưu thêm dữ liệu tùy ý
+      image: { type: String },
+      wordFile: { type: String },
+      excelFile: { type: String },
+      extra: mongoose.Schema.Types.Mixed,
     },
   },
   {
-    timestamps: true, // createdAt, updatedAt tự động
+    timestamps: true,
     versionKey: false,
   }
 );

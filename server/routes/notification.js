@@ -18,6 +18,7 @@ const storage = multer.diskStorage({
   },
 });
 const upload = multer({ storage });
+
 const normalizePath = (filePath) => filePath.replace(/\\/g, "/");
 
 // 🔹 Lấy danh sách tất cả thông báo
@@ -41,49 +42,40 @@ router.post(
   ]),
   async (req, res) => {
     try {
-      let { title, message: msg, type, userId, studentCode, date } = req.body;
+      let { title, message: msg, type, studentCode, date } = req.body;
+      let userId = null;
 
       if (type === "reminder") {
-        if (!studentCode) return res.status(400).json({ message: "studentCode bắt buộc với reminder" });
+        if (!studentCode)
+          return res.status(400).json({ message: "studentCode bắt buộc với reminder" });
+
         const user = await User.findOne({ studentCode });
         if (!user) return res.status(404).json({ message: "Không tìm thấy sinh viên với mã này" });
+
         userId = user._id;
       }
-
-      if (!userId) return res.status(400).json({ message: "userId hoặc studentCode là bắt buộc" });
 
       const newNotification = new Notification({
         title,
         message: msg,
         type,
-        userId,
+        ...(userId && { userId }), // Chỉ thêm userId nếu có
         createdAt: date ? new Date(date) : new Date(),
         data: {
-          image: req.files?.image ? normalizePath(req.files.image[0].path) : "",
-          wordFile: req.files?.wordFile ? normalizePath(req.files.wordFile[0].path) : "",
-          excelFile: req.files?.excelFile ? normalizePath(req.files.excelFile[0].path) : "",
+          image: req.files?.image?.[0]?.path ? req.files.image[0].path.replace(/\\/g, "/") : "",
+          wordFile: req.files?.wordFile?.[0]?.path ? req.files.wordFile[0].path.replace(/\\/g, "/") : "",
+          excelFile: req.files?.excelFile?.[0]?.path ? req.files.excelFile[0].path.replace(/\\/g, "/") : "",
         },
       });
 
       await newNotification.save();
       res.status(201).json(newNotification);
     } catch (err) {
-      console.error(err);
+      console.error("POST /notifications error:", err);
       res.status(500).json({ message: "Lỗi khi tạo thông báo", error: err.message });
     }
   }
 );
-
-// 🟣 Xem chi tiết
-router.get("/:id", async (req, res) => {
-  try {
-    const notification = await Notification.findById(req.params.id);
-    if (!notification) return res.status(404).json({ message: "Không tìm thấy thông báo" });
-    res.json(notification);
-  } catch (err) {
-    res.status(500).json({ message: "Lỗi khi xem chi tiết thông báo" });
-  }
-});
 
 // 🟠 Cập nhật
 router.put(
@@ -95,13 +87,23 @@ router.put(
   ]),
   async (req, res) => {
     try {
-      const { title, message, type } = req.body;
+      const { title, message, type, studentCode, date } = req.body;
       const notification = await Notification.findById(req.params.id);
       if (!notification) return res.status(404).json({ message: "Không tìm thấy thông báo" });
+
+      let userId = notification.userId || null;
+      if (type === "reminder" && studentCode) {
+        const user = await User.findOne({ studentCode });
+        if (!user) return res.status(404).json({ message: "Không tìm thấy sinh viên với mã này" });
+        userId = user._id;
+      }
 
       notification.title = title || notification.title;
       notification.message = message || notification.message;
       notification.type = type || notification.type;
+      notification.userId = userId;
+
+      notification.createdAt = date ? new Date(date) : notification.createdAt;
 
       notification.data = notification.data || {};
       if (req.files?.image) notification.data.image = normalizePath(req.files.image[0].path);
@@ -111,7 +113,8 @@ router.put(
       await notification.save();
       res.json(notification);
     } catch (err) {
-      res.status(500).json({ message: "Lỗi khi cập nhật thông báo" });
+      console.error(err);
+      res.status(500).json({ message: "Lỗi khi cập nhật thông báo", error: err.message });
     }
   }
 );
