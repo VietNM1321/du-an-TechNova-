@@ -311,7 +311,7 @@ const BorrowManager = () => {
       },
     },
     {
-      title: "Ảnh / QR Code",
+      title: "Ảnh tình trạng/ảnh thanh toán",
       key: "images",
       render: (record) => {
         const images = [];

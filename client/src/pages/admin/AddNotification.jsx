@@ -1,16 +1,29 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import axios from "axios";
 import { message } from "antd";
 
 const AddNotification = ({ mode = "add", notificationData = {}, onSuccess }) => {
-  const [title, setTitle] = useState(notificationData.title || "");
-  const [messageText, setMessageText] = useState(notificationData.message || "");
-  const [type, setType] = useState(notificationData.type || "general");
-  const [studentCode, setStudentCode] = useState(notificationData.studentCode || "");
-  const [date, setDate] = useState(notificationData.createdAt ? new Date(notificationData.createdAt).toISOString().slice(0,16) : "");
+  const [title, setTitle] = useState("");
+  const [messageText, setMessageText] = useState("");
+  const [type, setType] = useState("general");
+  const [studentCode, setStudentCode] = useState("");
+  const [date, setDate] = useState("");
   const [imageFile, setImageFile] = useState(null);
   const [wordFile, setWordFile] = useState(null);
   const [excelFile, setExcelFile] = useState(null);
+
+  useEffect(() => {
+    if (mode === "edit" && notificationData) {
+      setTitle(notificationData.title || "");
+      setMessageText(notificationData.message || "");
+      setType(notificationData.type || "general");
+      setStudentCode(notificationData.userId?.studentCode || "");
+      setDate(notificationData.createdAt ? new Date(notificationData.createdAt).toISOString().slice(0,16) : "");
+      setImageFile(null);
+      setWordFile(null);
+      setExcelFile(null);
+    }
+  }, [mode, notificationData]);
 
   const existingFiles = {
     image: notificationData.data?.image ? `http://localhost:5000/${notificationData.data.image}` : null,
@@ -35,12 +48,6 @@ const AddNotification = ({ mode = "add", notificationData = {}, onSuccess }) => 
       if (wordFile) formData.append("wordFile", wordFile);
       if (excelFile) formData.append("excelFile", excelFile);
 
-      // Debug FormData
-      console.log("===== FormData =====");
-      for (let [key, value] of formData.entries()) {
-        console.log(key, value);
-      }
-
       const res =
         mode === "edit"
           ? await axios.put(`http://localhost:5000/api/notifications/${notificationData._id}`, formData)
@@ -49,7 +56,7 @@ const AddNotification = ({ mode = "add", notificationData = {}, onSuccess }) => 
       message.success(mode === "edit" ? "Cập nhật thành công!" : "Tạo thông báo thành công!");
       onSuccess?.(res.data);
     } catch (err) {
-      console.error("Axios error:", err);
+      console.error(err);
       message.error(mode === "edit" ? "Cập nhật thất bại!" : "Tạo thất bại!");
     }
   };

@@ -14,16 +14,18 @@ const NotificationEdit = () => {
     const fetchNotification = async () => {
       try {
         setLoading(true);
-        // Lấy thông báo
+
+        // Lấy thông báo theo id
         const res = await axios.get(`http://localhost:5000/api/notifications/${id}`);
         const data = res.data;
 
         // Nếu là reminder, lấy studentCode từ user
-        if (data.type === "reminder") {
+        if (data.type === "reminder" && data.userId?._id) {
           try {
-            const userRes = await axios.get(`http://localhost:5000/api/users/${data.userId}`);
+            const userRes = await axios.get(`http://localhost:5000/api/users/${data.userId._id}`);
             data.studentCode = userRes.data.studentCode || "";
-          } catch {
+          } catch (err) {
+            console.warn("Không lấy được studentCode:", err);
             data.studentCode = "";
           }
         }
