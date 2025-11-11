@@ -33,6 +33,7 @@ import EditCategory from "./pages/admin/Editcategory";
 import SetPassword from "./pages/admin/SetPassword";
 import Users from "./pages/admin/Users";
 import History from "./pages/History";
+import Payment from "./pages/Payment";
 import ClientLayout from "./layout/clientlayout";
 import CourseManager from "./pages/admin/CourseManager";
 import ReviewManager from "./pages/admin/ReviewManager";
@@ -96,6 +97,7 @@ function App() {
           <Route path="search" element={<SearchResults />} />
           <Route path="profile/:id" element={<Profile />} />
           <Route path="/history" element={<History />} />
+          <Route path="/payment/:id" element={<Payment />} />
           <Route path="/changepassword" element={<ChangePassword />} />
           <Route path="notification/:id" element={<NotificationDetail />} />
         </Route>

@@ -227,13 +227,15 @@ router.put("/:id/report-broken", verifyToken, upload.single("image"), async (req
         damageType: "broken",
         damageReason: reason || "Không ghi rõ",
         damageImage: image,
+        compensationAmount: 50000, // Tự động set tiền đền 50,000 VNĐ
+        paymentStatus: "pending", // Chờ thanh toán
       },
       { new: true }
     );
 
     if (!borrowing)
       return res.status(404).json({ message: "Không tìm thấy đơn mượn!" });
-    res.json({ message: "✅ Đã báo hỏng!", borrowing });
+    res.json({ message: "✅ Đã báo hỏng! Vui lòng thanh toán 50,000 VNĐ.", borrowing });
   } catch (error) {
     console.error("❌ Lỗi báo hỏng:", error);
     res.status(500).json({ message: "Lỗi server khi báo hỏng!" });
@@ -245,12 +247,17 @@ router.put("/:id/report-lost", verifyToken, async (req, res) => {
   try {
     const borrowing = await Borrowing.findByIdAndUpdate(
       req.params.id,
-      { status: STATUS_ENUM.LOST, damageType: "lost" },
+      { 
+        status: STATUS_ENUM.LOST, 
+        damageType: "lost",
+        compensationAmount: 50000, // Tự động set tiền đền 50,000 VNĐ
+        paymentStatus: "pending", // Chờ thanh toán
+      },
       { new: true }
     );
     if (!borrowing)
       return res.status(404).json({ message: "Không tìm thấy đơn mượn!" });
-    res.json({ message: "✅ Đã báo mất!", borrowing });
+    res.json({ message: "✅ Đã báo mất! Vui lòng thanh toán 50,000 VNĐ.", borrowing });
   } catch (error) {
     console.error("❌ Lỗi báo mất:", error);
     res.status(500).json({ message: "Lỗi server khi báo mất!" });
@@ -277,6 +284,95 @@ router.put("/:id/compensation", verifyToken, requireRole("admin"), async (req, r
   } catch (error) {
     console.error("❌ Lỗi cập nhật tiền đền:", error);
     res.status(500).json({ message: "Lỗi server khi nhập tiền đền!" });
+  }
+});
+
+// ==================== Thanh toán đền bù ====================
+router.put("/:id/pay", verifyToken, upload.single("qrCodeImage"), async (req, res) => {
+  try {
+    const { paymentMethod, paymentNote } = req.body;
+    const qrCodeImage = req.file ? req.file.path : null;
+
+    if (!paymentMethod || !["cash", "bank"].includes(paymentMethod)) {
+      return res.status(400).json({ message: "Phương thức thanh toán không hợp lệ!" });
+    }
+
+    const borrowing = await Borrowing.findById(req.params.id);
+    if (!borrowing) {
+      return res.status(404).json({ message: "Không tìm thấy đơn mượn!" });
+    }
+
+    // Kiểm tra quyền: chỉ user sở hữu đơn mượn hoặc admin mới được thanh toán
+    if (req.user.role !== "admin" && borrowing.user.toString() !== req.user.id) {
+      return res.status(403).json({ message: "Bạn không có quyền thanh toán đơn này!" });
+    }
+
+    // Kiểm tra trạng thái: chỉ thanh toán khi sách bị hỏng hoặc mất
+    if (!["damaged", "lost"].includes(borrowing.status)) {
+      return res.status(400).json({ message: "Chỉ có thể thanh toán khi sách bị hỏng hoặc mất!" });
+    }
+
+    // Nếu thanh toán bằng ngân hàng thì cần có QR code
+    if (paymentMethod === "bank" && !qrCodeImage && !borrowing.qrCodeImage) {
+      return res.status(400).json({ message: "Vui lòng upload ảnh QR code khi thanh toán qua ngân hàng!" });
+    }
+
+    const updateData = {
+      paymentMethod,
+      paymentStatus: paymentMethod === "cash" ? "completed" : "pending", // Tiền mặt = hoàn tất ngay, ngân hàng = chờ xác nhận
+      paymentDate: paymentMethod === "cash" ? new Date() : null,
+      paymentNote: paymentNote || "",
+      status: paymentMethod === "cash" ? STATUS_ENUM.COMPENSATED : borrowing.status, // Tiền mặt tự động đổi status thành compensated
+    };
+
+    if (qrCodeImage) {
+      updateData.qrCodeImage = qrCodeImage;
+    }
+
+    // Nếu có QR code sẵn (từ lần upload trước), giữ lại
+    if (paymentMethod === "bank" && borrowing.qrCodeImage && !qrCodeImage) {
+      updateData.qrCodeImage = borrowing.qrCodeImage;
+    }
+
+    const updated = await Borrowing.findByIdAndUpdate(
+      req.params.id,
+      updateData,
+      { new: true }
+    );
+
+    res.json({ 
+      message: paymentMethod === "cash" 
+        ? "✅ Đã thanh toán bằng tiền mặt thành công!" 
+        : "✅ Đã gửi thông tin thanh toán qua ngân hàng! Vui lòng chờ xác nhận.",
+      borrowing: updated 
+    });
+  } catch (error) {
+    console.error("❌ Lỗi thanh toán:", error);
+    res.status(500).json({ message: "Lỗi server khi xử lý thanh toán!" });
+  }
+});
+
+// ==================== Xác nhận thanh toán (Admin) ====================
+router.put("/:id/confirm-payment", verifyToken, requireRole("admin"), async (req, res) => {
+  try {
+    const borrowing = await Borrowing.findByIdAndUpdate(
+      req.params.id,
+      {
+        paymentStatus: "completed",
+        paymentDate: new Date(),
+        status: STATUS_ENUM.COMPENSATED,
+      },
+      { new: true }
+    );
+
+    if (!borrowing) {
+      return res.status(404).json({ message: "Không tìm thấy đơn mượn!" });
+    }
+
+    res.json({ message: "✅ Đã xác nhận thanh toán thành công!", borrowing });
+  } catch (error) {
+    console.error("❌ Lỗi xác nhận thanh toán:", error);
+    res.status(500).json({ message: "Lỗi server khi xác nhận thanh toán!" });
   }
 });
 

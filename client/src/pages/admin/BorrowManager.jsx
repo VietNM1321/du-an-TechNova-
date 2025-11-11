@@ -119,7 +119,7 @@ const BorrowManager = () => {
       },
     });
   };
-  // 💰 Nhập tiền đền
+  // 💰 Nhập tiền đền (nếu cần thay đổi số tiền)
   const handleCompensation = async () => {
     if (!compensationAmount) {
       message.warning("Vui lòng nhập số tiền đền!");
@@ -131,21 +131,38 @@ const BorrowManager = () => {
         { compensationAmount },
         { headers: { Authorization: `Bearer ${token}` } }
       );
-      message.success("Đã nhập tiền đền!");
-      setBorrowings((prev) =>
-        prev.map((b) =>
-          b._id === compensationModal.record._id
-            ? { ...b, compensationAmount, status: "compensated" }
-            : b
-        )
-      );
+      message.success("Đã cập nhật tiền đền!");
+      fetchBorrowings(page);
       setCompensationModal({ open: false, record: null });
       setCompensationAmount("");
     } catch (error) {
       console.error(error);
-      message.error("Không nhập được tiền đền!");
+      message.error("Không cập nhật được tiền đền!");
     }
-  }
+  };
+
+  // ✅ Xác nhận thanh toán (khi thanh toán qua ngân hàng)
+  const handleConfirmPayment = (record) => {
+    confirm({
+      title: "Xác nhận thanh toán?",
+      icon: <ExclamationCircleOutlined />,
+      content: `Xác nhận đã nhận thanh toán ${record.compensationAmount?.toLocaleString("vi-VN") || 0} VNĐ từ người dùng?`,
+      onOk: async () => {
+        try {
+          await axios.put(
+            `http://localhost:5000/api/borrowings/${record._id}/confirm-payment`,
+            {},
+            { headers: { Authorization: `Bearer ${token}` } }
+          );
+          message.success("✅ Đã xác nhận thanh toán thành công!");
+          fetchBorrowings(page);
+        } catch (error) {
+          console.error(error);
+          message.error("Lỗi khi xác nhận thanh toán!");
+        }
+      },
+    });
+  };
   const columns = [
     {
       title: "Mã đơn",
@@ -217,7 +234,7 @@ const BorrowManager = () => {
       title: "Trạng thái",
       dataIndex: "status",
       key: "status",
-      render: (status) => {
+      render: (status, record) => {
         let color = "default";
         let text = "";
         switch (status) {
@@ -240,28 +257,97 @@ const BorrowManager = () => {
             break;
           case "compensated":
             color = "purple";
-            text = "Đã nhập tiền đền";
+            text = "Đã đền bù";
             break;
           default:
             text = status;
         }
-        return <Tag color={color}>{text}</Tag>;
+        return (
+          <div>
+            <Tag color={color}>{text}</Tag>
+            {record.paymentStatus && (
+              <Tag
+                color={
+                  record.paymentStatus === "completed"
+                    ? "green"
+                    : record.paymentStatus === "paid"
+                    ? "blue"
+                    : "orange"
+                }
+                className="mt-1"
+              >
+                {record.paymentStatus === "completed"
+                  ? "Đã thanh toán"
+                  : record.paymentStatus === "paid"
+                  ? "Đã thanh toán"
+                  : record.paymentStatus === "pending"
+                  ? "Chờ thanh toán"
+                  : ""}
+              </Tag>
+            )}
+          </div>
+        );
       },
     },
     {
-      title: "Ảnh đền tiền",
-      key: "damageImage",
+      title: "Tiền đền",
+      key: "compensation",
+      render: (_, record) => {
+        if (record.compensationAmount && record.compensationAmount > 0) {
+          return (
+            <div>
+              <span className="font-semibold text-red-600">
+                {record.compensationAmount.toLocaleString("vi-VN")} VNĐ
+              </span>
+              {record.paymentMethod && (
+                <div className="text-xs text-gray-500 mt-1">
+                  {record.paymentMethod === "cash" ? "💵 Tiền mặt" : "🏦 Ngân hàng"}
+                </div>
+              )}
+            </div>
+          );
+        }
+        return "—";
+      },
+    },
+    {
+      title: "Ảnh / QR Code",
+      key: "images",
       render: (record) => {
-        if (!record.damageImage) return "—";
-        const src = record.damageImage.startsWith("http")
-          ? record.damageImage
-          : `http://localhost:5000/${record.damageImage}`;
+        const images = [];
+        if (record.damageImage) {
+          const src = record.damageImage.startsWith("http")
+            ? record.damageImage
+            : `http://localhost:5000/${record.damageImage}`;
+          images.push({ src, alt: "Ảnh hỏng", label: "Hỏng" });
+        }
+        if (record.qrCodeImage) {
+          const src = record.qrCodeImage.startsWith("http")
+            ? record.qrCodeImage
+            : `http://localhost:5000/${record.qrCodeImage}`;
+          images.push({ src, alt: "QR Code", label: "QR" });
+        }
+        if (images.length === 0) return "—";
         return (
-          <img
-            src={src}
-            alt="ảnh đền tiền"
-            style={{ width: 40, height: 60, objectFit: "cover", borderRadius: 4 }}
-          />
+          <div className="flex flex-col gap-1">
+            {images.map((img, idx) => (
+              <div key={idx}>
+                <img
+                  src={img.src}
+                  alt={img.alt}
+                  style={{ width: 40, height: 40, objectFit: "cover", borderRadius: 4, cursor: "pointer" }}
+                  onClick={() => {
+                    Modal.info({
+                      title: img.label,
+                      content: <img src={img.src} alt={img.alt} style={{ width: "100%", maxWidth: 400 }} />,
+                      width: 500,
+                    });
+                  }}
+                />
+                <div className="text-xs text-gray-500">{img.label}</div>
+              </div>
+            ))}
+          </div>
         );
       },
     },
@@ -269,20 +355,40 @@ const BorrowManager = () => {
       title: "Thao tác",
       key: "action",
       render: (record) => (
-        <Space>
+        <Space direction="vertical" size="small">
           {record.status === "borrowed" && (
             <Button type="primary" onClick={() => handleReturn(record)}>
               Xác nhận trả
             </Button>
           )}
+          {/* Xác nhận thanh toán khi thanh toán qua ngân hàng */}
+          {(record.status === "damaged" || record.status === "lost") &&
+           record.paymentStatus === "pending" &&
+           record.paymentMethod === "bank" && (
+            <Button
+              type="primary"
+              style={{ backgroundColor: "#52c41a", borderColor: "#52c41a" }}
+              onClick={() => handleConfirmPayment(record)}
+            >
+              ✅ Xác nhận thanh toán
+            </Button>
+          )}
+          {/* Hiển thị thông tin thanh toán đã hoàn tất */}
+          {record.paymentStatus === "completed" && (
+            <Tag color="green">Đã hoàn tất thanh toán</Tag>
+          )}
+          {/* Nút chỉnh sửa tiền đền (nếu cần) */}
           {(record.status === "damaged" || record.status === "lost") && (
             <Button
               type="dashed"
-              danger
+              size="small"
               icon={<DollarOutlined />}
-              onClick={() => setCompensationModal({ open: true, record })}
+              onClick={() => {
+                setCompensationAmount(record.compensationAmount || "50000");
+                setCompensationModal({ open: true, record });
+              }}
             >
-              Nhập tiền đền
+              Sửa tiền đền
             </Button>
           )}
         </Space>

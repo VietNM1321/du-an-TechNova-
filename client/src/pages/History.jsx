@@ -2,24 +2,26 @@ import React, { useEffect, useState } from "react";
 import axios from "axios";
 import { Table, Tag, Button, Space, Modal, message, Image, Input, Upload } from "antd";
 import { UploadOutlined } from "@ant-design/icons";
-
+import PaymentModal from "../components/PaymentModal";
 const STATUS_LABEL = {
   borrowed: "Đang mượn",
   overdue: "Quá hạn",
   damaged: "Mất/hỏng",
+  lost: "Đã mất",
   returned: "Đã trả",
 };
-
 const STATUS_COLOR = {
   borrowed: "blue",
   overdue: "red",
   damaged: "orange",
+  lost: "volcano",
   returned: "green",
 };
-
 const History = ({ userId, refreshFlag }) => {
   const [history, setHistory] = useState([]);
   const [loading, setLoading] = useState(false);
+  const [paymentModalVisible, setPaymentModalVisible] = useState(false);
+  const [selectedBorrowing, setSelectedBorrowing] = useState(null);
   const token = localStorage.getItem("clientToken");
   const storedUser = JSON.parse(localStorage.getItem("clientUser") || "null");
   const effectiveUserId = userId || storedUser?._id || storedUser?.id;
@@ -43,9 +45,7 @@ const History = ({ userId, refreshFlag }) => {
       setLoading(false);
     }
   };
-
   useEffect(() => { fetchHistory(); }, [effectiveUserId, refreshFlag]);
-
   const handleReportLost = (id) => {
     Modal.confirm({
       title: "Xác nhận báo mất",
@@ -64,7 +64,6 @@ const History = ({ userId, refreshFlag }) => {
       },
     });
   };
-
   const handleReportBroken = (record) => {
     let reason = "";
     let file = null;
@@ -149,19 +148,45 @@ const History = ({ userId, refreshFlag }) => {
       title: "Trạng thái",
       dataIndex: "status",
       key: "status",
-      render: (status) => (
-        <Tag color={STATUS_COLOR[status] || "default"}>
-          {STATUS_LABEL[status] || status}
-        </Tag>
+      render: (status, record) => (
+        <div>
+          <Tag color={STATUS_COLOR[status] || "default"}>
+            {STATUS_LABEL[status] || status}
+          </Tag>
+          {record.paymentStatus && (
+            <Tag color={
+              record.paymentStatus === "completed" ? "green" :
+              record.paymentStatus === "paid" ? "blue" : "orange"
+            } className="mt-1">
+              {record.paymentStatus === "completed" ? "Đã thanh toán" :
+               record.paymentStatus === "paid" ? "Đã thanh toán" : "Chờ thanh toán"}
+            </Tag>
+          )}
+        </div>
       ),
+    },
+    {
+      title: "Tiền đền",
+      key: "compensation",
+      render: (_, record) => {
+        if (record.compensationAmount && record.compensationAmount > 0) {
+          return (
+            <span className="font-semibold text-red-600">
+              {record.compensationAmount.toLocaleString("vi-VN")} VNĐ
+            </span>
+          );
+        }
+        return "—";
+      },
     },
     {
       title: "Thao tác",
       key: "action",
       render: (_, record) => (
-        <Space>
+        <Space direction="vertical" size="small">
           <Button
             type="link"
+            size="small"
             onClick={() => Modal.info({
               title: "Chi tiết sách mượn",
               content: (
@@ -171,19 +196,46 @@ const History = ({ userId, refreshFlag }) => {
                   <p>Ngày mượn: {new Date(record.borrowDate).toLocaleDateString("vi-VN")}</p>
                   <p>Ngày trả: {new Date(record.dueDate).toLocaleDateString("vi-VN")}</p>
                   <p>Trạng thái: {STATUS_LABEL[record.status]}</p>
+                  {record.compensationAmount > 0 && (
+                    <>
+                      <p>Tiền đền: {record.compensationAmount.toLocaleString("vi-VN")} VNĐ</p>
+                      <p>Phương thức: {record.paymentMethod === "cash" ? "Tiền mặt" : record.paymentMethod === "bank" ? "Ngân hàng" : "—"}</p>
+                      <p>Trạng thái thanh toán: {
+                        record.paymentStatus === "completed" ? "Đã hoàn tất" :
+                        record.paymentStatus === "paid" ? "Đã thanh toán" :
+                        record.paymentStatus === "pending" ? "Chờ thanh toán" : "—"
+                      }</p>
+                    </>
+                  )}
                 </div>
               ),
-              okText: "Đóng"
+              okText: "Đóng",
+              width: 500,
             })}
           >
             Xem chi tiết
           </Button>
           {record.status === "borrowed" || record.status === "overdue" ? (
             <>
-              <Button type="link" danger onClick={() => handleReportLost(record._id)}>Báo mất</Button>
-              <Button type="link" danger onClick={() => handleReportBroken(record)}>Báo hỏng</Button>
+              <Button type="link" danger size="small" onClick={() => handleReportLost(record._id)}>Báo mất</Button>
+              <Button type="link" danger size="small" onClick={() => handleReportBroken(record)}>Báo hỏng</Button>
             </>
           ) : null}
+          {(record.status === "damaged" || record.status === "lost") && 
+           record.compensationAmount > 0 && 
+           record.paymentStatus !== "completed" && (
+            <Button
+              type="primary"
+              size="small"
+              onClick={() => {
+                setSelectedBorrowing(record);
+                setPaymentModalVisible(true);
+              }}
+              className="bg-blue-600 hover:bg-blue-700"
+            >
+              💳 Thanh toán
+            </Button>
+          )}
         </Space>
       ),
     },
@@ -199,6 +251,19 @@ const History = ({ userId, refreshFlag }) => {
         loading={loading}
         pagination={{ pageSize: 5 }}
         bordered
+      />
+      <PaymentModal
+        visible={paymentModalVisible}
+        onClose={() => {
+          setPaymentModalVisible(false);
+          setSelectedBorrowing(null);
+        }}
+        borrowing={selectedBorrowing}
+        onSuccess={() => {
+          fetchHistory();
+          setPaymentModalVisible(false);
+          setSelectedBorrowing(null);
+        }}
       />
     </div>
   );

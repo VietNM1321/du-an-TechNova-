@@ -23,7 +23,14 @@ const BorrowingSchema = new mongoose.Schema(
     damageType: { type: String, enum: ["broken", "lost", null], default: null }, // broken=hỏng, lost=mất
     damageReason: { type: String }, // lý do sinh viên gửi
     damageImage: { type: String }, // đường dẫn ảnh upload
-    compensationAmount: { type: Number, default: 0 }, // tiền đền (admin nhập)
+    compensationAmount: { type: Number, default: 50000 }, // tiền đền (mặc định 50,000 VNĐ)
+    
+    // 💰 Thông tin thanh toán
+    paymentMethod: { type: String, enum: ["cash", "bank", null], default: null }, // cash=tiền mặt, bank=ngân hàng
+    paymentStatus: { type: String, enum: ["pending", "paid", "completed"], default: "pending" }, // pending=chờ thanh toán, paid=đã thanh toán, completed=hoàn tất
+    paymentDate: { type: Date }, // ngày thanh toán
+    qrCodeImage: { type: String }, // đường dẫn ảnh QR code ngân hàng
+    paymentNote: { type: String }, // ghi chú thanh toán
 
     // 🧍 Dữ liệu snapshot sinh viên (khi mượn)
     userSnapshot: {
