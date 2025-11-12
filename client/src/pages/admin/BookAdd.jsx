@@ -1,23 +1,31 @@
 import React, { useEffect, useState } from "react";
 import axios from "axios";
-import { PlusCircle, Upload, BookOpen } from "lucide-react";
+import { PlusCircle } from "lucide-react";
 import { useNavigate } from "react-router-dom";
+import {
+  Card,
+  Form,
+  Input,
+  Select,
+  Row,
+  Col,
+  InputNumber,
+  Upload,
+  Button,
+  Typography,
+  message,
+} from "antd";
+
+const { Title, Text } = Typography;
+
 const BookAdd = () => {
   const navigate = useNavigate();
   const [previewBookCode, setPreviewBookCode] = useState("");
   const [categories, setCategories] = useState([]);
   const [authors, setAuthors] = useState([]);
-  const [selectedFiles, setSelectedFiles] = useState([]);
+  const [fileList, setFileList] = useState([]);
   const [loadingCode, setLoadingCode] = useState(false);
-  const [form, setForm] = useState({
-    title: "",
-    description: "",
-    images: [],
-    category: "",
-    author: "",
-    publishedYear: "",
-    quantity: "",
-  });
+  const [submitting, setSubmitting] = useState(false);
   // Lấy danh mục và tác giả
   useEffect(() => {
     const fetchData = async () => {
@@ -34,183 +42,174 @@ const BookAdd = () => {
     };
     fetchData();
   }, []);
-  useEffect(() => {
-    const fetchBookCode = async () => {
-      if (!form.category) {
-        setPreviewBookCode("");
-        return;
-      }
-      setLoadingCode(true);
-      try {
-        const res = await axios.get(
-          `http://localhost:5000/api/bookcodes/category/${form.category}`
-        );
-        if (res.data) {
-          const { prefix, lastNumber } = res.data;
-          const nextCode = `${prefix}-${String(lastNumber + 1).padStart(3, "0")}`;
-          setPreviewBookCode(nextCode);
-        } else {
-          setPreviewBookCode("Lỗi chưa có mã cho thể loại này");
-        }
-      } catch (err) {
-        setPreviewBookCode("Mã sách chưa tồn tại");
-        console.error("Lỗi lấy mã sách:", err);
-      } finally {
-        setLoadingCode(false);
-      }
-    };
-    fetchBookCode();
-  }, [form.category]);
-  const handleFileChange = (e) => setSelectedFiles(Array.from(e.target.files));
-  const handleSubmit = async (e) => { // form thêm sách
-    e.preventDefault();
-    if (
-      !form.title ||
-      !form.category ||
-      !form.publishedYear ||
-      !form.quantity ||
-      selectedFiles.length === 0
-    ) {
-      alert("⚠️ Vui lòng nhập đầy đủ thông tin bắt buộc!");
+  // preview code will be fetched when category changes via Select onChange
+  const beforeUpload = (file) => {
+    // prevent auto upload; store files in state
+    setFileList((prev) => [...prev, file]);
+    return false;
+  };
+
+  const removeFile = (file) => {
+    setFileList((prev) => prev.filter((f) => f.uid !== file.uid && f.name !== file.name));
+  };
+
+  const handleSubmit = async (values) => {
+    if (!values.title || !values.category || !values.publishedYear || !values.quantity) {
+      message.warning("Vui lòng điền đầy đủ thông tin bắt buộc");
       return;
     }
+    if (fileList.length === 0) {
+      message.warning("Vui lòng thêm ít nhất một ảnh sách");
+      return;
+    }
+
+    setSubmitting(true);
     const dataToSend = {
-      ...form,
-      available: form.quantity,
+      title: values.title,
+      description: values.description || "",
+      category: values.category,
+      author: values.author || "",
+      publishedYear: values.publishedYear,
+      quantity: values.quantity,
+      available: values.quantity,
     };
 
     const formData = new FormData();
-    Object.entries(dataToSend).forEach(([key, value]) =>
-      formData.append(key, value)
-    );
-    selectedFiles.forEach((file) => formData.append("images", file));
+    Object.entries(dataToSend).forEach(([k, v]) => formData.append(k, v));
+    fileList.forEach((f) => formData.append("images", f.originFileObj || f));
+
     try {
+      const token = localStorage.getItem("adminToken");
       await axios.post("http://localhost:5000/api/books", formData, {
-        headers: { "Content-Type": "multipart/form-data" },
+        headers: {
+          "Content-Type": "multipart/form-data",
+          Authorization: `Bearer ${token}`,
+        },
       });
-      alert("✅ Thêm sách thành công!");
+      message.success("✅ Thêm sách thành công!");
       navigate("/admin/bookmanager");
     } catch (err) {
       console.error("Lỗi thêm sách:", err.response?.data || err);
-      alert("❌ Thêm sách thất bại!");
+      message.error(err.response?.data?.message || "❌ Thêm sách thất bại!");
+    } finally {
+      setSubmitting(false);
     }
   };
   return (
-    <div className="max-w-4xl mx-auto mt-10 p-8 bg-white rounded-2xl shadow-xl border border-gray-200">
-      <h2 className="text-3xl font-bold text-blue-600 mb-6 text-center">
-        📚 Thêm Sách Mới
-      </h2>
+    <div className="max-w-6xl mx-auto mt-10 p-4">
+      <Card className="shadow-xl rounded-2xl">
+        <Row gutter={[24, 24]}>
+          <Col xs={24} md={8} className="flex flex-col items-center justify-center">
+            <div className="bg-gradient-to-br from-blue-50 to-white rounded-lg p-6 w-full text-center">
+              <Title level={4}>📚 Thêm Sách Mới</Title>
+              <Text type="secondary">Thêm thông tin cơ bản cho sách và upload ảnh</Text>
 
-      <form
-        className="grid grid-cols-1 md:grid-cols-2 gap-6"
-        onSubmit={handleSubmit}
-      >
-        <div className="relative">
-          <BookOpen className="absolute top-3 left-3 text-gray-400" />
-          <input
-            type="text"
-            placeholder="Tên sách *"
-            value={form.title}
-            onChange={(e) => setForm({ ...form, title: e.target.value })}
-            className="pl-10 border rounded-lg w-full py-3 focus:ring-2 focus:ring-blue-400 outline-none"
-            required
-          />
-        </div>
-        <select
-          value={form.category}
-          onChange={(e) => setForm({ ...form, category: e.target.value })}
-          className="border rounded-lg w-full py-3 px-4 focus:ring-2 focus:ring-blue-400 outline-none"
-          required
-        >
-          <option value="">-- Chọn thể loại *--</option>
-          {categories.map((c) => (
-            <option key={c._id} value={c._id}>
-              {c.name}
-            </option>
-          ))}
-        </select>
-        <select
-          value={form.author}
-          onChange={(e) => setForm({ ...form, author: e.target.value })}
-          className="border rounded-lg w-full py-3 px-4 focus:ring-2 focus:ring-blue-400 outline-none"
-        >
-          <option value="">-- Chọn tác giả --</option>
-          {authors.map((a) => (
-            <option key={a._id} value={a._id}>
-              {a.name}
-            </option>
-          ))}
-        </select>
-        <input
-          type="number"
-          placeholder="Năm xuất bản *"
-          value={form.publishedYear}
-          onChange={(e) =>
-            setForm({ ...form, publishedYear: e.target.value })
-          }
-          className="border rounded-lg w-full py-3 px-4 focus:ring-2 focus:ring-blue-400 outline-none"
-          required
-        />
-        <input
-          type="text"
-          value={loadingCode ? "Đang tải..." : previewBookCode}
-          readOnly
-          className="md:col-span-2 border rounded-lg w-full py-3 px-4 bg-gray-100 text-gray-600"
-          placeholder="Mã sách tự sinh"
-        />
-        <input
-          type="number"
-          placeholder="Số lượng *"
-          value={form.quantity}
-          onChange={(e) => setForm({ ...form, quantity: e.target.value })}
-          className="border rounded-lg w-full py-3 px-4 focus:ring-2 focus:ring-blue-400 outline-none"
-          required
-        />
-        <textarea
-          placeholder="Mô tả"
-          value={form.description}
-          onChange={(e) => setForm({ ...form, description: e.target.value })}
-          className="md:col-span-2 border rounded-lg w-full py-3 px-4 focus:ring-2 focus:ring-blue-400 outline-none resize-none h-32"
-        />
-        <div className="md:col-span-2 flex flex-col gap-2">
-          <label className="font-medium flex items-center gap-2">
-            <Upload className="text-gray-500" /> Ảnh sách *
-          </label>
-          <input
-            type="file"
-            multiple
-            onChange={handleFileChange}
-            className="border rounded-lg p-2 focus:ring-2 focus:ring-blue-400 outline-none"
-            required
-          />
-          <div className="flex flex-wrap gap-3 mt-2">
-            {selectedFiles.map((img, idx) => (
-              <img
-                key={idx}
-                src={URL.createObjectURL(img)}
-                alt="book"
-                className="w-24 h-32 object-cover rounded-lg border"
-              />
-            ))}
-          </div>
-        </div>
-        <div className="md:col-span-2 flex justify-center gap-4 mt-6">
-          <button
-            type="button"
-            onClick={() => navigate("/admin/bookmanager")}
-            className="bg-gray-400 hover:bg-gray-500 text-white px-6 py-2 rounded-lg shadow-md transition-all"
-          >
-            ⬅️ Quay lại
-          </button>
+              <div className="mt-6 w-full">
+                <Upload
+                  multiple
+                  beforeUpload={beforeUpload}
+                  onRemove={removeFile}
+                  listType="picture-card"
+                  fileList={fileList}
+                >
+                  <div>
+                    <PlusCircle size={20} />
+                    <div style={{ marginTop: 8 }}>Tải ảnh</div>
+                  </div>
+                </Upload>
 
-          <button
-            type="submit"
-            className="bg-gradient-to-r from-blue-500 to-blue-700 text-white px-6 py-2 rounded-lg shadow-md hover:from-blue-600 hover:to-blue-800 transition-all flex items-center gap-2"
-          >
-            <PlusCircle size={20} /> Thêm Sách
-          </button>
-        </div>
-      </form>
+                <div className="mt-4 text-sm text-gray-500">
+                  Hỗ trợ nhiều ảnh. Kéo thả hoặc nhấp để chọn.
+                </div>
+              </div>
+            </div>
+          </Col>
+
+          <Col xs={24} md={16}>
+            <Form layout="vertical" onFinish={handleSubmit} initialValues={{ quantity: 1 }}>
+              <Row gutter={16}>
+                <Col xs={24} sm={24}>
+                  <Form.Item name="title" label="Tên sách" rules={[{ required: true, message: "Nhập tên sách" }]}> 
+                    <Input size="large" placeholder="Nhập tên sách..." />
+                  </Form.Item>
+                </Col>
+
+                <Col xs={12} sm={12}>
+                  <Form.Item name="category" label="Thể loại" rules={[{ required: true, message: "Chọn thể loại" }]}> 
+                    <Select
+                      placeholder="Chọn thể loại"
+                      size="large"
+                      onChange={(val) => {
+                        if (val) {
+                          setLoadingCode(true);
+                          axios.get(`http://localhost:5000/api/bookcodes/category/${val}`)
+                            .then(res => {
+                              if (res.data) {
+                                const { prefix, lastNumber } = res.data;
+                                setPreviewBookCode(`${prefix}-${String(lastNumber + 1).padStart(3, "0")}`);
+                              }
+                            })
+                            .catch(err => {
+                              console.error(err);
+                              setPreviewBookCode("Mã sách chưa tồn tại");
+                            })
+                            .finally(() => setLoadingCode(false));
+                        } else {
+                          setPreviewBookCode("");
+                        }
+                      }}
+                    >
+                      {categories.map((c) => (
+                        <Select.Option key={c._id} value={c._id}>{c.name}</Select.Option>
+                      ))}
+                    </Select>
+                  </Form.Item>
+                </Col>
+
+                <Col xs={12} sm={12}>
+                  <Form.Item name="author" label="Tác giả">
+                    <Select placeholder="Chọn tác giả" size="large" allowClear>
+                      {authors.map((a) => (
+                        <Select.Option key={a._id} value={a._id}>{a.name}</Select.Option>
+                      ))}
+                    </Select>
+                  </Form.Item>
+                </Col>
+
+                <Col xs={12} sm={12}>
+                  <Form.Item name="publishedYear" label="Năm xuất bản" rules={[{ required: true, message: "Nhập năm xuất bản" }]}> 
+                    <InputNumber min={1000} max={3000} style={{ width: "100%" }} size="large" />
+                  </Form.Item>
+                </Col>
+
+                <Col xs={12} sm={12}>
+                  <Form.Item label="Mã sách">
+                    <Input readOnly value={loadingCode ? "Đang tải..." : previewBookCode} />
+                  </Form.Item>
+                </Col>
+
+                <Col xs={12} sm={12}>
+                  <Form.Item name="quantity" label="Số lượng" rules={[{ required: true, message: "Nhập số lượng" }]}> 
+                    <InputNumber min={1} style={{ width: "100%" }} size="large" />
+                  </Form.Item>
+                </Col>
+
+                <Col xs={24}>
+                  <Form.Item name="description" label="Mô tả">
+                    <Input.TextArea rows={4} placeholder="Mô tả ngắn về sách" />
+                  </Form.Item>
+                </Col>
+
+                <Col xs={24} className="flex justify-end gap-3">
+                  <Button onClick={() => navigate("/admin/bookmanager")}>Hủy</Button>
+                  <Button onClick={() => { setFileList([]); message.info("Đã reset ảnh"); }}>Reset ảnh</Button>
+                  <Button type="primary" htmlType="submit" icon={<PlusCircle size={16} />} loading={submitting}>Thêm Sách</Button>
+                </Col>
+              </Row>
+            </Form>
+          </Col>
+        </Row>
+      </Card>
     </div>
   );
 };
