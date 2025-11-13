@@ -42,6 +42,7 @@ import NotificationList from "./pages/admin/NotificationList";
 import AddNotification from "./pages/admin/AddNotification";
 import EditNotification from "./pages/admin/EditNotification";
 import NotificationDetail from "./components/NotificationDetail"; 
+import ForgotPassword from "./pages/ForgotPassword";
 
 
 
@@ -100,6 +101,7 @@ function App() {
           <Route path="/payment/:id" element={<Payment />} />
           <Route path="/changepassword" element={<ChangePassword />} />
           <Route path="notification/:id" element={<NotificationDetail />} />
+          <Route path="/forgot-password" element={<ForgotPassword />} />
         </Route>
 
         {/* Admin routes */}

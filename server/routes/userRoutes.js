@@ -34,6 +34,9 @@ router.get("/profile", verifyToken, async (req, res) => {
 /* ============================================================
    🟢 LẤY DANH SÁCH NGƯỜI DÙNG (có tìm kiếm/bộ lọc/phân trang)
    ============================================================ */
+/* ============================================================
+   🟢 LẤY DANH SÁCH NGƯỜI DÙNG (có tìm kiếm/bộ lọc/phân trang, date-safe)
+   ============================================================ */
 router.get("/", async (req, res) => {
   try {
     const page = parseInt(req.query.page) || 1;
@@ -43,6 +46,7 @@ router.get("/", async (req, res) => {
     const { q, role, active, dateFrom, dateTo, sort, order } = req.query;
     const filter = {};
 
+    // Search
     if (q && q.trim()) {
       const text = q.trim();
       filter.$or = [
@@ -53,25 +57,30 @@ router.get("/", async (req, res) => {
       ];
     }
 
-    if (role) {
-      filter.role = role;
-    }
+    // Role filter
+    if (role) filter.role = role;
 
-    if (active === "true" || active === "false") {
-      filter.active = active === "true";
-    }
+    // Active filter
+    if (active === "true") filter.active = true;
+    else if (active === "false") filter.active = false;
 
+    // Date filter (safe)
     if (dateFrom || dateTo) {
+      const gte = dateFrom ? new Date(dateFrom) : null;
+      const lte = dateTo ? new Date(dateTo) : null;
+
       filter.createdAt = {};
-      if (dateFrom) filter.createdAt.$gte = new Date(dateFrom);
-      if (dateTo) filter.createdAt.$lte = new Date(dateTo);
+      if (gte instanceof Date && !isNaN(gte)) filter.createdAt.$gte = gte;
+      if (lte instanceof Date && !isNaN(lte)) filter.createdAt.$lte = lte;
+
+      if (Object.keys(filter.createdAt).length === 0) delete filter.createdAt;
     }
 
     const total = await User.countDocuments(filter);
-    const sortSpec =
-      sort
-        ? { [sort]: (order || "desc").toLowerCase() === "asc" ? 1 : -1 }
-        : { createdAt: -1 };
+
+    const sortSpec = sort
+      ? { [sort]: (order || "desc").toLowerCase() === "asc" ? 1 : -1 }
+      : { createdAt: -1 };
 
     const users = await User.find(filter)
       .select("studentCode fullName email active role createdAt")
@@ -87,11 +96,13 @@ router.get("/", async (req, res) => {
       totalPages: Math.ceil(total / limit),
       totalItems: total,
     });
-  } catch (error) {
-    console.error("❌ Lỗi lấy danh sách người dùng:", error);
+  } catch (err) {
+    console.error("❌ Lỗi lấy danh sách người dùng:", err);
     res.status(500).json({ success: false, message: "Lỗi server" });
   }
 });
+
+
 
 /* ============================================================
    🔒 KHÓA / MỞ KHÓA TÀI KHOẢN
@@ -136,7 +147,33 @@ router.get("/:userId/profile", async (req, res) => {
     res.status(500).json({ message: err.message });
   }
 });
+// Sinh viên gửi yêu cầu quên mật khẩu
+router.post("/forgot-password", async (req, res) => {
+  const { studentCode, email } = req.body;
+  const user = await User.findOne({ studentCode });
+  if (!user) return res.status(404).json({ message: "Sinh viên không tồn tại" });
+  if (user.email !== email) return res.status(400).json({ message: "Email không khớp" });
 
+  user.forgotPassword = true;  // cập nhật trạng thái
+  await user.save();
+
+  res.json({ message: "✅ Yêu cầu đã được gửi thành công!" });
+});
+
+router.put("/:id/forgotPassword", async (req, res) => {
+  try {
+    const user = await User.findById(req.params.id);
+    if (!user) return res.status(404).json({ message: "Người dùng không tồn tại" });
+
+    user.forgotPassword = false; // reset trạng thái quên mật khẩu
+    await user.save();
+
+    res.json({ message: "✅ Đã xác nhận cấp mật khẩu, trạng thái quên mật khẩu đã reset" });
+  } catch (err) {
+    console.error("❌ Lỗi reset trạng thái quên mật khẩu:", err);
+    res.status(500).json({ message: err.message });
+  }
+});
 /* ============================================================
    📘 GỬI BÁO CÁO MẤT / HỎNG
    ============================================================ */
