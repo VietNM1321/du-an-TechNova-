@@ -146,6 +146,28 @@ router.put("/setpassword/:id", verifyToken, requireRole("admin"), async (req, re
     res.status(500).json({ message: "Lỗi server!" });
   }
 });
+// Reset mật khẩu sinh viên
+router.put("/resetpassword/:id", verifyToken, requireRole("admin"), async (req, res) => {
+  const { id } = req.params;
+
+  try {
+    const user = await User.findById(id);
+    if (!user) return res.status(404).json({ message: "Không tìm thấy người dùng!" });
+
+    if (!user.active) {
+      return res.status(403).json({ message: "Sinh viên đã bị khóa, không thể reset mật khẩu!" });
+    }
+
+    user.password = ""; // Xóa mật khẩu
+    await user.save();
+
+    res.json({ message: "✅ Mật khẩu đã được reset thành công!" });
+  } catch (err) {
+    console.error("❌ Lỗi khi reset mật khẩu:", err);
+    res.status(500).json({ message: "Lỗi server!" });
+  }
+});
+
 router.get("/users", verifyToken, requireRole("admin"), async (req, res) => {
   try {
     const students = await User.find({ role: "student" }).select(
@@ -243,16 +265,5 @@ router.put("/changepassword", verifyToken, async (req, res) => {
     res.status(500).json({ message: "Lỗi server khi đổi mật khẩu!" });
   }
 });
-router.get("/profile", verifyToken, async (req, res) => {
-  try {
-    const user = await User.findById(req.user.id).populate("borrowings.book");
-    if (!user) {
-      return res.status(404).json({ message: "Không tìm thấy người dùng!" });
-    }
-    res.json(user);
-  } catch (err) {
-    console.error("❌ Lỗi lấy profile:", err);
-    res.status(500).json({ message: "Lỗi server khi lấy profile!" });
-  }
-});
+
 export default router;
