@@ -1,8 +1,35 @@
 import express from "express";
 import User from "../models/User.js";
 import Borrowings from "../models/borrowings.js";
+import { verifyToken } from "../middleware/auth.js";
+
 
 const router = express.Router();
+router.get("/profile", verifyToken, async (req, res) => {
+  try {
+    const user = await User.findById(req.user.id)
+      .select("studentCode fullName email role active createdAt")
+      .lean();
+
+    if (!user) {
+      return res.status(404).json({ message: "Không tìm thấy người dùng!" });
+    }
+
+    const borrowings = await Borrowings.find({ user: req.user.id })
+      .populate("book", "title author image")
+      .sort({ borrowDate: -1 });
+
+    res.status(200).json({
+      success: true,
+      message: "Lấy hồ sơ người dùng thành công!",
+      user,
+      borrowings,
+    });
+  } catch (err) {
+    console.error("❌ Lỗi khi lấy hồ sơ:", err);
+    res.status(500).json({ message: "Lỗi server khi lấy hồ sơ người dùng!" });
+  }
+});
 
 /* ============================================================
    🟢 LẤY DANH SÁCH NGƯỜI DÙNG (có tìm kiếm/bộ lọc/phân trang)
@@ -88,6 +115,8 @@ router.put("/:id/toggle-active", async (req, res) => {
     res.status(500).json({ success: false, message: "Lỗi server" });
   }
 });
+// 🧑‍💻 Lấy hồ sơ người dùng hiện tại bằng token
+
 
 /* ============================================================
    🧾 LẤY HỒ SƠ NGƯỜI DÙNG + DANH SÁCH SÁCH ĐÃ MƯỢN

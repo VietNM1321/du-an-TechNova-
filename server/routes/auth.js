@@ -243,5 +243,16 @@ router.put("/changepassword", verifyToken, async (req, res) => {
     res.status(500).json({ message: "Lỗi server khi đổi mật khẩu!" });
   }
 });
-
+router.get("/profile", verifyToken, async (req, res) => {
+  try {
+    const user = await User.findById(req.user.id).populate("borrowings.book");
+    if (!user) {
+      return res.status(404).json({ message: "Không tìm thấy người dùng!" });
+    }
+    res.json(user);
+  } catch (err) {
+    console.error("❌ Lỗi lấy profile:", err);
+    res.status(500).json({ message: "Lỗi server khi lấy profile!" });
+  }
+});
 export default router;

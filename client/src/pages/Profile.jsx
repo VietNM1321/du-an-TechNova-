@@ -1,65 +1,41 @@
 import { useState, useEffect } from "react";
-import { useNavigate } from "react-router-dom"; // <-- thêm
-import { motion, AnimatePresence } from "framer-motion";
-import { AlertCircle, CheckCircle, Loader2 } from "lucide-react";
+import { useNavigate } from "react-router-dom";
+import { Loader2 } from "lucide-react";
 import axios from "axios";
 
 const Profile = () => {
-  const navigate = useNavigate(); // <-- thêm
-  const [user, setUser] = useState(() => {
-    const stored = localStorage.getItem("clientUser");
-    return stored ? JSON.parse(stored) : null;
-  });
+  const navigate = useNavigate();
+  const [user, setUser] = useState(null);
   const [borrowedBooks, setBorrowedBooks] = useState([]);
-  const [selectedBook, setSelectedBook] = useState(null);
-  const [reportType, setReportType] = useState("");
-  const [reason, setReason] = useState("");
-  const [loading, setLoading] = useState(false);
+  const [loading, setLoading] = useState(true);
+  const token = localStorage.getItem("clientToken");
 
   useEffect(() => {
     const fetchProfile = async () => {
-      const userData = JSON.parse(localStorage.getItem("clientUser"));
-      if (!userData || !userData._id) {
-        alert("Chưa đăng nhập!");
+      if (!token) {
+        alert("Vui lòng đăng nhập trước!");
+        navigate("/login");
         return;
       }
 
       try {
         setLoading(true);
-        const res = await axios.get(
-          `http://localhost:5000/api/users/${userData._id}/profile`
-        );
-        setUser(res.data);
+        const res = await axios.get("http://localhost:5000/api/users/profile", {
+          headers: { Authorization: `Bearer ${token}` },
+        });
+
+        setUser(res.data.user);
         setBorrowedBooks(res.data.borrowings || []);
-      } catch (error) {
-        console.error("❌ Lỗi khi tải hồ sơ:", error);
-        alert("Không thể tải hồ sơ, vui lòng thử lại!");
+      } catch (err) {
+        console.error("❌ Lỗi khi tải hồ sơ:", err);
+        alert("Không thể tải thông tin hồ sơ. Vui lòng thử lại!");
       } finally {
         setLoading(false);
       }
     };
 
     fetchProfile();
-  }, []);
-
-  const handleReport = async () => {
-    if (!reportType || !reason.trim())
-      return alert("Vui lòng chọn loại báo cáo và nhập lý do!");
-
-    try {
-      await axios.post(
-        `http://localhost:5000/api/users/${selectedBook._id}/report`,
-        { type: reportType, reason }
-      );
-      alert("✅ Đã gửi báo cáo thành công!");
-      setSelectedBook(null);
-      setReportType("");
-      setReason("");
-    } catch (err) {
-      console.error("❌ Lỗi gửi báo cáo:", err);
-      alert("Không thể gửi báo cáo, vui lòng thử lại!");
-    }
-  };
+  }, [token, navigate]);
 
   if (loading)
     return (
@@ -68,32 +44,48 @@ const Profile = () => {
       </div>
     );
 
+  if (!user)
+    return (
+      <div className="text-center text-gray-500 mt-10">
+        Không tìm thấy thông tin người dùng.
+      </div>
+    );
+
   return (
     <div className="container mx-auto px-6 py-10">
       <h1 className="text-2xl font-bold mb-6 text-gray-800">Hồ sơ người dùng</h1>
 
-      {user ? (
-        <div className="bg-white shadow-md rounded-xl p-6 mb-8 border border-gray-100">
-          <p className="text-gray-700 text-lg">
-            <strong>Mã sinh viên:</strong> {user.studentCode || "Không có"}
-          </p>
-          <p className="text-gray-700 text-lg mt-2">
-            <strong>Email:</strong> {user.email || "Không có"}
-          </p>
+      <div className="bg-white shadow-md rounded-xl p-6 mb-8 border border-gray-100">
+        <p className="text-gray-700 text-lg">
+          <strong>Mã sinh viên:</strong> {user.studentCode || "Không có"}
+        </p>
+        <p className="text-gray-700 text-lg mt-2">
+          <strong>Họ tên:</strong> {user.fullName || "Không có"}
+        </p>
+        <p className="text-gray-700 text-lg mt-2">
+          <strong>Email:</strong> {user.email || "Không có"}
+        </p>
+        <p className="text-gray-700 text-lg mt-2">
+          <strong>Khóa học:</strong> {user.course || "Chưa có"}
+        </p>
 
-          {/* Nút Đổi mật khẩu */}
+        <div className="mt-5 flex gap-4">
           <button
             onClick={() => navigate("/changepassword")}
-            className="mt-4 bg-yellow-500 text-white px-4 py-2 rounded-lg hover:bg-yellow-600 transition"
+            className="bg-yellow-500 text-white px-5 py-2 rounded-lg hover:bg-yellow-600 transition"
           >
             Đổi mật khẩu
           </button>
-        </div>
-      ) : (
-        <p className="text-gray-500">Chưa có thông tin người dùng.</p>
-      )}
 
-      {/* Danh sách sách đã mượn */}
+          <button
+            onClick={() => navigate("/history")}
+            className="bg-blue-500 text-white px-5 py-2 rounded-lg hover:bg-blue-600 transition"
+          >
+            Xem lịch sử mượn
+          </button>
+        </div>
+      </div>
+
       <div className="bg-white shadow-md rounded-xl p-6 border border-gray-100">
         <h2 className="text-xl font-semibold mb-4 text-gray-800">
           Danh sách sách đã mượn
@@ -104,121 +96,36 @@ const Profile = () => {
             Bạn chưa mượn quyển sách nào.
           </p>
         ) : (
-          <table className="w-full border-collapse">
-            <thead>
-              <tr className="bg-gray-100 text-gray-700 text-sm">
-                <th className="p-3 text-left">Tên sách</th>
-                <th className="p-3 text-left">Ngày mượn</th>
-                <th className="p-3 text-left">Trạng thái</th>
-                <th className="p-3 text-center">Hành động</th>
-              </tr>
-            </thead>
-            <tbody>
-              {borrowedBooks.map((b) => (
-                <tr key={b._id} className="border-t text-sm hover:bg-gray-50">
-                  <td className="p-3">{b.book?.title || "Không xác định"}</td>
-                  <td className="p-3">
-                    {new Date(b.borrowDate).toLocaleDateString("vi-VN")}
-                  </td>
-                  <td className="p-3">
-                    <span
-                      className={`px-3 py-1 rounded-full text-xs font-medium ${
-                        b.status === "borrowed"
-                          ? "bg-blue-100 text-blue-600"
-                          : b.status === "overdue"
-                          ? "bg-yellow-100 text-yellow-600"
-                          : "bg-red-100 text-red-600"
-                      }`}
-                    >
+          <div className="overflow-x-auto">
+            <table className="w-full border-collapse text-sm">
+              <thead>
+                <tr className="bg-gray-100 text-gray-700">
+                  <th className="p-3 text-left">Tên sách</th>
+                  <th className="p-3 text-left">Ngày mượn</th>
+                  <th className="p-3 text-left">Trạng thái</th>
+                </tr>
+              </thead>
+              <tbody>
+                {borrowedBooks.map((b) => (
+                  <tr key={b._id} className="border-t hover:bg-gray-50">
+                    <td className="p-3">{b.book?.title || "Không xác định"}</td>
+                    <td className="p-3">
+                      {new Date(b.borrowDate).toLocaleDateString("vi-VN")}
+                    </td>
+                    <td className="p-3">
                       {b.status === "borrowed"
                         ? "Đang mượn"
                         : b.status === "overdue"
                         ? "Trễ hạn"
-                        : "Đã trả / hỏng"}
-                    </span>
-                  </td>
-                  <td className="p-3 text-center">
-                    <button
-                      onClick={() => setSelectedBook(b)}
-                      className="bg-blue-600 hover:bg-blue-700 text-white text-xs font-medium px-3 py-1 rounded-lg"
-                    >
-                      Báo mất / hỏng
-                    </button>
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
+                        : "Đã trả"}
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
         )}
       </div>
-
-      <AnimatePresence>
-        {selectedBook && (
-          <motion.div
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
-            className="fixed inset-0 bg-black bg-opacity-40 flex items-center justify-center z-50"
-          >
-            <motion.div
-              initial={{ scale: 0.9 }}
-              animate={{ scale: 1 }}
-              exit={{ scale: 0.9 }}
-              className="bg-white rounded-xl p-6 w-96 shadow-xl"
-            >
-              <h3 className="text-lg font-semibold mb-4">
-                Báo mất/hỏng:{" "}
-                <span className="text-blue-600">{selectedBook.book?.title}</span>
-              </h3>
-
-              <div className="flex gap-3 mb-4">
-                <button
-                  onClick={() => setReportType("lost")}
-                  className={`flex-1 px-3 py-2 rounded-lg border ${
-                    reportType === "lost"
-                      ? "bg-red-100 border-red-400 text-red-600"
-                      : "hover:bg-gray-100 border-gray-200"
-                  } flex items-center justify-center gap-2`}
-                >
-                  <AlertCircle size={16} /> Báo mất
-                </button>
-                <button
-                  onClick={() => setReportType("damaged")}
-                  className={`flex-1 px-3 py-2 rounded-lg border ${
-                    reportType === "damaged"
-                      ? "bg-yellow-100 border-yellow-400 text-yellow-600"
-                      : "hover:bg-gray-100 border-gray-200"
-                  } flex items-center justify-center gap-2`}
-                >
-                  <CheckCircle size={16} /> Báo hỏng
-                </button>
-              </div>
-
-              <textarea
-                placeholder="Nhập lý do..."
-                value={reason}
-                onChange={(e) => setReason(e.target.value)}
-                className="w-full border border-gray-300 rounded-lg p-2 text-sm mb-4 resize-none h-24"
-              />
-
-              <div className="flex justify-end gap-3">
-                <button
-                  onClick={() => setSelectedBook(null)}
-                  className="px-4 py-2 text-gray-600 hover:text-gray-800"
-                >
-                  Hủy
-                </button>
-                <button
-                  onClick={handleReport}
-                  className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700"
-                >
-                  Gửi báo cáo
-                </button>
-              </div>
-            </motion.div>
-          </motion.div>
-        )}
-      </AnimatePresence>
     </div>
   );
 };
