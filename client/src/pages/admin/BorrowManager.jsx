@@ -93,8 +93,6 @@ const BorrowManager = () => {
     setPage(1);
     fetchBorrowings(1, { q: "" });
   };
-
-  // ✅ Xác nhận trả sách
   const handleReturn = (record) => {
     confirm({
       title: "Xác nhận trả sách?",
@@ -119,15 +117,13 @@ const BorrowManager = () => {
       },
     });
   };
-  // 💰 Nhập tiền đền (nếu cần thay đổi số tiền)
   const handleCompensation = async () => {
     if (!compensationAmount) {
       message.warning("Vui lòng nhập số tiền đền!");
       return;
     }
     try {
-      await axios.put(
-        `http://localhost:5000/api/borrowings/${compensationModal.record._id}/compensation`,
+      await axios.put(`http://localhost:5000/api/borrowings/${compensationModal.record._id}/compensation`,
         { compensationAmount },
         { headers: { Authorization: `Bearer ${token}` } }
       );
@@ -140,8 +136,6 @@ const BorrowManager = () => {
       message.error("Không cập nhật được tiền đền!");
     }
   };
-
-  // ✅ Xác nhận thanh toán (khi thanh toán qua ngân hàng)
   const handleConfirmPayment = (record) => {
     confirm({
       title: "Xác nhận thanh toán?",
@@ -397,137 +391,152 @@ const BorrowManager = () => {
   ];
 
   return (
-    <div className="p-6 bg-white rounded-xl shadow-sm">
-      <div className="flex justify-between items-center mb-4">
-        <h2 className="text-xl font-semibold flex items-center gap-2">
-          <BookOutlined /> Quản lý đơn mượn sách
-        </h2>
-        <Button onClick={() => fetchBorrowings(page)}>Làm mới</Button>
-      </div>
+    <div className="min-h-screen bg-gradient-to-br from-blue-50 via-slate-50 to-purple-50 py-8 px-4 md:px-8">
+      <div className="max-w-7xl mx-auto space-y-6">
+        <div className="bg-white rounded-3xl shadow-lg border border-slate-100 px-6 py-5 flex flex-wrap items-center justify-between gap-4">
+          <div className="flex items-center gap-3">
+            <div className="p-3 bg-blue-100 rounded-2xl text-blue-700 shadow-inner">
+              <BookOutlined />
+            </div>
+            <div>
+              <h2 className="text-2xl md:text-3xl font-bold text-slate-900">Quản lý đơn mượn sách</h2>
+              <p className="text-sm text-slate-500">Theo dõi trạng thái mượn/trả và xử lý đền bù</p>
+            </div>
+          </div>
+          <Button onClick={() => fetchBorrowings(page)} className="!rounded-2xl !bg-blue-600 !text-white hover:!bg-blue-700">
+            Làm mới
+          </Button>
+        </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-6 gap-3 mb-4">
-        <div className="md:col-span-2">
-          <label className="block text-sm font-medium text-gray-700 mb-1">Tìm kiếm</label>
-          <Input
-            value={query}
-            onChange={onChangeQuery}
-            placeholder="Tên/email người mượn, tên sách, ISBN..."
-          />
+        <div className="bg-white rounded-3xl shadow-lg border border-slate-100 p-6 grid grid-cols-1 lg:grid-cols-4 gap-5">
+          <div className="lg:col-span-2">
+            <label className="text-xs font-semibold text-slate-500 uppercase tracking-wide">Tìm kiếm</label>
+            <Input
+              value={query}
+              onChange={onChangeQuery}
+              placeholder="Tên/email người mượn, tên sách, ISBN..."
+              className="mt-2 rounded-2xl border-slate-200"
+            />
+          </div>
+          <div>
+            <label className="text-xs font-semibold text-slate-500 uppercase tracking-wide">Trạng thái</label>
+            <Select
+              value={status}
+              onChange={(v) => { setStatus(v); setPage(1); }}
+              allowClear
+              placeholder="Tất cả"
+              options={[
+                { value: "borrowed", label: "Đang mượn" },
+                { value: "returned", label: "Đã trả" },
+                { value: "overdue", label: "Quá hạn" },
+                { value: "damaged", label: "Hỏng" },
+                { value: "lost", label: "Mất" },
+                { value: "compensated", label: "Đã đền bù" },
+              ]}
+              className="mt-2 w-full"
+            />
+          </div>
+          <div>
+            <label className="text-xs font-semibold text-slate-500 uppercase tracking-wide">Mượn từ</label>
+            <DatePicker
+              value={borrowFrom ? dayjs(borrowFrom) : null}
+              onChange={(d) => { setBorrowFrom(d ? d.format("YYYY-MM-DD") : null); setPage(1); }}
+              className="mt-2 w-full"
+            />
+          </div>
+          <div>
+            <label className="text-xs font-semibold text-slate-500 uppercase tracking-wide">Mượn đến</label>
+            <DatePicker
+              value={borrowTo ? dayjs(borrowTo) : null}
+              onChange={(d) => { setBorrowTo(d ? d.format("YYYY-MM-DD") : null); setPage(1); }}
+              className="mt-2 w-full"
+            />
+          </div>
+          <div>
+            <label className="text-xs font-semibold text-slate-500 uppercase tracking-wide">Hẹn trả từ</label>
+            <DatePicker
+              value={dueFrom ? dayjs(dueFrom) : null}
+              onChange={(d) => { setDueFrom(d ? d.format("YYYY-MM-DD") : null); setPage(1); }}
+              className="mt-2 w-full"
+            />
+          </div>
+          <div>
+            <label className="text-xs font-semibold text-slate-500 uppercase tracking-wide">Hẹn trả đến</label>
+            <DatePicker
+              value={dueTo ? dayjs(dueTo) : null}
+              onChange={(d) => { setDueTo(d ? d.format("YYYY-MM-DD") : null); setPage(1); }}
+              className="mt-2 w-full"
+            />
+          </div>
+          <div>
+            <label className="text-xs font-semibold text-slate-500 uppercase tracking-wide">Sắp xếp theo</label>
+            <Select
+              value={sort}
+              onChange={(v) => { setSort(v); setPage(1); }}
+              options={[
+                { value: "borrowDate", label: "Ngày mượn" },
+                { value: "dueDate", label: "Hẹn trả" },
+                { value: "status", label: "Trạng thái" },
+                { value: "createdAt", label: "Ngày tạo" },
+              ]}
+              className="mt-2 w-full"
+            />
+          </div>
+          <div>
+            <label className="text-xs font-semibold text-slate-500 uppercase tracking-wide">Thứ tự</label>
+            <Select
+              value={order}
+              onChange={(v) => { setOrder(v); setPage(1); }}
+              options={[
+                { value: "desc", label: "Giảm dần" },
+                { value: "asc", label: "Tăng dần" },
+              ]}
+              className="mt-2 w-full"
+            />
+          </div>
+          <div>
+            <label className="text-xs font-semibold text-slate-500 uppercase tracking-wide">Mỗi trang</label>
+            <Select
+              value={limit}
+              onChange={(v) => { setLimit(v); setPage(1); }}
+              options={[
+                { value: 10, label: "10" },
+                { value: 20, label: "20" },
+                { value: 50, label: "50" },
+              ]}
+              className="mt-2 w-full"
+            />
+          </div>
+          <div className="flex items-end">
+            <Button onClick={onClearFilters} className="w-full rounded-2xl border border-slate-200">
+              Đặt lại
+            </Button>
+          </div>
         </div>
-        <div>
-          <label className="block text-sm font-medium text-gray-700 mb-1">Trạng thái</label>
-          <Select
-            value={status}
-            onChange={(v) => { setStatus(v); setPage(1); }}
-            allowClear
-            placeholder="Tất cả"
-            options={[
-              { value: "borrowed", label: "Đang mượn" },
-              { value: "returned", label: "Đã trả" },
-              { value: "overdue", label: "Quá hạn" },
-              { value: "damaged", label: "Hỏng" },
-              { value: "lost", label: "Mất" },
-              { value: "compensated", label: "Đã nhập tiền đền" },
-            ]}
-            className="w-full"
+
+        <div className="bg-white rounded-3xl shadow-lg border border-slate-100">
+          <Table
+            rowKey="_id"
+            columns={columns}
+            dataSource={borrowings}
+            loading={loading}
+            pagination={{
+              current: page,
+              pageSize: limit,
+              total: totalItems,
+              onChange: (p, ps) => {
+                if (ps !== limit) {
+                  setLimit(ps);
+                  setPage(1);
+                } else {
+                  setPage(p);
+                }
+              },
+              showSizeChanger: true,
+            }}
           />
-        </div>
-        <div>
-          <label className="block text-sm font-medium text-gray-700 mb-1">Mượn từ</label>
-          <DatePicker
-            value={borrowFrom ? dayjs(borrowFrom) : null}
-            onChange={(d) => { setBorrowFrom(d ? d.format("YYYY-MM-DD") : null); setPage(1); }}
-            className="w-full"
-          />
-        </div>
-        <div>
-          <label className="block text-sm font-medium text-gray-700 mb-1">Mượn đến</label>
-          <DatePicker
-            value={borrowTo ? dayjs(borrowTo) : null}
-            onChange={(d) => { setBorrowTo(d ? d.format("YYYY-MM-DD") : null); setPage(1); }}
-            className="w-full"
-          />
-        </div>
-        <div>
-          <label className="block text-sm font-medium text-gray-700 mb-1">Hẹn trả từ</label>
-          <DatePicker
-            value={dueFrom ? dayjs(dueFrom) : null}
-            onChange={(d) => { setDueFrom(d ? d.format("YYYY-MM-DD") : null); setPage(1); }}
-            className="w-full"
-          />
-        </div>
-        <div>
-          <label className="block text-sm font-medium text-gray-700 mb-1">Hẹn trả đến</label>
-          <DatePicker
-            value={dueTo ? dayjs(dueTo) : null}
-            onChange={(d) => { setDueTo(d ? d.format("YYYY-MM-DD") : null); setPage(1); }}
-            className="w-full"
-          />
-        </div>
-        <div>
-          <label className="block text-sm font-medium text-gray-700 mb-1">Sắp xếp theo</label>
-          <Select
-            value={sort}
-            onChange={(v) => { setSort(v); setPage(1); }}
-            options={[
-              { value: "borrowDate", label: "Ngày mượn" },
-              { value: "dueDate", label: "Hẹn trả" },
-              { value: "status", label: "Trạng thái" },
-              { value: "createdAt", label: "Ngày tạo" },
-            ]}
-            className="w-full"
-          />
-        </div>
-        <div>
-          <label className="block text-sm font-medium text-gray-700 mb-1">Thứ tự</label>
-          <Select
-            value={order}
-            onChange={(v) => { setOrder(v); setPage(1); }}
-            options={[
-              { value: "desc", label: "Giảm dần" },
-              { value: "asc", label: "Tăng dần" },
-            ]}
-            className="w-full"
-          />
-        </div>
-        <div>
-          <label className="block text-sm font-medium text-gray-700 mb-1">Mỗi trang</label>
-          <Select
-            value={limit}
-            onChange={(v) => { setLimit(v); setPage(1); }}
-            options={[
-              { value: 10, label: "10" },
-              { value: 20, label: "20" },
-              { value: 50, label: "50" },
-            ]}
-            className="w-full"
-          />
-        </div>
-        <div className="flex items-end">
-          <Button onClick={onClearFilters}>Đặt lại</Button>
         </div>
       </div>
-
-      <Table
-        rowKey="_id"
-        columns={columns}
-        dataSource={borrowings}
-        loading={loading}
-        pagination={{
-          current: page,
-          pageSize: limit,
-          total: totalItems,
-          onChange: (p, ps) => {
-            if (ps !== limit) {
-              setLimit(ps);
-              setPage(1);
-            } else {
-              setPage(p);
-            }
-          },
-          showSizeChanger: true,
-        }}
-      />
 
       {/* Modal Nhập tiền đền có ảnh */}
       <Modal

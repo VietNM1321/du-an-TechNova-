@@ -2,6 +2,7 @@ import React, { useEffect, useState } from "react";
 import axios from "axios";
 import { Input, Select, Space, Button, Row, Col, Form, message } from "antd";
 import { SearchOutlined } from "@ant-design/icons";
+import { KeyRound } from "lucide-react";
 
 const SetPassword = () => {
   const [users, setUsers] = useState([]);
@@ -118,123 +119,162 @@ const SetPassword = () => {
 
   const uniqueCourses = [...new Set(users.map((u) => u.course).filter(Boolean))];
 
-  if (loading) return <p>Đang tải dữ liệu...</p>;
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-blue-50 via-slate-50 to-purple-50 flex items-center justify-center text-slate-500">
+        Đang tải dữ liệu...
+      </div>
+    );
+  }
 
   return (
-    <div className="p-6">
-      <h2 className="text-2xl font-bold mb-4 text-green-600">
-        Cấp / Reset mật khẩu sinh viên
-      </h2>
+    <div className="min-h-screen bg-gradient-to-br from-blue-50 via-slate-50 to-purple-50 py-8 px-4 md:px-8">
+      <div className="max-w-7xl mx-auto space-y-6">
+        <div className="bg-white rounded-3xl shadow-lg border border-slate-100 px-6 py-5 flex flex-wrap items-center justify-between gap-4">
+          <div className="flex items-center gap-3">
+            <div className="p-3 bg-blue-100 rounded-2xl text-blue-700 shadow-inner">
+              <KeyRound className="w-7 h-7" />
+            </div>
+            <div>
+              <h2 className="text-2xl md:text-3xl font-bold text-slate-900">Cấp / Reset mật khẩu</h2>
+              <p className="text-sm text-slate-500">Quản lý mật khẩu cho sinh viên hệ thống</p>
+            </div>
+          </div>
+          <div className="text-right">
+            <p className="text-sm text-slate-500">Tổng sinh viên</p>
+            <p className="text-2xl font-bold text-blue-600">{filteredUsers.length}</p>
+          </div>
+        </div>
 
-      <Form form={searchForm} onFinish={handleSearch} className="mb-4">
-        <Row gutter={16}>
-          <Col span={8}>
-            <Form.Item name="searchText">
-              <Input
-                placeholder="Tìm theo mã SV, họ tên, email"
-                prefix={<SearchOutlined />}
-                allowClear
-              />
-            </Form.Item>
-          </Col>
-          <Col span={6}>
-            <Form.Item name="passwordStatus">
-              <Select placeholder="Trạng thái mật khẩu" allowClear>
-                <Select.Option value="withPassword">Đã có mật khẩu</Select.Option>
-                <Select.Option value="withoutPassword">Chưa có mật khẩu</Select.Option>
-              </Select>
-            </Form.Item>
-          </Col>
-          <Col span={6}>
-            <Form.Item name="courseFilter">
-              <Select placeholder="Lọc theo khóa học" allowClear>
-                {uniqueCourses.map((course) => (
-                  <Select.Option key={course} value={course}>
-                    {course}
-                  </Select.Option>
+        <div className="bg-white rounded-3xl shadow-lg border border-slate-100 p-6">
+          <Form form={searchForm} onFinish={handleSearch}>
+            <Row gutter={[16, 16]}>
+              <Col xs={24} md={12} lg={8}>
+                <Form.Item name="searchText" className="mb-0">
+                  <Input
+                    placeholder="Tìm theo mã SV, họ tên, email"
+                    prefix={<SearchOutlined />}
+                    allowClear
+                    size="large"
+                    className="rounded-2xl"
+                  />
+                </Form.Item>
+              </Col>
+              <Col xs={24} md={12} lg={6}>
+                <Form.Item name="passwordStatus" className="mb-0">
+                  <Select placeholder="Trạng thái mật khẩu" allowClear size="large" className="rounded-2xl">
+                    <Select.Option value="withPassword">Đã có mật khẩu</Select.Option>
+                    <Select.Option value="withoutPassword">Chưa có mật khẩu</Select.Option>
+                  </Select>
+                </Form.Item>
+              </Col>
+              <Col xs={24} md={12} lg={6}>
+                <Form.Item name="courseFilter" className="mb-0">
+                  <Select placeholder="Lọc theo khóa học" allowClear size="large" className="rounded-2xl">
+                    {uniqueCourses.map((course) => (
+                      <Select.Option key={course} value={course}>
+                        {course}
+                      </Select.Option>
+                    ))}
+                  </Select>
+                </Form.Item>
+              </Col>
+              <Col xs={24} md={12} lg={4} className="flex items-end">
+                <Space size="middle">
+                  <Button type="primary" htmlType="submit" className="!rounded-2xl">
+                    🔍 Tìm
+                  </Button>
+                  <Button
+                    className="!rounded-2xl"
+                    onClick={() => {
+                      searchForm.resetFields();
+                      setFilteredUsers(users);
+                    }}
+                  >
+                    ↺ Đặt lại
+                  </Button>
+                </Space>
+              </Col>
+            </Row>
+          </Form>
+        </div>
+
+        <div className="bg-white rounded-3xl shadow-lg border border-slate-100 overflow-hidden">
+          <div className="overflow-x-auto">
+            <table className="min-w-full divide-y divide-slate-100">
+              <thead className="bg-gradient-to-r from-blue-50 to-indigo-50 text-blue-700 uppercase text-xs tracking-wide">
+                <tr>
+                  <th className="p-4 text-left">Mã SV</th>
+                  <th className="p-4 text-left">Họ tên</th>
+                  <th className="p-4 text-left">Email</th>
+                  <th className="p-4 text-left">Khóa học</th>
+                  <th className="p-4 text-center">Mật khẩu</th>
+                  <th className="p-4 text-center">Thao tác</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-slate-100 text-sm text-slate-700">
+                {filteredUsers.map((u) => (
+                  <tr key={u._id} className="hover:bg-blue-50 transition">
+                    <td className="p-4 font-semibold text-slate-900">{u.studentCode || "—"}</td>
+                    <td className="p-4">{u.fullName || "—"}</td>
+                    <td className="p-4">{u.email || "—"}</td>
+                    <td className="p-4">{u.course || "—"}</td>
+                    <td className="p-4 text-center">
+                      {!u.active ? (
+                        <span className="text-rose-600 font-semibold">Đã khóa</span>
+                      ) : u.password ? (
+                        <span className="text-emerald-600 font-semibold">Đã cấp</span>
+                      ) : (
+                        <Input
+                          type="password"
+                          value={passwords[u._id] || ""}
+                          onChange={(e) => handlePasswordChange(u._id, e.target.value)}
+                          placeholder="Nhập mật khẩu..."
+                          className="max-w-xs mx-auto"
+                        />
+                      )}
+                    </td>
+                    <td className="p-4 text-center">
+                      <div className="flex flex-wrap items-center justify-center gap-2">
+                        {u.active && !u.password && (
+                          <Button
+                            type="primary"
+                            size="small"
+                            onClick={() => handleSetPassword(u._id)}
+                            loading={loadingIds.includes(u._id)}
+                            className="!rounded-2xl"
+                          >
+                            Cấp mật khẩu
+                          </Button>
+                        )}
+                        {u.active && u.password && (
+                          <Button
+                            type="default"
+                            size="small"
+                            danger
+                            onClick={() => handleResetPassword(u._id)}
+                            loading={loadingIds.includes(u._id)}
+                            className="!rounded-2xl"
+                          >
+                            Reset mật khẩu
+                          </Button>
+                        )}
+                      </div>
+                    </td>
+                  </tr>
                 ))}
-              </Select>
-            </Form.Item>
-          </Col>
-          <Col span={4}>
-            <Space>
-              <Button type="primary" htmlType="submit">
-                🔍 Tìm kiếm
-              </Button>
-              <Button
-                onClick={() => {
-                  searchForm.resetFields();
-                  setFilteredUsers(users);
-                }}
-              >
-                ↺ Đặt lại
-              </Button>
-            </Space>
-          </Col>
-        </Row>
-      </Form>
 
-      <div className="overflow-x-auto">
-        <table className="w-full border border-gray-300">
-          <thead>
-            <tr className="bg-green-100 text-left">
-              <th className="px-4 py-2 border">Mã SV</th>
-              <th className="px-4 py-2 border">Họ tên</th>
-              <th className="px-4 py-2 border">Email</th>
-              <th className="px-4 py-2 border">Khóa học</th>
-              <th className="px-4 py-2 border text-center">Mật khẩu</th>
-              <th className="px-4 py-2 border text-center">Thao tác</th>
-            </tr>
-          </thead>
-          <tbody>
-            {filteredUsers.map((u) => (
-              <tr key={u._id} className="hover:bg-gray-50">
-                <td className="border px-4 py-2">{u.studentCode}</td>
-                <td className="border px-4 py-2">{u.fullName}</td>
-                <td className="border px-4 py-2">{u.email}</td>
-                <td className="border px-4 py-2">{u.course}</td>
-                <td className="border px-4 py-2 text-center">
-                  {!u.active ? (
-                    <span className="text-red-600 font-medium">Đã khóa</span>
-                  ) : u.password ? (
-                    <span className="text-green-600 font-medium">Đã cấp</span>
-                  ) : (
-                    <Input
-                      type="password"
-                      value={passwords[u._id] || ""}
-                      onChange={(e) => handlePasswordChange(u._id, e.target.value)}
-                      placeholder="Nhập mật khẩu..."
-                      className="w-full"
-                    />
-                  )}
-                </td>
-                <td className="border px-4 py-2 text-center space-x-2">
-                  {u.active && !u.password && (
-                    <Button
-                      type="primary"
-                      size="small"
-                      onClick={() => handleSetPassword(u._id)}
-                      loading={loadingIds.includes(u._id)}
-                    >
-                      Cấp mật khẩu
-                    </Button>
-                  )}
-                  {u.active && u.password && (
-                    <Button
-                      type="default"
-                      size="small"
-                      danger
-                      onClick={() => handleResetPassword(u._id)}
-                      loading={loadingIds.includes(u._id)}
-                    >
-                      Reset mật khẩu
-                    </Button>
-                  )}
-                </td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
+                {filteredUsers.length === 0 && (
+                  <tr>
+                    <td colSpan="6" className="py-10 text-center text-slate-400">
+                      📭 Không tìm thấy sinh viên phù hợp.
+                    </td>
+                  </tr>
+                )}
+              </tbody>
+            </table>
+          </div>
+        </div>
       </div>
     </div>
   );

@@ -15,6 +15,7 @@ import {
   Select,
 } from "antd";
 import { SearchOutlined } from "@ant-design/icons";
+import { GraduationCap } from "lucide-react";
 const CourseManager = () => {
   const [courses, setCourses] = useState([]);
   const [loading, setLoading] = useState(false);
@@ -139,67 +140,80 @@ const CourseManager = () => {
     },
   ];
   return (
-    <div className="p-4 bg-white rounded-lg shadow">
-      <h2 className="text-2xl font-semibold mb-4">📘 Quản lý khóa học</h2>
+    <div className="min-h-screen bg-gradient-to-br from-blue-50 via-slate-50 to-purple-50 py-8 px-4 md:px-8">
+      <div className="max-w-7xl mx-auto space-y-6">
+        <div className="bg-white rounded-3xl shadow-lg border border-slate-100 px-6 py-5 flex flex-wrap items-center justify-between gap-4">
+          <div className="flex items-center gap-3">
+            <div className="p-3 bg-blue-100 rounded-2xl text-blue-700 shadow-inner">
+              <GraduationCap className="w-7 h-7" />
+            </div>
+            <div>
+              <h2 className="text-2xl md:text-3xl font-bold text-slate-900">Quản lý khóa học</h2>
+              <p className="text-sm text-slate-500">Cập nhật thông tin khóa và mã sinh viên liên quan</p>
+            </div>
+          </div>
+          <Button
+            type="primary"
+            onClick={() => openModal()}
+            className="!rounded-2xl !bg-blue-600 hover:!bg-blue-700 !border-none !px-5 !py-2.5 !text-sm"
+          >
+            ➕ Thêm khóa học
+          </Button>
+        </div>
 
-      <Button
-        type="primary"
-        onClick={() => openModal()}
-        style={{ marginBottom: 16 }}
-      >
-        ➕ Thêm khóa học
-      </Button>
+        <div className="bg-white rounded-3xl shadow-lg border border-slate-100 p-6">
+          <Form form={searchForm} onFinish={handleSearch}>
+            <Row gutter={[16, 16]}>
+              <Col xs={24} md={12} lg={8}>
+                <Form.Item name="searchText" className="mb-0">
+                  <Input
+                    placeholder="Tìm theo tên hoặc mã khóa học"
+                    prefix={<SearchOutlined />}
+                    allowClear
+                    size="large"
+                    className="rounded-2xl"
+                  />
+                </Form.Item>
+              </Col>
+              <Col xs={24} md={12} lg={8}>
+                <Form.Item name="studentCodeRange" className="mb-0">
+                  <Select placeholder="Lọc theo mã sinh viên" allowClear size="large" className="rounded-2xl">
+                    <Select.Option value="below2000">Dưới PH2000</Select.Option>
+                    <Select.Option value="2000to4000">PH2000 - PH4000</Select.Option>
+                    <Select.Option value="above4000">Trên PH4000</Select.Option>
+                  </Select>
+                </Form.Item>
+              </Col>
+              <Col xs={24} md={12} lg={8}>
+                <Space size="middle">
+                  <Button type="primary" htmlType="submit" className="!rounded-2xl">
+                    🔍 Tìm kiếm
+                  </Button>
+                  <Button
+                    className="!rounded-2xl"
+                    onClick={() => {
+                      searchForm.resetFields();
+                      setFilteredCourses(courses);
+                    }}
+                  >
+                    ↺ Đặt lại
+                  </Button>
+                </Space>
+              </Col>
+            </Row>
+          </Form>
+        </div>
 
-      <Form
-        form={searchForm}
-        onFinish={handleSearch}
-        style={{ marginBottom: "20px" }}
-      >
-        <Row gutter={16}>
-          <Col span={8}>
-            <Form.Item name="searchText">
-              <Input
-                placeholder="Tìm theo tên hoặc mã khóa học"
-                prefix={<SearchOutlined />}
-                allowClear
-              />
-            </Form.Item>
-          </Col>
-          <Col span={8}>
-            <Form.Item name="studentCodeRange">
-              <Select placeholder="Lọc theo mã sinh viên" allowClear>
-                <Select.Option value="below2000">Dưới PH2000</Select.Option>
-                <Select.Option value="2000to4000">PH2000 - PH4000</Select.Option>
-                <Select.Option value="above4000">Trên PH4000</Select.Option>
-              </Select>
-            </Form.Item>
-          </Col>
-          <Col span={8}>
-            <Button type="primary" htmlType="submit">
-              🔍 Tìm kiếm
-            </Button>
-            <Button 
-              style={{ marginLeft: 8 }}
-              onClick={() => {
-                searchForm.resetFields();
-                setFilteredCourses(courses);
-              }}
-            >
-              ↺ Đặt lại
-            </Button>
-          </Col>
-        </Row>
-      </Form>
-
-      <Table
-        rowKey="_id"
-        dataSource={filteredCourses}
-        columns={columns}
-        loading={loading}
-        bordered
-      />
-
-      {/* Modal thêm/sửa khóa học */}
+        <div className="bg-white rounded-3xl shadow-lg border border-slate-100">
+          <Table
+            rowKey="_id"
+            dataSource={filteredCourses}
+            columns={columns}
+            loading={loading}
+            pagination={false}
+          />
+        </div>
+      </div>
       <Modal
         open={isModalOpen}
         title={editingCourse ? "Chỉnh sửa khóa học" : "Thêm khóa học mới"}

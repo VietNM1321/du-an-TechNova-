@@ -20,13 +20,9 @@ const storage = multer.diskStorage({
   filename: (req, file, cb) => cb(null, Date.now() + path.extname(file.originalname)),
 });
 const upload = multer({ storage });
-
-// Lấy danh sách sách với phân trang
 router.get("/", async (req, res) => {
   try {
     const filter = {};
-
-    // Tìm kiếm toàn văn đơn giản theo tiêu đề/mô tả/mã
     const { q, author, yearFrom, yearTo, availableMin, sort, order } = req.query;
     if (q && q.trim()) {
       const text = q.trim();
@@ -36,20 +32,14 @@ router.get("/", async (req, res) => {
         { code: { $regex: text, $options: "i" } },
       ];
     }
-
-    // Lọc theo tác giả
     if (author && mongoose.Types.ObjectId.isValid(author)) {
       filter.author = author;
     }
-
-    // Lọc theo khoảng năm xuất bản
     if (yearFrom || yearTo) {
       filter.publishedYear = {};
       if (yearFrom) filter.publishedYear.$gte = Number(yearFrom);
       if (yearTo) filter.publishedYear.$lte = Number(yearTo);
     }
-
-    // Lọc theo số lượng sẵn có tối thiểu
     if (availableMin !== undefined) {
       const min = Number(availableMin);
       if (!Number.isNaN(min)) {
@@ -166,7 +156,7 @@ router.get("/:id", async (req, res) => {
 });
 router.post("/", verifyToken, requireRole("admin"), upload.array("images", 10), async (req, res) => {
   try {
-    const { title, description, category, author, publishedYear, quantity, available } = req.body;
+    const { title, description, category, author, publishedYear, quantity, available, Pricebook } = req.body;
 
     if (!title || !category || !publishedYear) {
       return res.status(400).json({ 
@@ -209,6 +199,14 @@ router.post("/", verifyToken, requireRole("admin"), upload.array("images", 10), 
       throw new Error("Không thể tạo mã sách duy nhất sau nhiều lần thử");
     }
 
+    const parsedCompensation =
+      Pricebook !== undefined && Pricebook !== null
+        ? Number(Pricebook)
+        : undefined;
+    if (parsedCompensation !== undefined && (Number.isNaN(parsedCompensation) || parsedCompensation < 0)) {
+      return res.status(400).json({ message: "Giá đền bù phải là số không âm" });
+    }
+
     const images = req.files?.map(file => `${req.protocol}://${req.get("host")}/uploads/books/${file.filename}`) || [];
     const newBook = await Book.create({
       title: title.trim(),
@@ -221,7 +219,8 @@ router.post("/", verifyToken, requireRole("admin"), upload.array("images", 10), 
       available: Number(available) || Number(quantity) || 0,
       views: 0,
       code: bookCode,
-      bookCode: bookCodeDoc._id
+      bookCode: bookCodeDoc._id,
+      Pricebook: parsedCompensation ?? 50000,
     });
 
     const populatedBook = await Book.findById(newBook._id)
@@ -255,6 +254,14 @@ router.put("/:id", verifyToken, requireRole("admin"), upload.array("images", 10)
       }
     }
 
+    const parsedCompensation =
+      req.body.Pricebook !== undefined && req.body.Pricebook !== null
+        ? Number(req.body.Pricebook)
+        : undefined;
+    if (parsedCompensation !== undefined && (Number.isNaN(parsedCompensation) || parsedCompensation < 0)) {
+      return res.status(400).json({ message: "Giá đền bù phải là số không âm" });
+    }
+
     const updates = {
       title: req.body.title || book.title,
       description: req.body.description || book.description,
@@ -263,8 +270,12 @@ router.put("/:id", verifyToken, requireRole("admin"), upload.array("images", 10)
       publishedYear: req.body.publishedYear ? Number(req.body.publishedYear) : book.publishedYear,
       quantity: req.body.quantity !== undefined ? Number(req.body.quantity) : book.quantity,
       available: req.body.available !== undefined ? Number(req.body.available) : book.available,
-      images: images
+      images: images,
     };
+
+    if (parsedCompensation !== undefined) {
+      updates.Pricebook = parsedCompensation;
+    }
 
     const result = await Book.findByIdAndUpdate(req.params.id, { $set: updates }, { new: true })
       .populate("category", "name")

@@ -18,20 +18,18 @@ const BookEdit = () => {
     publishedYear: "",
     quantity: "",
     bookCode: "",
+    Pricebook: 50000,
   });
   useEffect(() => {
     const fetchData = async () => {
       try {
         const token = localStorage.getItem("adminToken");
-        const authConfig = token
-          ? { headers: { Authorization: `Bearer ${token}` } }
-          : undefined;
+        const authConfig = token ? { headers: { Authorization: `Bearer ${token}` } } : undefined;
         const [catRes, authorRes, bookRes] = await Promise.all([
           axios.get("http://localhost:5000/api/category?limit=1000&sort=createdAt&order=asc", authConfig),
           axios.get("http://localhost:5000/api/authors?limit=1000", authConfig),
           axios.get(`http://localhost:5000/api/books/${id}`, authConfig),
         ]);
-
         setCategories(catRes.data.categories || catRes.data);
         setAuthors(authorRes.data.authors || authorRes.data);
         const data = bookRes.data;
@@ -44,6 +42,7 @@ const BookEdit = () => {
           quantity: data.quantity || 0,
           images: data.images || [],
           bookCode: data.bookCode?.code || "",
+          Pricebook: data.Pricebook ?? 50000,
         });
       } catch (err) {
         console.error(err);
@@ -58,19 +57,11 @@ const BookEdit = () => {
       setLoadingCode(true);
       try {
         const token = localStorage.getItem("adminToken");
-        const authConfig = token
-          ? { headers: { Authorization: `Bearer ${token}` } }
-          : undefined;
-        const res = await axios.get(
-          `http://localhost:5000/api/bookcodes/category/${form.category}`,
-          authConfig
-        );
+        const authConfig = token? { headers: { Authorization: `Bearer ${token}` } }: undefined;
+        const res = await axios.get(`http://localhost:5000/api/bookcodes/category/${form.category}`,authConfig);
         if (res.data?.prefix) {
           const { prefix, lastNumber = 0 } = res.data;
-          const nextCode = `${prefix}-${String((lastNumber || 0) + 1).padStart(
-            3,
-            "0"
-          )}`;
+          const nextCode = `${prefix}-${String((lastNumber || 0) + 1).padStart(3,"0")}`;
           setForm((prev) => ({ ...prev, bookCode: nextCode }));
         }
       } catch (err) {
@@ -82,16 +73,10 @@ const BookEdit = () => {
     };
     fetchBookCode();
   }, [form.category]);
-
   const handleFileChange = (e) => setNewFiles(Array.from(e.target.files)); // xử lý cọn ảnh
   const handleSubmit = async (e) => {
     e.preventDefault();
-    if (
-      !form.title ||
-      !form.category ||
-      (!newFiles.length && !form.images.length) ||
-      !form.publishedYear
-    ) {
+    if (!form.title || !form.category || (!newFiles.length && !form.images.length) || !form.publishedYear) {
       alert("⚠️ Vui lòng nhập đầy đủ thông tin!");
       return;
     }
@@ -103,25 +88,18 @@ const BookEdit = () => {
     formData.append("publishedYear", form.publishedYear);
     formData.append("quantity", form.quantity);
     formData.append("available", form.quantity);
+    formData.append("Pricebook", form.Pricebook);
     if (form.bookCode) formData.append("bookCode", form.bookCode);
     if (newFiles.length > 0) {
       newFiles.forEach((file) => formData.append("images", file));
     } else if (form.images.length > 0) {
       formData.append("images", JSON.stringify(form.images));
     }
-
     try {
       const token = localStorage.getItem("adminToken");
-      const headers = {
-        "Content-Type": "multipart/form-data",
-      };
+      const headers = {"Content-Type": "multipart/form-data",};
       if (token) headers.Authorization = `Bearer ${token}`;
-
-      const res = await axios.put(
-        `http://localhost:5000/api/books/${id}`,
-        formData,
-        {headers,}  
-      )
+      const res = await axios.put(`http://localhost:5000/api/books/${id}`,formData,{headers,} )
       alert(res.data.message || "✅ Cập nhật sách thành công!");
       navigate("/admin/bookmanager", {
         state: { updatedBook: res.data.book },
@@ -199,6 +177,15 @@ const BookEdit = () => {
           placeholder="Số lượng *"
           value={form.quantity}
           onChange={(e) => setForm({ ...form, quantity: e.target.value })}
+          className="border rounded-lg w-full py-3 px-4 focus:ring-2 focus:ring-blue-400 outline-none"
+          required
+        />
+        <input
+          type="number"
+          placeholder="Giá đền bù (VNĐ)"
+          min="0"
+          value={form.Pricebook}
+          onChange={(e) => setForm({ ...form, Pricebook: e.target.value })}
           className="border rounded-lg w-full py-3 px-4 focus:ring-2 focus:ring-blue-400 outline-none"
           required
         />

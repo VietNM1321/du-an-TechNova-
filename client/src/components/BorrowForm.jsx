@@ -1,10 +1,8 @@
 import React, { useState, useEffect } from "react";
 import axios from "axios";
 import { useCart } from "../components/cart";
-
 const BorrowForm = ({ book, onClose }) => {
   const { addToCart } = useCart();
-
   const user = JSON.parse(localStorage.getItem("clientUser")) || {};
   const isAdmin = user.role === "admin";
   const derivedStudentId = user.studentId || user.studentCode || "";
@@ -15,16 +13,13 @@ const BorrowForm = ({ book, onClose }) => {
     borrowDate: "",
     returnDate: "",
   });
-
   useEffect(() => {
     const ensureStudentId = async () => {
       if (formData.studentId || isAdmin) return;
-
       const latestUser = JSON.parse(localStorage.getItem("clientUser")) || {};
       const token = localStorage.getItem("clientToken");
       const userId = latestUser?._id || latestUser?.id;
       if (!token || !userId) return;
-
       try {
         const res = await axios.get(
           `http://localhost:5000/api/users/${userId}/profile`,
@@ -32,11 +27,7 @@ const BorrowForm = ({ book, onClose }) => {
         );
         const fetchedCode = res.data?.user?.studentCode || "";
         if (fetchedCode) {
-          const updatedUser = {
-            ...latestUser,
-            studentCode: fetchedCode,
-            studentId: fetchedCode,
-          };
+          const updatedUser = {...latestUser,studentCode: fetchedCode,studentId: fetchedCode,};
           localStorage.setItem("clientUser", JSON.stringify(updatedUser));
           setFormData((prev) => ({ ...prev, studentId: fetchedCode }));
         }
@@ -44,15 +35,11 @@ const BorrowForm = ({ book, onClose }) => {
         console.error("❌ Không lấy được mã sinh viên:", error);
       }
     };
-
     ensureStudentId();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [formData.studentId]);
-
   const handleChange = (e) => {
     setFormData({ ...formData, [e.target.name]: e.target.value });
   };
-
   const handleSubmit = async (e) => {
     e.preventDefault();
     try {
@@ -75,7 +62,6 @@ const BorrowForm = ({ book, onClose }) => {
         alert("Thời gian mượn không được quá 30 ngày!");
         return;
       }
-
       await addToCart({
         bookId: book._id,
         quantity: 1,
@@ -90,7 +76,6 @@ const BorrowForm = ({ book, onClose }) => {
       alert("❌ Mượn sách thất bại.");
     }
   };
-
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center">
       <div className="absolute inset-0 bg-slate-900/50 backdrop-blur-sm" onClick={onClose} />
@@ -110,6 +95,14 @@ const BorrowForm = ({ book, onClose }) => {
           <p className="text-sm text-slate-500 mt-1">
             {book?.title}
           </p>
+          {book?.Pricebook !== undefined && (
+            <p className="text-sm text-rose-600 mt-2">
+              Giá đền bù dự kiến:{" "}
+              <span className="font-semibold">
+                {(book.Pricebook ?? 0).toLocaleString("vi-VN")} VNĐ
+              </span>
+            </p>
+          )}
         </div>
 
         <form onSubmit={handleSubmit} className="space-y-3">

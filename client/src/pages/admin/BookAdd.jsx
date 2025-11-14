@@ -2,22 +2,8 @@ import React, { useEffect, useState } from "react";
 import axios from "axios";
 import { PlusCircle } from "lucide-react";
 import { useNavigate } from "react-router-dom";
-import {
-  Card,
-  Form,
-  Input,
-  Select,
-  Row,
-  Col,
-  InputNumber,
-  Upload,
-  Button,
-  Typography,
-  message,
-} from "antd";
-
+import {Card,Form,Input,Select,Row,Col,InputNumber,Upload,Button,Typography,message,} from "antd";
 const { Title, Text } = Typography;
-
 const BookAdd = () => {
   const navigate = useNavigate();
   const [previewBookCode, setPreviewBookCode] = useState("");
@@ -26,7 +12,6 @@ const BookAdd = () => {
   const [fileList, setFileList] = useState([]);
   const [loadingCode, setLoadingCode] = useState(false);
   const [submitting, setSubmitting] = useState(false);
-  // Lấy danh mục và tác giả
   useEffect(() => {
     const fetchData = async () => {
       try {
@@ -42,17 +27,13 @@ const BookAdd = () => {
     };
     fetchData();
   }, []);
-  // preview code will be fetched when category changes via Select onChange
   const beforeUpload = (file) => {
-    // prevent auto upload; store files in state
     setFileList((prev) => [...prev, file]);
     return false;
   };
-
   const removeFile = (file) => {
     setFileList((prev) => prev.filter((f) => f.uid !== file.uid && f.name !== file.name));
   };
-
   const handleSubmit = async (values) => {
     if (!values.title || !values.category || !values.publishedYear || !values.quantity) {
       message.warning("Vui lòng điền đầy đủ thông tin bắt buộc");
@@ -62,7 +43,6 @@ const BookAdd = () => {
       message.warning("Vui lòng thêm ít nhất một ảnh sách");
       return;
     }
-
     setSubmitting(true);
     const dataToSend = {
       title: values.title,
@@ -72,12 +52,11 @@ const BookAdd = () => {
       publishedYear: values.publishedYear,
       quantity: values.quantity,
       available: values.quantity,
+      Pricebook: values.Pricebook,
     };
-
     const formData = new FormData();
     Object.entries(dataToSend).forEach(([k, v]) => formData.append(k, v));
     fileList.forEach((f) => formData.append("images", f.originFileObj || f));
-
     try {
       const token = localStorage.getItem("adminToken");
       await axios.post("http://localhost:5000/api/books", formData, {
@@ -126,7 +105,7 @@ const BookAdd = () => {
           </Col>
 
           <Col xs={24} md={16}>
-            <Form layout="vertical" onFinish={handleSubmit} initialValues={{ quantity: 1 }}>
+            <Form layout="vertical" onFinish={handleSubmit} initialValues={{ quantity: 1, Pricebook: 50000 }}>
               <Row gutter={16}>
                 <Col xs={24} sm={24}>
                   <Form.Item name="title" label="Tên sách" rules={[{ required: true, message: "Nhập tên sách" }]}> 
@@ -191,6 +170,26 @@ const BookAdd = () => {
                 <Col xs={12} sm={12}>
                   <Form.Item name="quantity" label="Số lượng" rules={[{ required: true, message: "Nhập số lượng" }]}> 
                     <InputNumber min={1} style={{ width: "100%" }} size="large" />
+                  </Form.Item>
+                </Col>
+
+                <Col xs={12} sm={12}>
+                  <Form.Item
+                    name="Pricebook"
+                    label="Giá đền bù (VNĐ)"
+                    rules={[{ required: true, message: "Nhập giá đền bù" }]}
+                  >
+                    <InputNumber
+                      min={0}
+                      formatter={(value) =>
+                        value !== undefined && value !== null
+                          ? `${value}`.replace(/\B(?=(\d{3})+(?!\d))/g, ",")
+                          : ""
+                      }
+                      parser={(value) => value?.replace(/,/g, "")}
+                      style={{ width: "100%" }}
+                      size="large"
+                    />
                   </Form.Item>
                 </Col>
 

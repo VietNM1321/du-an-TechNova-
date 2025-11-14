@@ -1,24 +1,12 @@
 import React, { useState } from "react";
 import axios from "axios";
 import { useNavigate } from "react-router-dom";
-import {
-  Card,
-  Form,
-  Input,
-  Button,
-  Row,
-  Col,
-  Typography,
-  message,
-} from "antd";
-
+import {Card,Form,Input,Button,Row,Col,Typography,message,} from "antd";
 const { Title, Text } = Typography;
-
 const AddCategory = () => {
   const [loading, setLoading] = useState(false);
   const [form] = Form.useForm();
   const navigate = useNavigate();
-
   const handleSubmit = async (values) => {
     setLoading(true);
     try {
@@ -32,7 +20,6 @@ const AddCategory = () => {
       setLoading(false);
     }
   };
-
   return (
     <div className="max-w-4xl mx-auto mt-10 p-4">
       <Card className="shadow-xl rounded-2xl">
@@ -117,5 +104,4 @@ const AddCategory = () => {
     </div>
   );
 };
-
 export default AddCategory;

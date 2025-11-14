@@ -1,7 +1,6 @@
 import React, { useEffect, useState } from "react";
 import axios from "axios";
 import { useParams, useNavigate } from "react-router-dom";
-
 const BookDetail = () => {
   const { id } = useParams();
   const navigate = useNavigate();
@@ -40,6 +39,12 @@ const BookDetail = () => {
             <p className="text-gray-700 text-lg"><span className="font-semibold">Tác giả:</span> {book.author?.name || "—"}</p>
             <p className="text-gray-700 text-lg"><span className="font-semibold">Năm xuất bản:</span> {book.publishedYear || "—"}</p>
             <p className="text-gray-700 text-lg"><span className="font-semibold">Số lượng hiện có:</span> <span className="text-green-600 font-bold">{book.available}</span> / {book.quantity}</p>
+            <p className="text-gray-700 text-lg">
+              <span className="font-semibold">Giá đền bù:</span>{" "}
+              <span className="text-rose-600 font-semibold">
+                {(book.Pricebook ?? 0).toLocaleString("vi-VN")} VNĐ
+              </span>
+            </p>
             <p className="text-gray-500 text-base"><span className="font-semibold">Ngày thêm sách:</span> {new Date(book.createdAt).toLocaleDateString("vi-VN")}</p>
         </div>
         </div>

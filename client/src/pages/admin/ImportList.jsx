@@ -4,6 +4,7 @@ import { useNavigate } from "react-router-dom";
 import { Input, Select, DatePicker, Space, Button, Row, Col, Form } from "antd";
 import { SearchOutlined } from "@ant-design/icons";
 import locale from "antd/es/date-picker/locale/vi_VN";
+import { PackagePlus } from "lucide-react";
 
 const { RangePicker } = DatePicker;
 
@@ -98,158 +99,181 @@ const ImportList = () => {
     if (page < totalPages) setPage(page + 1);
   };
   return (
-    <div className="max-w-6xl mx-auto bg-white p-8 rounded-2xl shadow-lg mt-6">
-      <div className="flex justify-between items-center mb-6">
-        <h2 className="text-3xl font-bold text-blue-700">📦 Quản lý Phiếu Nhập Kho</h2>
-        <button
-          onClick={() => navigate("/admin/importlist/add")}
-          className="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 flex items-center gap-1"
-        >
-          ➕ Nhập Kho Mới
-        </button>
-      </div>
+    <div className="min-h-screen bg-gradient-to-br from-blue-50 via-slate-50 to-purple-50 py-8 px-4 md:px-8">
+      <div className="max-w-7xl mx-auto space-y-6">
+        <div className="bg-white rounded-3xl shadow-lg border border-slate-100 px-6 py-5 flex flex-wrap items-center justify-between gap-4">
+          <div className="flex items-center gap-3">
+            <div className="p-3 bg-blue-100 rounded-2xl text-blue-700 shadow-inner">
+              <PackagePlus className="w-7 h-7" />
+            </div>
+            <div>
+              <h2 className="text-2xl md:text-3xl font-bold text-slate-900">Quản lý Phiếu Nhập Kho</h2>
+              <p className="text-sm text-slate-500">Theo dõi lịch sử nhập hàng và người phụ trách</p>
+            </div>
+          </div>
+          <button
+            onClick={() => navigate("/admin/importlist/add")}
+            className="inline-flex items-center gap-2 rounded-2xl bg-blue-600 text-white px-4 py-2.5 text-sm font-semibold shadow hover:bg-blue-700 transition"
+          >
+            ➕ Nhập kho mới
+          </button>
+        </div>
 
-      <Form
-        form={searchForm}
-        onFinish={handleSearch}
-        className="mb-6"
-      >
-        <Row gutter={16}>
-          <Col span={6}>
-            <Form.Item name="searchText">
-              <Input
-                placeholder="Tìm theo tên sách/nhà cung cấp"
-                prefix={<SearchOutlined />}
-                allowClear
-              />
-            </Form.Item>
-          </Col>
-          <Col span={5}>
-            <Form.Item name="quantityRange">
-              <Select placeholder="Lọc theo số lượng" allowClear>
-                <Select.Option value="below10">Dưới 10</Select.Option>
-                <Select.Option value="10to50">Từ 10 đến 50</Select.Option>
-                <Select.Option value="above50">Trên 50</Select.Option>
-              </Select>
-            </Form.Item>
-          </Col>
-          <Col span={5}>
-            <Form.Item name="userRole">
-              <Select placeholder="Lọc theo người nhập" allowClear>
-                <Select.Option value="admin">Admin</Select.Option>
-                <Select.Option value="librarian">Thủ thư</Select.Option>
-              </Select>
-            </Form.Item>
-          </Col>
-          <Col span={5}>
-            <Form.Item name="dateRange">
-              <RangePicker 
-                locale={locale}
-                format="DD/MM/YYYY"
-                placeholder={["Từ ngày", "Đến ngày"]}
-              />
-            </Form.Item>
-          </Col>
-          <Col span={3}>
-            <Space>
-              <Button type="primary" htmlType="submit">
-                🔍 Tìm
-              </Button>
-              <Button onClick={() => {
-                searchForm.resetFields();
-                setFilteredImports(imports);
-              }}>
-                ↺ Đặt lại
-              </Button>
-            </Space>
-          </Col>
-        </Row>
-      </Form>
+        <div className="bg-white rounded-3xl shadow-lg border border-slate-100 p-6">
+          <Form form={searchForm} onFinish={handleSearch}>
+            <Row gutter={[16, 16]}>
+              <Col xs={24} md={12} lg={6}>
+                <Form.Item name="searchText" className="mb-0">
+                  <Input
+                    placeholder="Tên sách hoặc nhà cung cấp"
+                    prefix={<SearchOutlined />}
+                    allowClear
+                    size="large"
+                    className="rounded-2xl"
+                  />
+                </Form.Item>
+              </Col>
+              <Col xs={24} md={12} lg={5}>
+                <Form.Item name="quantityRange" className="mb-0">
+                  <Select placeholder="Lọc theo số lượng" allowClear size="large" className="rounded-2xl">
+                    <Select.Option value="below10">Dưới 10</Select.Option>
+                    <Select.Option value="10to50">10 - 50</Select.Option>
+                    <Select.Option value="above50">Trên 50</Select.Option>
+                  </Select>
+                </Form.Item>
+              </Col>
+              <Col xs={24} md={12} lg={5}>
+                <Form.Item name="userRole" className="mb-0">
+                  <Select placeholder="Người nhập" allowClear size="large" className="rounded-2xl">
+                    <Select.Option value="admin">Admin</Select.Option>
+                    <Select.Option value="librarian">Thủ thư</Select.Option>
+                  </Select>
+                </Form.Item>
+              </Col>
+              <Col xs={24} md={12} lg={6}>
+                <Form.Item name="dateRange" className="mb-0">
+                  <RangePicker
+                    locale={locale}
+                    format="DD/MM/YYYY"
+                    placeholder={["Từ ngày", "Đến ngày"]}
+                    className="w-full rounded-2xl"
+                  />
+                </Form.Item>
+              </Col>
+              <Col xs={24} md={12} lg={2} className="flex items-end">
+                <Space size="middle">
+                  <Button type="primary" htmlType="submit" className="!rounded-2xl">
+                    🔍
+                  </Button>
+                  <Button
+                    className="!rounded-2xl"
+                    onClick={() => {
+                      searchForm.resetFields();
+                      setFilteredImports(imports);
+                    }}
+                  >
+                    ↺
+                  </Button>
+                </Space>
+              </Col>
+            </Row>
+          </Form>
+        </div>
 
-      <table className="min-w-full border border-gray-200 rounded-lg overflow-hidden">
-        <thead className="bg-blue-100 text-blue-800">
-        <tr>
-          <th className="p-3 border text-center">#</th>
-          <th className="p-3 border text-left">Tên sách</th>
-          <th className="p-3 border text-center">Số lượng</th>
-          <th className="p-3 border text-left">Nhà cung cấp</th>
-          <th className="p-3 border text-left">Người nhập</th>
-          <th className="p-3 border text-left">Ghi chú</th>
-          <th className="p-3 border text-center">Ngày nhập</th>
-          <th className="p-3 border text-center">Hành động</th>
-        </tr>
-      </thead>
-      <tbody>
-        {filteredImports.map((imp, idx) => {
-          const role = imp.user?.role?.toLowerCase().trim();
-          const roleLabel = role === "admin" ? "Admin" : role ? "Thủ thư" : "Admin";
-          const fullName = imp.user?.fullName && imp.user.fullName !== "Chưa cập nhật"
-            ? imp.user.fullName
-            : null;
-          const displayUser = imp.userLabel
-            ? imp.userLabel
-            : imp.user
-            ? fullName
-              ? `${fullName} (${roleLabel})`
-              : roleLabel
-            : roleLabel;
-          return (
-            <tr key={imp._id} className="hover:bg-gray-50 h-16 transition-all">
-            <td className="p-3 border text-center">{(page - 1) * limit + idx + 1}</td>
-            <td className="p-3 border font-semibold">{imp.book?.title || "Không rõ"}</td>
-            <td className="p-3 border text-center text-blue-700 font-bold">{imp.quantity}</td>
-            <td className="p-3 border">{imp.supplier || "-"}</td>
-            <td className="p-3 border text-gray-700">{displayUser}</td>
-            <td className="p-3 border text-gray-600 italic max-w-xs truncate">{imp.note || "-"}</td>
-            <td className="p-3 border text-center">
-              {new Date(imp.createdAt).toLocaleDateString("vi-VN")}
-            </td>
-            <td className="p-3 border text-center">
-              <button
-                onClick={() => handleDelete(imp._id)}
-                className="bg-red-500 hover:bg-red-600 text-white px-3 py-1 rounded"
-              >
-                🗑️ Xóa
-              </button>
-            </td>
-          </tr>
-          );
-        })}
-        {filteredImports.length === 0 && (
-          <tr>
-            <td colSpan="7" className="text-center py-6 text-gray-500 italic">
-              📭 Chưa có phiếu nhập nào.
-            </td>
-          </tr>
-        )}
-        </tbody>
-      </table>
-      <div className="flex justify-center mt-6 space-x-4">
-        <button
-          onClick={handlePrev}
-          disabled={page === 1}
-          className={`px-4 py-2 rounded-lg border ${
-            page === 1
-              ? "text-gray-400 border-gray-200 cursor-not-allowed"
-              : "text-blue-600 border-blue-400 hover:bg-blue-100"
-          }`}
-        >
-          ◀ Trước
-        </button>
-        <span className="px-4 py-2 text-gray-700 font-semibold">
-          Trang {page}/{totalPages}
-        </span>
-        <button
-          onClick={handleNext}
-          disabled={page === totalPages}
-          className={`px-4 py-2 rounded-lg border ${
-            page === totalPages
-              ? "text-gray-400 border-gray-200 cursor-not-allowed"
-              : "text-blue-600 border-blue-400 hover:bg-blue-100"
-          }`}
-        >
-          Sau ▶
-        </button>
+        <div className="bg-white rounded-3xl shadow-lg border border-slate-100 overflow-hidden">
+          <div className="overflow-x-auto">
+            <table className="min-w-full divide-y divide-slate-100">
+              <thead className="bg-gradient-to-r from-blue-50 to-indigo-50 text-blue-700 uppercase text-xs tracking-wide">
+                <tr>
+                  <th className="p-4 text-center">#</th>
+                  <th className="p-4 text-left">Tên sách</th>
+                  <th className="p-4 text-center">Số lượng</th>
+                  <th className="p-4 text-left">Nhà cung cấp</th>
+                  <th className="p-4 text-left">Người nhập</th>
+                  <th className="p-4 text-left">Ghi chú</th>
+                  <th className="p-4 text-center">Ngày nhập</th>
+                  <th className="p-4 text-center">Hành động</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-slate-100 text-sm text-slate-700">
+                {filteredImports.map((imp, idx) => {
+                  const role = imp.user?.role?.toLowerCase().trim();
+                  const roleLabel = role === "admin" ? "Admin" : role ? "Thủ thư" : "Admin";
+                  const fullName =
+                    imp.user?.fullName && imp.user.fullName !== "Chưa cập nhật"
+                      ? imp.user.fullName
+                      : null;
+                  const displayUser = imp.userLabel
+                    ? imp.userLabel
+                    : imp.user
+                    ? fullName
+                      ? `${fullName} (${roleLabel})`
+                      : roleLabel
+                    : roleLabel;
+                  return (
+                    <tr key={imp._id} className="hover:bg-blue-50 transition">
+                      <td className="p-4 text-center font-semibold text-slate-900">
+                        {(page - 1) * limit + idx + 1}
+                      </td>
+                      <td className="p-4 font-semibold text-slate-900">{imp.book?.title || "Không rõ"}</td>
+                      <td className="p-4 text-center text-blue-600 font-bold">{imp.quantity}</td>
+                      <td className="p-4">{imp.supplier || "—"}</td>
+                      <td className="p-4 text-slate-600">{displayUser}</td>
+                      <td className="p-4 text-slate-500 italic max-w-xs">{imp.note || "—"}</td>
+                      <td className="p-4 text-center">
+                        {new Date(imp.createdAt).toLocaleDateString("vi-VN")}
+                      </td>
+                      <td className="p-4 text-center">
+                        <button
+                          onClick={() => handleDelete(imp._id)}
+                          className="px-3 py-2 rounded-2xl text-xs font-semibold text-white bg-rose-500 hover:bg-rose-600 shadow-sm transition"
+                        >
+                          🗑️ Xóa
+                        </button>
+                      </td>
+                    </tr>
+                  );
+                })}
+
+                {filteredImports.length === 0 && (
+                  <tr>
+                    <td colSpan="8" className="py-10 text-center text-slate-400">
+                      📭 Chưa có phiếu nhập nào.
+                    </td>
+                  </tr>
+                )}
+              </tbody>
+            </table>
+          </div>
+        </div>
+
+        <div className="flex flex-wrap items-center justify-center gap-4 pt-4">
+          <button
+            onClick={handlePrev}
+            disabled={page === 1}
+            className={`px-4 py-2 rounded-2xl text-sm font-semibold ${
+              page === 1
+                ? "bg-slate-200 text-slate-400 cursor-not-allowed"
+                : "bg-blue-600 text-white hover:bg-blue-700"
+            } transition`}
+          >
+            ◀ Trước
+          </button>
+          <span className="text-sm font-semibold text-slate-600">
+            Trang {page}/{totalPages}
+          </span>
+          <button
+            onClick={handleNext}
+            disabled={page === totalPages}
+            className={`px-4 py-2 rounded-2xl text-sm font-semibold ${
+              page === totalPages
+                ? "bg-slate-200 text-slate-400 cursor-not-allowed"
+                : "bg-blue-600 text-white hover:bg-blue-700"
+            } transition`}
+          >
+            Sau ▶
+          </button>
+        </div>
       </div>
     </div>
   );

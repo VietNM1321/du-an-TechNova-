@@ -1,5 +1,7 @@
 import express from "express";
 import Review from "../models/review.js";
+import Borrowing from "../models/borrowings.js";
+import { verifyToken } from "../middleware/auth.js";
 
 const router = express.Router();
 
@@ -7,8 +9,6 @@ router.get("/", async (req, res) => {
   try {
     const filter = {};
     if (req.query.bookId) filter.bookId = req.query.bookId;
-
-    // Nếu có bookId, trả về tất cả reviews của sách đó (cho client)
     if (req.query.bookId) {
       const reviews = await Review.find(filter)
         .populate("userId", "fullName email")
@@ -17,20 +17,16 @@ router.get("/", async (req, res) => {
 
       return res.json(reviews);
     }
-
-    // Nếu không có bookId, trả về với pagination (cho admin)
     const page = parseInt(req.query.page) || 1;
     const limit = parseInt(req.query.limit) || 10;
     const skip = (page - 1) * limit;
-
     const total = await Review.countDocuments(filter);
     const reviews = await Review.find(filter)
       .populate("userId", "fullName email")
       .populate("bookId", "title")
-      .sort({ createdAt: -1 }) // Sắp xếp mới nhất trước
+      .sort({ createdAt: -1 })
       .skip(skip)
       .limit(limit);
-
     res.json({
       reviews,
       currentPage: page,
@@ -41,7 +37,6 @@ router.get("/", async (req, res) => {
     res.status(500).json({ message: "Lỗi server khi lấy đánh giá", error });
   }
 });
-
 router.get("/:id", async (req, res) => {
   try {
     const review = await Review.findById(req.params.id)
@@ -56,23 +51,28 @@ router.get("/:id", async (req, res) => {
   }
 });
 
-router.post("/", async (req, res) => {
+router.post("/", verifyToken, async (req, res) => {
   try {
-    const { bookId, rating, comment, userId } = req.body;
+    const { bookId, rating, comment } = req.body;
+    const userId = req.user?.id;
 
-    if (!bookId || !rating) {
-      return res.status(400).json({ message: "bookId và rating là bắt buộc" });
+    if (!bookId || !rating || !userId) {
+      return res.status(400).json({ message: "Thiếu thông tin đánh giá" });
     }
-
-    const reviewData = { bookId, rating, comment };
-    if (userId) {
-      reviewData.userId = userId;
+    const hasReturned = await Borrowing.findOne({
+      user: userId,
+      book: bookId,
+      status: "returned",
+      returnDate: { $ne: null },
+    });
+    if (!hasReturned) {
+      return res.status(403).json({
+        message: "Bạn chỉ có thể bình luận sau khi đã trả sách.",
+      });
     }
-
+    const reviewData = { bookId, rating, comment, userId };
     const newReview = new Review(reviewData);
     await newReview.save();
-
-    // Populate userId và bookId trước khi trả về
     await newReview.populate("userId", "fullName email");
     await newReview.populate("bookId", "title");
 
@@ -84,21 +84,17 @@ router.post("/", async (req, res) => {
 router.put("/:id", async (req, res) => {
   try {
     const { rating, comment } = req.body;
-
     const updatedReview = await Review.findByIdAndUpdate(
       req.params.id,
       { rating, comment },
       { new: true }
     );
-
     if (!updatedReview) return res.status(404).json({ message: "Không tìm thấy đánh giá để cập nhật" });
-
     res.json(updatedReview);
   } catch (error) {
     res.status(500).json({ message: "Cập nhật đánh giá thất bại", error });
   }
 });
-
 router.delete("/:id", async (req, res) => {
   try {
     const deletedReview = await Review.findByIdAndDelete(req.params.id);

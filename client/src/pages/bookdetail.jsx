@@ -4,7 +4,6 @@ import axios from "axios";
 import BorrowForm from "../components/BorrowForm";
 import ReviewList from "../components/ReviewList";
 import ReviewForm from "../components/ReviewForm";
-
 function BookDetail() {
   const { id } = useParams();
   const navigate = useNavigate();
@@ -13,7 +12,6 @@ function BookDetail() {
   const [showBorrowForm, setShowBorrowForm] = useState(false);
   const [reviews, setReviews] = useState([]);
   const [loadingReviews, setLoadingReviews] = useState(false);
-
   const defaultImage = "https://cdn-icons-png.flaticon.com/512/2232/2232688.png";
   useEffect(() => {
     const fetchBook = async () => {
@@ -31,9 +29,7 @@ function BookDetail() {
   if (book?.category?._id) {
     const fetchRelated = async () => {
       try {
-        const res = await axios.get(
-          `http://localhost:5000/api/books?category=${book.category._id}`
-        );
+        const res = await axios.get(`http://localhost:5000/api/books?category=${book.category._id}`);
         let booksArray = [];
         if (Array.isArray(res.data)) {
           booksArray = res.data;
@@ -51,11 +47,9 @@ function BookDetail() {
     fetchRelated();
   }
 }, [book, id]);
-
   const handleViewRelated = (relatedId) => {
     navigate(`/book/${relatedId}`);
   };
-
   const handleBorrowClick = () => {
     const token = localStorage.getItem("clientToken");
     const user = localStorage.getItem("clientUser");
@@ -65,8 +59,6 @@ function BookDetail() {
     }
     setShowBorrowForm(true);
   };
-
-  // Fetch reviews
   const fetchReviews = async () => {
     if (!id) return;
     try {
@@ -80,14 +72,12 @@ function BookDetail() {
       setLoadingReviews(false);
     }
   };
-
   // Load reviews khi component mount hoặc bookId thay đổi
   useEffect(() => {
     if (id) {
       fetchReviews();
     }
   }, [id]);
-
   if (!book) {
     return (
       <div className="min-h-screen bg-gradient-to-b from-slate-50 to-white">
@@ -113,32 +103,24 @@ function BookDetail() {
       </div>
     );
   }
-
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50/30 to-purple-50/20">
       <div className="container mx-auto px-4 py-8">
         <div className="max-w-7xl mx-auto">
-          {/* Breadcrumb */}
           <div className="flex items-center gap-2 text-sm text-slate-600 mb-6">
             <button
               onClick={() => navigate(-1)}
-              className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg hover:bg-white/80 hover:text-slate-900 transition-all font-medium"
-            >
+              className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg hover:bg-white/80 hover:text-slate-900 transition-all font-medium">
               <span>←</span>
               <span>Quay lại</span>
             </button>
             <span className="text-slate-400">•</span>
             <span className="text-slate-500">{book.category?.name || "Thể loại"}</span>
           </div>
-
-          {/* Main Content Grid - Chi tiết sách bên trái, Bình luận bên phải */}
           <div className="grid lg:grid-cols-3 gap-6 mb-12">
-            {/* Left Column - Chi tiết sách */}
             <div className="lg:col-span-2 space-y-6">
-              {/* Book Info Card */}
               <div className="bg-white/90 backdrop-blur-xl rounded-3xl shadow-2xl ring-1 ring-white/50 p-6 md:p-8">
                 <div className="grid md:grid-cols-2 gap-8">
-                  {/* Book Image */}
                   <div className="flex justify-center items-start">
                     <div className="relative group">
                       <div className="absolute -inset-1 bg-gradient-to-r from-blue-600 to-purple-600 rounded-2xl blur opacity-30 group-hover:opacity-50 transition duration-300"></div>
@@ -149,14 +131,11 @@ function BookDetail() {
                       />
                     </div>
                   </div>
-
-                  {/* Book Details */}
                   <div className="flex flex-col gap-5 text-slate-800">
                     <div>
                       <h1 className="text-3xl md:text-4xl font-extrabold tracking-tight text-slate-900 mb-4 leading-tight">
                         {book.title}
                       </h1>
-                      
                       <div className="flex flex-wrap items-center gap-2.5 mb-4">
                         <span className="inline-flex items-center px-3.5 py-1.5 rounded-full bg-gradient-to-r from-blue-50 to-blue-100 text-blue-700 text-xs font-semibold ring-1 ring-blue-200 shadow-sm">
                           <span className="mr-1.5">✍️</span>
@@ -174,8 +153,13 @@ function BookDetail() {
                           {(book.available ?? 0) > 0 ? "✅ Còn sách" : "❌ Hết sách"}
                         </span>
                       </div>
+                      <div className="bg-slate-50 border border-rose-100 rounded-xl px-4 py-3 inline-flex flex-col gap-1 shadow-inner w-full">
+                        <span className="text-sm uppercase tracking-wide text-slate-500">Giá đền bù</span>
+                        <span className="text-2xl font-bold text-rose-600">
+                          {(book.Pricebook ?? 0).toLocaleString("vi-VN")} VNĐ
+                        </span>
+                      </div>
                     </div>
-
                     <div className="bg-gradient-to-br from-slate-50 to-blue-50/50 rounded-xl p-5 border border-slate-200 shadow-inner">
                       <h3 className="font-bold text-slate-900 mb-2.5 flex items-center gap-2">
                         <span>📖</span>
@@ -185,19 +169,16 @@ function BookDetail() {
                         {book.description || "Chưa có mô tả cho cuốn sách này."}
                       </p>
                     </div>
-
                     <div className="grid grid-cols-2 gap-3 pt-2">
                       <button
                         onClick={() => navigate(-1)}
-                        className="inline-flex justify-center items-center gap-2 border-2 border-slate-300 px-5 py-3 rounded-xl hover:bg-slate-50 hover:border-slate-400 transition-all font-semibold shadow-sm hover:shadow-md"
-                      >
+                        className="inline-flex justify-center items-center gap-2 border-2 border-slate-300 px-5 py-3 rounded-xl hover:bg-slate-50 hover:border-slate-400 transition-all font-semibold shadow-sm hover:shadow-md">
                         <span>←</span>
                         <span>Quay lại</span>
                       </button>
                       <button
                         onClick={handleBorrowClick}
-                        className="inline-flex justify-center items-center gap-2 bg-gradient-to-r from-emerald-600 to-emerald-700 text-white px-5 py-3 rounded-xl hover:from-emerald-700 hover:to-emerald-800 transition-all font-semibold shadow-lg hover:shadow-xl transform hover:-translate-y-0.5"
-                      >
+                        className="inline-flex justify-center items-center gap-2 bg-gradient-to-r from-emerald-600 to-emerald-700 text-white px-5 py-3 rounded-xl hover:from-emerald-700 hover:to-emerald-800 transition-all font-semibold shadow-lg hover:shadow-xl transform hover:-translate-y-0.5">
                         <span>✅</span>
                         <span>Mượn sách</span>
                       </button>
@@ -206,20 +187,13 @@ function BookDetail() {
                 </div>
               </div>
             </div>
-
-            {/* Right Column - Phần bình luận và đánh giá */}
             <div className="lg:col-span-1">
               <div className="sticky top-6 space-y-6 max-h-[calc(100vh-3rem)] overflow-y-auto">
-                {/* Review Form */}
                 <ReviewForm bookId={id} onReviewAdded={fetchReviews} />
-
-                {/* Review List */}
                 <ReviewList reviews={reviews} loading={loadingReviews} />
               </div>
             </div>
           </div>
-
-          {/* Related Books Section - Sách cùng thể loại */}
           <div className="mt-8">
             <div className="flex items-center gap-3 mb-6">
               <div className="h-1 w-12 bg-gradient-to-r from-blue-600 to-purple-600 rounded-full"></div>
@@ -229,7 +203,6 @@ function BookDetail() {
               </h2>
               <div className="flex-1 h-1 bg-gradient-to-r from-purple-600 to-transparent rounded-full"></div>
             </div>
-
             {relatedBooks.length === 0 ? (
               <div className="bg-white/90 backdrop-blur-xl rounded-2xl shadow-xl ring-1 ring-white/50 p-12 text-center">
                 <div className="text-5xl mb-4">📖</div>
@@ -278,7 +251,6 @@ function BookDetail() {
               </div>
             )}
           </div>
-
           {showBorrowForm && (
             <BorrowForm book={book} onClose={() => setShowBorrowForm(false)} />
           )}

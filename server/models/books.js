@@ -1,5 +1,4 @@
 import mongoose from "mongoose";
-
 const BookSchema = new mongoose.Schema(
   {
     code: { 
@@ -68,6 +67,11 @@ const BookSchema = new mongoose.Schema(
         note: { type: String },
       },
     ],
+    Pricebook: {
+      type: Number,
+      default: 50000,
+      min: [0, "Giá đền bù phải từ 0 trở lên"],
+    },
   },
   {
     timestamps: true,

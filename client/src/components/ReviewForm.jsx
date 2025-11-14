@@ -1,55 +1,90 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { Star } from "lucide-react";
 import axios from "axios";
-
 function ReviewForm({ bookId, onReviewAdded }) {
   const [rating, setRating] = useState(0);
   const [hoveredRating, setHoveredRating] = useState(0);
   const [comment, setComment] = useState("");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
-
-  // Kiểm tra đăng nhập
+  const [canReview, setCanReview] = useState(false);
+  const [checkingEligibility, setCheckingEligibility] = useState(false);
+  const [eligibilityError, setEligibilityError] = useState("");
   const user = JSON.parse(localStorage.getItem("clientUser") || "null");
   const isLoggedIn = !!user;
-
+  useEffect(() => {
+    const checkEligibility = async () => {
+      if (!isLoggedIn || !bookId) {
+        setCanReview(false);
+        setCheckingEligibility(false);
+        return;
+      }
+      const token = localStorage.getItem("clientToken");
+      if (!token) {
+        setCanReview(false);
+        setEligibilityError("Vui lòng đăng nhập lại để bình luận.");
+        setCheckingEligibility(false);
+        return;
+      }
+      setCheckingEligibility(true);
+      setEligibilityError("");
+      try {
+        const res = await axios.get(`http://localhost:5000/api/borrowings/can-review/${bookId}`,{
+            headers: { Authorization: `Bearer ${token}` },
+          }
+        );
+        setCanReview(!!res.data?.canReview);
+      } catch (err) {
+        console.error("❌ Lỗi kiểm tra quyền bình luận:", err);
+        setCanReview(false);
+        setEligibilityError(
+          err.response?.data?.message ||
+            "Không thể kiểm tra quyền bình luận. Vui lòng thử lại."
+        );
+      } finally {
+        setCheckingEligibility(false);
+      }
+    };
+    checkEligibility();
+  }, [bookId, isLoggedIn]);
   const handleSubmit = async (e) => {
     e.preventDefault();
-
     if (!isLoggedIn) {
       setError("Vui lòng đăng nhập để đánh giá sách.");
       return;
     }
-
+    if (!canReview) {
+      setError("Bạn chỉ có thể bình luận sau khi đã trả sách.");
+      return;
+    }
     if (!rating) {
       setError("Vui lòng chọn số sao đánh giá.");
       return;
     }
-
     try {
       setLoading(true);
       setError("");
-
-      const response = await axios.post(
-        "http://localhost:5000/api/reviews",
+      const token = localStorage.getItem("clientToken");
+      if (!token) {
+        setError("Phiên đăng nhập hết hạn. Vui lòng đăng nhập lại.");
+        setLoading(false);
+        return;
+      }
+      await axios.post("http://localhost:5000/api/reviews",{
+          bookId,rating,comment: comment.trim() || undefined,
+        },
         {
-          bookId,
-          rating,
-          comment: comment.trim() || undefined,
-          userId: user._id || user.id,
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
         }
       );
-
-      // Reset form
       setRating(0);
       setComment("");
       setHoveredRating(0);
-
-      // Gọi callback để refresh danh sách reviews
       if (onReviewAdded) {
         onReviewAdded();
       }
-
       alert("✅ Đánh giá của bạn đã được gửi thành công!");
     } catch (err) {
       console.error("❌ Lỗi khi gửi đánh giá:", err);
@@ -60,12 +95,10 @@ function ReviewForm({ bookId, onReviewAdded }) {
       setLoading(false);
     }
   };
-
   const renderStars = () => {
     return Array.from({ length: 5 }, (_, index) => {
       const starValue = index + 1;
       const isFilled = starValue <= (hoveredRating || rating);
-
       return (
         <button
           key={index}
@@ -92,7 +125,6 @@ function ReviewForm({ bookId, onReviewAdded }) {
       );
     });
   };
-
   if (!isLoggedIn) {
     return (
       <div className="bg-gradient-to-br from-white to-slate-50 rounded-2xl shadow-xl ring-1 ring-slate-200 p-5">
@@ -122,6 +154,41 @@ function ReviewForm({ bookId, onReviewAdded }) {
               </a>{" "}
               để đánh giá và bình luận.
             </span>
+          </p>
+        </div>
+      </div>
+    );
+  }
+
+  if (checkingEligibility) {
+    return (
+      <div className="bg-gradient-to-br from-white to-slate-50 rounded-2xl shadow-xl ring-1 ring-slate-200 p-5">
+        <div className="flex items-center gap-2 mb-3 text-slate-600 text-sm">
+          <span className="animate-spin">⏳</span>
+          <span>Đang kiểm tra quyền bình luận...</span>
+        </div>
+      </div>
+    );
+  }
+
+  if (!canReview) {
+    return (
+      <div className="bg-gradient-to-br from-white to-slate-50 rounded-2xl shadow-xl ring-1 ring-slate-200 p-5">
+        <div className="flex items-center gap-2 mb-2">
+          <div className="w-10 h-10 rounded-full bg-gradient-to-br from-orange-500 to-red-500 flex items-center justify-center text-white text-lg font-bold shadow-md">
+            ⛔
+          </div>
+          <div>
+            <h2 className="text-lg font-bold text-slate-900">Chưa thể bình luận</h2>
+            <p className="text-xs text-slate-500">
+              Bạn chỉ có thể đánh giá sau khi đã trả sách thành công.
+            </p>
+          </div>
+        </div>
+        <div className="bg-orange-50 border-l-4 border-orange-400 rounded-xl p-4 shadow-sm text-sm text-orange-900">
+          <p>
+            {eligibilityError ||
+              "Hãy hoàn tất việc trả sách, sau đó quay lại để chia sẻ cảm nhận của bạn nhé!"}
           </p>
         </div>
       </div>
