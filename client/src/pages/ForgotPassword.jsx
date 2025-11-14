@@ -13,7 +13,7 @@ const ForgotPassword = () => {
             animation: "flicker 1s infinite",
           }}
         >
-          ✅ NGUUU!!!! quên ấn vào làm chó gì
+          ✅ vui lòng mang thẻ sinh viên đến thư viên trường để xin cấp lại mật khẩu
         </p>
       </div>
 

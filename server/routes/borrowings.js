@@ -175,6 +175,31 @@ router.get("/history/:userId", verifyToken, isSelfOrAdmin("userId"), async (req,
     res.status(500).json({ message: "Lỗi server khi lấy lịch sử mượn!" });
   }
 });
+router.put("/:id/pickup", verifyToken, requireRole("admin"), async (req, res) => {
+  try {
+    const borrowing = await Borrowing.findById(req.params.id);
+
+    if (!borrowing) {
+      return res.status(404).json({ message: "Không tìm thấy đơn mượn!" });
+    }
+
+    if (borrowing.isPickedUp) {
+      return res.status(400).json({ message: "Đã xác nhận lấy sách trước đó!" });
+    }
+
+    borrowing.isPickedUp = true;
+    await borrowing.save();
+
+    res.json({
+      message: "📘 Đã xác nhận sinh viên đã lấy sách!",
+      borrowing,
+    });
+  } catch (error) {
+    console.error("❌ Lỗi xác nhận lấy sách:", error);
+    res.status(500).json({ message: "Lỗi server khi xác nhận lấy sách!" });
+  }
+});
+
 router.put("/:id/report-broken", verifyToken, upload.single("image"), async (req, res) => {
   try {
     const { reason } = req.body;

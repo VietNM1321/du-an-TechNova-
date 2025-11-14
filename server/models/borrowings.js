@@ -1,6 +1,4 @@
 import mongoose from "mongoose";
-import { verifyToken, requireRole } from "../middleware/auth.js";
-
 
 const BorrowingSchema = new mongoose.Schema(
   {
@@ -19,20 +17,23 @@ const BorrowingSchema = new mongoose.Schema(
       default: "borrowed",
     },
 
-    // 📸 Khi báo hỏng hoặc mất
-    damageType: { type: String, enum: ["broken", "lost", null], default: null }, // broken=hỏng, lost=mất
-    damageReason: { type: String }, // lý do sinh viên gửi
-    damageImage: { type: String }, // đường dẫn ảnh upload
-    compensationAmount: { type: Number, default: 50000 }, // tiền đền (mặc định 50,000 VNĐ)
-    
-    // 💰 Thông tin thanh toán
-    paymentMethod: { type: String, enum: ["cash", "bank", null], default: null }, // cash=tiền mặt, bank=ngân hàng
-    paymentStatus: { type: String, enum: ["pending", "paid", "completed"], default: "pending" }, // pending=chờ thanh toán, paid=đã thanh toán, completed=hoàn tất
-    paymentDate: { type: Date }, // ngày thanh toán
-    qrCodeImage: { type: String }, // đường dẫn ảnh QR code ngân hàng
-    paymentNote: { type: String }, // ghi chú thanh toán
+    // 🟦 NEW: Quản lý xác nhận sinh viên đã nhận sách
+    isPickedUp: { type: Boolean, default: false },
 
-    // 🧍 Dữ liệu snapshot sinh viên (khi mượn)
+    // 📸 Khi báo hỏng hoặc mất
+    damageType: { type: String, enum: ["broken", "lost", null], default: null },
+    damageReason: { type: String },
+    damageImage: { type: String },
+    compensationAmount: { type: Number, default: 50000 },
+
+    // 💰 Thông tin thanh toán
+    paymentMethod: { type: String, enum: ["cash", "bank", null], default: null },
+    paymentStatus: { type: String, enum: ["pending", "paid", "completed"], default: "pending" },
+    paymentDate: { type: Date },
+    qrCodeImage: { type: String },
+    paymentNote: { type: String },
+
+    // 🧍 Snapshot sinh viên
     userSnapshot: {
       fullName: String,
       studentId: String,
@@ -40,7 +41,7 @@ const BorrowingSchema = new mongoose.Schema(
       email: String,
     },
 
-    // 📚 Dữ liệu snapshot sách (khi mượn)
+    // 📚 Snapshot sách
     bookSnapshot: {
       title: String,
       author: String,

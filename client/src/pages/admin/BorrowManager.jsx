@@ -1,9 +1,10 @@
 import React, { useEffect, useState } from "react";
 import axios from "axios";
-import { Table, Tag, Button, Space, Modal, Input, message, Select, DatePicker } from "antd";
+import { Table, Tag, Button, Space, Modal, Input, message, Select, DatePicker, Tooltip } from "antd";
 import dayjs from "dayjs";
-import { BookOutlined, ExclamationCircleOutlined, DollarOutlined } from "@ant-design/icons";
+import { ExclamationCircleOutlined, DollarOutlined } from "@ant-design/icons";
 const { confirm } = Modal;
+
 const BorrowManager = () => {
   const [borrowings, setBorrowings] = useState([]);
   const [loading, setLoading] = useState(false);
@@ -14,28 +15,21 @@ const BorrowManager = () => {
   const [status, setStatus] = useState("");
   const [borrowFrom, setBorrowFrom] = useState(null);
   const [borrowTo, setBorrowTo] = useState(null);
-  const [dueFrom, setDueFrom] = useState(null);
-  const [dueTo, setDueTo] = useState(null);
-  const [sort, setSort] = useState("borrowDate");
-  const [order, setOrder] = useState("desc");
   const [typingTimer, setTypingTimer] = useState(null);
+
   const [compensationModal, setCompensationModal] = useState({ open: false, record: null });
   const [compensationAmount, setCompensationAmount] = useState("");
 
   const token = localStorage.getItem("adminToken");
-  // 📦 Load danh sách đơn mượn
+
   const fetchBorrowings = async (pageNum = 1, params = {}) => {
     setLoading(true);
     try {
       const q = params.q ?? query;
-      const s = params.sort ?? sort;
-      const o = params.order ?? order;
       const l = params.limit ?? limit;
       const st = params.status ?? status;
       const bf = params.borrowFrom ?? borrowFrom;
       const bt = params.borrowTo ?? borrowTo;
-      const df = params.dueFrom ?? dueFrom;
-      const dt = params.dueTo ?? dueTo;
 
       const parts = [
         `page=${pageNum}`,
@@ -44,10 +38,6 @@ const BorrowManager = () => {
         st ? `status=${encodeURIComponent(st)}` : "",
         bf ? `borrowFrom=${encodeURIComponent(bf)}` : "",
         bt ? `borrowTo=${encodeURIComponent(bt)}` : "",
-        df ? `dueFrom=${encodeURIComponent(df)}` : "",
-        dt ? `dueTo=${encodeURIComponent(dt)}` : "",
-        s ? `sort=${encodeURIComponent(s)}` : "",
-        o ? `order=${encodeURIComponent(o)}` : "",
       ].filter(Boolean);
 
       const res = await axios.get(`http://localhost:5000/api/borrowings?${parts.join("&")}`, {
@@ -58,16 +48,16 @@ const BorrowManager = () => {
       setTotalItems(payload.totalItems || 0);
       setPage(payload.currentPage || pageNum);
     } catch (error) {
-      console.error("❌ Lỗi tải borrowings:", error);
+      console.error(error);
       message.error("Không tải được danh sách đơn mượn!");
     } finally {
       setLoading(false);
     }
   };
+
   useEffect(() => {
     fetchBorrowings(page);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [page, limit, status, sort, order, borrowFrom, borrowTo, dueFrom, dueTo]);
+  }, [page, limit, status, borrowFrom, borrowTo]);
 
   const onChangeQuery = (e) => {
     const value = e.target.value;
@@ -80,19 +70,31 @@ const BorrowManager = () => {
     setTypingTimer(timer);
   };
 
-  const onClearFilters = () => {
-    setQuery("");
-    setStatus("");
-    setBorrowFrom(null);
-    setBorrowTo(null);
-    setDueFrom(null);
-    setDueTo(null);
-    setSort("borrowDate");
-    setOrder("desc");
-    setLimit(10);
-    setPage(1);
-    fetchBorrowings(1, { q: "" });
+  const handlePickUp = (record) => {
+    confirm({
+      title: "Xác nhận đã lấy sách?",
+      icon: <ExclamationCircleOutlined />,
+      onOk: async () => {
+        try {
+          await axios.put(
+            `http://localhost:5000/api/borrowings/${record._id}/pickup`,
+            {},
+            { headers: { Authorization: `Bearer ${token}` } }
+          );
+          message.success("✅ Xác nhận đã lấy sách!");
+          setBorrowings((prev) =>
+            prev.map((b) =>
+              b._id === record._id ? { ...b, isPickedUp: true, status: "borrowed" } : b
+            )
+          );
+        } catch (error) {
+          console.error(error);
+          message.error("Lỗi khi xác nhận!");
+        }
+      },
+    });
   };
+
   const handleReturn = (record) => {
     confirm({
       title: "Xác nhận trả sách?",
@@ -117,13 +119,15 @@ const BorrowManager = () => {
       },
     });
   };
+
   const handleCompensation = async () => {
     if (!compensationAmount) {
       message.warning("Vui lòng nhập số tiền đền!");
       return;
     }
     try {
-      await axios.put(`http://localhost:5000/api/borrowings/${compensationModal.record._id}/compensation`,
+      await axios.put(
+        `http://localhost:5000/api/borrowings/${compensationModal.record._id}/compensation`,
         { compensationAmount },
         { headers: { Authorization: `Bearer ${token}` } }
       );
@@ -136,11 +140,12 @@ const BorrowManager = () => {
       message.error("Không cập nhật được tiền đền!");
     }
   };
+
   const handleConfirmPayment = (record) => {
     confirm({
       title: "Xác nhận thanh toán?",
       icon: <ExclamationCircleOutlined />,
-      content: `Xác nhận đã nhận thanh toán ${record.compensationAmount?.toLocaleString("vi-VN") || 0} VNĐ từ người dùng?`,
+      content: `Xác nhận đã nhận thanh toán ${record.compensationAmount?.toLocaleString("vi-VN") || 0} VNĐ?`,
       onOk: async () => {
         try {
           await axios.put(
@@ -148,8 +153,12 @@ const BorrowManager = () => {
             {},
             { headers: { Authorization: `Bearer ${token}` } }
           );
-          message.success("✅ Đã xác nhận thanh toán thành công!");
-          fetchBorrowings(page);
+          message.success("✅ Đã xác nhận thanh toán!");
+          setBorrowings((prev) =>
+            prev.map((b) =>
+              b._id === record._id ? { ...b, status: "compensated", paymentStatus: "done" } : b
+            )
+          );
         } catch (error) {
           console.error(error);
           message.error("Lỗi khi xác nhận thanh toán!");
@@ -157,6 +166,7 @@ const BorrowManager = () => {
       },
     });
   };
+
   const columns = [
     {
       title: "Mã đơn",
@@ -183,19 +193,13 @@ const BorrowManager = () => {
     {
       title: "Sách",
       key: "book",
-      width: "22%",
+      width: "25%",
       render: (record) => {
         const book = record.book || record.bookSnapshot || {};
         const title = book.title || "Không rõ";
         const author = (book.author && book.author.name) || book.author || "N/A";
-
-        let thumb = null;
-        if (book.image) thumb = book.image;
-        else if (book.images && book.images.length > 0) thumb = book.images[0];
-
-        if (thumb && !thumb.startsWith("http")) {
-          thumb = `http://localhost:5000/${thumb}`;
-        }
+        let thumb = book.image || (book.images && book.images[0]) || null;
+        if (thumb && !thumb.startsWith("http")) thumb = `http://localhost:5000/${thumb}`;
         const placeholder = "https://via.placeholder.com/40x60?text=?";
         return (
           <div className="flex items-center gap-2">
@@ -226,122 +230,58 @@ const BorrowManager = () => {
     },
     {
       title: "Trạng thái",
-      dataIndex: "status",
       key: "status",
-      render: (status, record) => {
-        let color = "default";
+      render: (record) => {
         let text = "";
-        switch (status) {
+        let color = "default";
+        switch (record.status) {
           case "borrowed":
-            color = "blue";
-            text = "Đang mượn";
+            text = record.isPickedUp ? "Đang mượn" : "Chưa lấy sách";
+            color = record.isPickedUp ? "cyan" : "blue";
             break;
           case "returned":
-            color = "green";
             text = "Đã trả";
+            color = "green";
             break;
           case "damaged":
           case "lost":
-            color = "red";
             text = "Hỏng / Mất";
+            color = "red";
             break;
           case "overdue":
-            color = "orange";
             text = "Quá hạn";
+            color = "orange";
             break;
           case "compensated":
-            color = "purple";
             text = "Đã đền bù";
+            color = "gold";
             break;
           default:
-            text = status;
+            text = "—";
         }
-        return (
-          <div>
-            <Tag color={color}>{text}</Tag>
-            {record.paymentStatus && (
-              <Tag
-                color={
-                  record.paymentStatus === "completed"
-                    ? "green"
-                    : record.paymentStatus === "paid"
-                    ? "blue"
-                    : "orange"
-                }
-                className="mt-1"
-              >
-                {record.paymentStatus === "completed"
-                  ? "Đã thanh toán"
-                  : record.paymentStatus === "paid"
-                  ? "Đã thanh toán"
-                  : record.paymentStatus === "pending"
-                  ? "Chờ thanh toán"
-                  : ""}
-              </Tag>
-            )}
-          </div>
-        );
+        return <Tag color={color}>{text}</Tag>;
       },
     },
     {
-      title: "Tiền đền",
+      title: "Tiền đền / Phạt",
       key: "compensation",
-      render: (_, record) => {
-        if (record.compensationAmount && record.compensationAmount > 0) {
-          return (
-            <div>
-              <span className="font-semibold text-red-600">
-                {record.compensationAmount.toLocaleString("vi-VN")} VNĐ
-              </span>
-              {record.paymentMethod && (
-                <div className="text-xs text-gray-500 mt-1">
-                  {record.paymentMethod === "cash" ? "💵 Tiền mặt" : "🏦 Ngân hàng"}
-                </div>
-              )}
-            </div>
-          );
-        }
-        return "—";
-      },
-    },
-    {
-      title: "Ảnh tình trạng/ảnh thanh toán",
-      key: "images",
       render: (record) => {
-        const images = [];
-        if (record.damageImage) {
-          const src = record.damageImage.startsWith("http")
-            ? record.damageImage
-            : `http://localhost:5000/${record.damageImage}`;
-          images.push({ src, alt: "Ảnh hỏng", label: "Hỏng" });
+        let penalty = 0;
+        let overdueDays = 0;
+        if (record.dueDate && !record.returnDate) {
+          const due = new Date(record.dueDate);
+          const today = new Date();
+          overdueDays = Math.max(0, Math.floor((today - due) / (1000 * 60 * 60 * 24)));
+          penalty = overdueDays * 500;
         }
-        if (record.qrCodeImage) {
-          const src = record.qrCodeImage.startsWith("http")
-            ? record.qrCodeImage
-            : `http://localhost:5000/${record.qrCodeImage}`;
-          images.push({ src, alt: "QR Code", label: "QR" });
-        }
-        if (images.length === 0) return "—";
-        return (
-          <div className="flex flex-col gap-1">
-            {images.map((img, idx) => (
-              <div key={idx}>
-                <img
-                  src={img.src}
-                  alt={img.alt}
-                  style={{ width: 40, height: 40, objectFit: "cover", borderRadius: 4, cursor: "pointer" }}
-                  onClick={() => {
-                    Modal.info({
-                      title: img.label,
-                      content: <img src={img.src} alt={img.alt} style={{ width: "100%", maxWidth: 400 }} />,
-                      width: 500,
-                    });
-                  }}
-                />
-                <div className="text-xs text-gray-500">{img.label}</div>
-              </div>
-            ))}
-          </div>
+        const compensation = record.compensationAmount || 0;
+        const total = compensation + penalty;
+        return total > 0 ? (
+          <Tooltip title={`Phạt ${penalty.toLocaleString("vi-VN")} VNĐ (${overdueDays} ngày quá hạn)`}>
+            <div className="text-right font-semibold text-red-600">{total.toLocaleString("vi-VN")} VNĐ</div>
+          </Tooltip>
+        ) : (
+          "—"
         );
       },
     },
@@ -349,33 +289,21 @@ const BorrowManager = () => {
       title: "Thao tác",
       key: "action",
       render: (record) => (
-        <Space direction="vertical" size="small">
-          {record.status === "borrowed" && (
-            <Button type="primary" onClick={() => handleReturn(record)}>
-              Xác nhận trả
+        <Space size="small">
+          {!record.isPickedUp && record.status === "borrowed" && (
+            <Button size="small" type="primary" onClick={() => handlePickUp(record)}>
+              ✅ Đã lấy sách
             </Button>
           )}
-          {/* Xác nhận thanh toán khi thanh toán qua ngân hàng */}
-          {(record.status === "damaged" || record.status === "lost") &&
-           record.paymentStatus === "pending" &&
-           record.paymentMethod === "bank" && (
-            <Button
-              type="primary"
-              style={{ backgroundColor: "#52c41a", borderColor: "#52c41a" }}
-              onClick={() => handleConfirmPayment(record)}
-            >
-              ✅ Xác nhận thanh toán
+          {record.isPickedUp && record.status === "borrowed" && (
+            <Button size="small" type="primary" onClick={() => handleReturn(record)}>
+              Trả sách
             </Button>
           )}
-          {/* Hiển thị thông tin thanh toán đã hoàn tất */}
-          {record.paymentStatus === "completed" && (
-            <Tag color="green">Đã hoàn tất thanh toán</Tag>
-          )}
-          {/* Nút chỉnh sửa tiền đền (nếu cần) */}
           {(record.status === "damaged" || record.status === "lost") && (
             <Button
-              type="dashed"
               size="small"
+              type="dashed"
               icon={<DollarOutlined />}
               onClick={() => {
                 setCompensationAmount(record.compensationAmount || "50000");
@@ -385,6 +313,18 @@ const BorrowManager = () => {
               Sửa tiền đền
             </Button>
           )}
+          {(record.status === "damaged" || record.status === "lost") &&
+            record.paymentStatus === "pending" &&
+            record.paymentMethod === "bank" && (
+              <Button
+                size="small"
+                type="primary"
+                style={{ backgroundColor: "#52c41a", borderColor: "#52c41a" }}
+                onClick={() => handleConfirmPayment(record)}
+              >
+                ✅ Thanh toán
+              </Button>
+            )}
         </Space>
       ),
     },
@@ -394,183 +334,79 @@ const BorrowManager = () => {
     <div className="min-h-screen bg-gradient-to-br from-blue-50 via-slate-50 to-purple-50 py-8 px-4 md:px-8">
       <div className="max-w-7xl mx-auto space-y-6">
         <div className="bg-white rounded-3xl shadow-lg border border-slate-100 px-6 py-5 flex flex-wrap items-center justify-between gap-4">
-          <div className="flex items-center gap-3">
-            <div className="p-3 bg-blue-100 rounded-2xl text-blue-700 shadow-inner">
-              <BookOutlined />
-            </div>
-            <div>
-              <h2 className="text-2xl md:text-3xl font-bold text-slate-900">Quản lý đơn mượn sách</h2>
-              <p className="text-sm text-slate-500">Theo dõi trạng thái mượn/trả và xử lý đền bù</p>
-            </div>
-          </div>
+          <h2 className="text-2xl md:text-3xl font-bold text-slate-900">Quản lý đơn mượn sách</h2>
           <Button onClick={() => fetchBorrowings(page)} className="!rounded-2xl !bg-blue-600 !text-white hover:!bg-blue-700">
             Làm mới
           </Button>
         </div>
 
+        {/* Filters */}
         <div className="bg-white rounded-3xl shadow-lg border border-slate-100 p-6 grid grid-cols-1 lg:grid-cols-4 gap-5">
-          <div className="lg:col-span-2">
-            <label className="text-xs font-semibold text-slate-500 uppercase tracking-wide">Tìm kiếm</label>
-            <Input
-              value={query}
-              onChange={onChangeQuery}
-              placeholder="Tên/email người mượn, tên sách, ISBN..."
-              className="mt-2 rounded-2xl border-slate-200"
-            />
-          </div>
-          <div>
-            <label className="text-xs font-semibold text-slate-500 uppercase tracking-wide">Trạng thái</label>
-            <Select
-              value={status}
-              onChange={(v) => { setStatus(v); setPage(1); }}
-              allowClear
-              placeholder="Tất cả"
-              options={[
-                { value: "borrowed", label: "Đang mượn" },
-                { value: "returned", label: "Đã trả" },
-                { value: "overdue", label: "Quá hạn" },
-                { value: "damaged", label: "Hỏng" },
-                { value: "lost", label: "Mất" },
-                { value: "compensated", label: "Đã đền bù" },
-              ]}
-              className="mt-2 w-full"
-            />
-          </div>
-          <div>
-            <label className="text-xs font-semibold text-slate-500 uppercase tracking-wide">Mượn từ</label>
-            <DatePicker
-              value={borrowFrom ? dayjs(borrowFrom) : null}
-              onChange={(d) => { setBorrowFrom(d ? d.format("YYYY-MM-DD") : null); setPage(1); }}
-              className="mt-2 w-full"
-            />
-          </div>
-          <div>
-            <label className="text-xs font-semibold text-slate-500 uppercase tracking-wide">Mượn đến</label>
-            <DatePicker
-              value={borrowTo ? dayjs(borrowTo) : null}
-              onChange={(d) => { setBorrowTo(d ? d.format("YYYY-MM-DD") : null); setPage(1); }}
-              className="mt-2 w-full"
-            />
-          </div>
-          <div>
-            <label className="text-xs font-semibold text-slate-500 uppercase tracking-wide">Hẹn trả từ</label>
-            <DatePicker
-              value={dueFrom ? dayjs(dueFrom) : null}
-              onChange={(d) => { setDueFrom(d ? d.format("YYYY-MM-DD") : null); setPage(1); }}
-              className="mt-2 w-full"
-            />
-          </div>
-          <div>
-            <label className="text-xs font-semibold text-slate-500 uppercase tracking-wide">Hẹn trả đến</label>
-            <DatePicker
-              value={dueTo ? dayjs(dueTo) : null}
-              onChange={(d) => { setDueTo(d ? d.format("YYYY-MM-DD") : null); setPage(1); }}
-              className="mt-2 w-full"
-            />
-          </div>
-          <div>
-            <label className="text-xs font-semibold text-slate-500 uppercase tracking-wide">Sắp xếp theo</label>
-            <Select
-              value={sort}
-              onChange={(v) => { setSort(v); setPage(1); }}
-              options={[
-                { value: "borrowDate", label: "Ngày mượn" },
-                { value: "dueDate", label: "Hẹn trả" },
-                { value: "status", label: "Trạng thái" },
-                { value: "createdAt", label: "Ngày tạo" },
-              ]}
-              className="mt-2 w-full"
-            />
-          </div>
-          <div>
-            <label className="text-xs font-semibold text-slate-500 uppercase tracking-wide">Thứ tự</label>
-            <Select
-              value={order}
-              onChange={(v) => { setOrder(v); setPage(1); }}
-              options={[
-                { value: "desc", label: "Giảm dần" },
-                { value: "asc", label: "Tăng dần" },
-              ]}
-              className="mt-2 w-full"
-            />
-          </div>
-          <div>
-            <label className="text-xs font-semibold text-slate-500 uppercase tracking-wide">Mỗi trang</label>
-            <Select
-              value={limit}
-              onChange={(v) => { setLimit(v); setPage(1); }}
-              options={[
-                { value: 10, label: "10" },
-                { value: 20, label: "20" },
-                { value: 50, label: "50" },
-              ]}
-              className="mt-2 w-full"
-            />
-          </div>
-          <div className="flex items-end">
-            <Button onClick={onClearFilters} className="w-full rounded-2xl border border-slate-200">
-              Đặt lại
-            </Button>
-          </div>
+          <Input
+            value={query}
+            onChange={onChangeQuery}
+            placeholder="Tìm kiếm người mượn, sách..."
+            className="rounded-2xl"
+          />
+          <Select
+            value={status}
+            onChange={(v) => { setStatus(v); setPage(1); }}
+            allowClear
+            placeholder="Trạng thái"
+            options={[
+              { value: "borrowed", label: "Đang mượn" },
+              { value: "returned", label: "Đã trả" },
+              { value: "overdue", label: "Quá hạn" },
+              { value: "damaged", label: "Hỏng" },
+              { value: "lost", label: "Mất" },
+              { value: "compensated", label: "Đã đền bù" },
+            ]}
+          />
+          <DatePicker
+            value={borrowFrom ? dayjs(borrowFrom) : null}
+            onChange={(d) => { setBorrowFrom(d ? d.format("YYYY-MM-DD") : null); setPage(1); }}
+            placeholder="Mượn từ"
+          />
+          <DatePicker
+            value={borrowTo ? dayjs(borrowTo) : null}
+            onChange={(d) => { setBorrowTo(d ? d.format("YYYY-MM-DD") : null); setPage(1); }}
+            placeholder="Mượn đến"
+          />
         </div>
 
-        <div className="bg-white rounded-3xl shadow-lg border border-slate-100">
+        {/* Table */}
+        <div className="bg-white rounded-3xl shadow-lg border border-slate-100 p-4 overflow-x-auto">
           <Table
-            rowKey="_id"
             columns={columns}
             dataSource={borrowings}
             loading={loading}
+            rowKey="_id"
             pagination={{
               current: page,
               pageSize: limit,
               total: totalItems,
-              onChange: (p, ps) => {
-                if (ps !== limit) {
-                  setLimit(ps);
-                  setPage(1);
-                } else {
-                  setPage(p);
-                }
-              },
               showSizeChanger: true,
+              onChange: (p, l) => { setPage(p); setLimit(l); },
             }}
           />
         </div>
       </div>
 
-      {/* Modal Nhập tiền đền có ảnh */}
+      {/* Modal tiền đền */}
       <Modal
-        title="💰 Nhập tiền đền"
+        title="Cập nhật tiền đền / phạt"
         open={compensationModal.open}
-        onOk={handleCompensation}
         onCancel={() => setCompensationModal({ open: false, record: null })}
-        okText="Lưu"
+        onOk={handleCompensation}
+        okText="Cập nhật"
         cancelText="Hủy"
       >
-        <p>
-          Nhập số tiền đền cho đơn <b>{compensationModal.record?._id?.slice(-8)}</b>:
-        </p>
-
-        {/* ảnh hỏng/mất */}
-        {compensationModal.record?.damageImage && (
-          <div className="mb-2">
-            <img
-              src={
-                compensationModal.record.damageImage.startsWith("http")
-                  ? compensationModal.record.damageImage
-                  : `http://localhost:5000/${compensationModal.record.damageImage}`
-              }
-              alt="ảnh đền tiền"
-              style={{ width: 80, height: 120, objectFit: "cover", borderRadius: 4 }}
-            />
-          </div>
-        )}
-
         <Input
           type="number"
           value={compensationAmount}
           onChange={(e) => setCompensationAmount(e.target.value)}
-          placeholder="VD: 50000"
+          placeholder="Nhập số tiền đền"
+          prefix="VNĐ"
         />
       </Modal>
     </div>
