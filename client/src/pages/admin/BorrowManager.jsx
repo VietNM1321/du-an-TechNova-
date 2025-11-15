@@ -1,8 +1,19 @@
 import React, { useEffect, useState } from "react";
 import axios from "axios";
-import { Table, Tag, Button, Space, Modal, Input, message, Select, DatePicker, Tooltip } from "antd";
+import {
+  Table,
+  Tag,
+  Button,
+  Space,
+  Modal,
+  Input,
+  message,
+  Select,
+  DatePicker,
+} from "antd";
 import dayjs from "dayjs";
-import { ExclamationCircleOutlined, DollarOutlined } from "@ant-design/icons";
+import { ExclamationCircleOutlined } from "@ant-design/icons";
+
 const { confirm } = Modal;
 
 const BorrowManager = () => {
@@ -16,9 +27,6 @@ const BorrowManager = () => {
   const [borrowFrom, setBorrowFrom] = useState(null);
   const [borrowTo, setBorrowTo] = useState(null);
   const [typingTimer, setTypingTimer] = useState(null);
-
-  const [compensationModal, setCompensationModal] = useState({ open: false, record: null });
-  const [compensationAmount, setCompensationAmount] = useState("");
 
   const token = localStorage.getItem("adminToken");
 
@@ -70,34 +78,9 @@ const BorrowManager = () => {
     setTypingTimer(timer);
   };
 
-  const handlePickUp = (record) => {
-    confirm({
-      title: "Xác nhận đã lấy sách?",
-      icon: <ExclamationCircleOutlined />,
-      onOk: async () => {
-        try {
-          await axios.put(
-            `http://localhost:5000/api/borrowings/${record._id}/pickup`,
-            {},
-            { headers: { Authorization: `Bearer ${token}` } }
-          );
-          message.success("✅ Xác nhận đã lấy sách!");
-          setBorrowings((prev) =>
-            prev.map((b) =>
-              b._id === record._id ? { ...b, isPickedUp: true, status: "borrowed" } : b
-            )
-          );
-        } catch (error) {
-          console.error(error);
-          message.error("Lỗi khi xác nhận!");
-        }
-      },
-    });
-  };
-
   const handleReturn = (record) => {
     confirm({
-      title: "Xác nhận trả sách?",
+      title: "Xác nhận đã trả sách?",
       icon: <ExclamationCircleOutlined />,
       onOk: async () => {
         try {
@@ -106,46 +89,31 @@ const BorrowManager = () => {
             {},
             { headers: { Authorization: `Bearer ${token}` } }
           );
-          message.success("Đã xác nhận trả!");
+          message.success("Đã ghi nhận trả sách!");
           setBorrowings((prev) =>
             prev.map((b) =>
-              b._id === record._id ? { ...b, status: "returned", returnDate: new Date() } : b
+              b._id === record._id
+                ? { ...b, hasReturned: true } // đánh dấu đã trả vật lý
+                : b
             )
           );
         } catch (error) {
           console.error(error);
-          message.error("Lỗi khi xác nhận trả!");
+          message.error("Lỗi khi ghi nhận trả sách!");
         }
       },
     });
   };
 
-  const handleCompensation = async () => {
-    if (!compensationAmount) {
-      message.warning("Vui lòng nhập số tiền đền!");
+  const handleConfirmPayment = (record) => {
+    if (!record.hasReturned) {
+      message.warning("Phải trả sách trước khi thanh toán!");
       return;
     }
-    try {
-      await axios.put(
-        `http://localhost:5000/api/borrowings/${compensationModal.record._id}/compensation`,
-        { compensationAmount },
-        { headers: { Authorization: `Bearer ${token}` } }
-      );
-      message.success("Đã cập nhật tiền đền!");
-      fetchBorrowings(page);
-      setCompensationModal({ open: false, record: null });
-      setCompensationAmount("");
-    } catch (error) {
-      console.error(error);
-      message.error("Không cập nhật được tiền đền!");
-    }
-  };
-
-  const handleConfirmPayment = (record) => {
     confirm({
       title: "Xác nhận thanh toán?",
-      icon: <ExclamationCircleOutlined />,
       content: `Xác nhận đã nhận thanh toán ${record.compensationAmount?.toLocaleString("vi-VN") || 0} VNĐ?`,
+      icon: <ExclamationCircleOutlined />,
       onOk: async () => {
         try {
           await axios.put(
@@ -153,15 +121,17 @@ const BorrowManager = () => {
             {},
             { headers: { Authorization: `Bearer ${token}` } }
           );
-          message.success("✅ Đã xác nhận thanh toán!");
+          message.success("✅ Đã thanh toán!");
           setBorrowings((prev) =>
             prev.map((b) =>
-              b._id === record._id ? { ...b, status: "compensated", paymentStatus: "done" } : b
+              b._id === record._id
+                ? { ...b, status: "returned", paymentStatus: "done" }
+                : b
             )
           );
         } catch (error) {
           console.error(error);
-          message.error("Lỗi khi xác nhận thanh toán!");
+          message.error("Lỗi khi thanh toán!");
         }
       },
     });
@@ -243,17 +213,17 @@ const BorrowManager = () => {
             text = "Đã trả";
             color = "green";
             break;
+          case "overdue":
+            text = record.hasReturned ? "Quá hạn (Đã trả vật lý)" : "Quá hạn";
+            color = "orange";
+            break;
           case "damaged":
           case "lost":
             text = "Hỏng / Mất";
             color = "red";
             break;
-          case "overdue":
-            text = "Quá hạn";
-            color = "orange";
-            break;
           case "compensated":
-            text = "Đã đền bù";
+            text = "Đã thanh toán";
             color = "gold";
             break;
           default:
@@ -266,23 +236,10 @@ const BorrowManager = () => {
       title: "Tiền đền / Phạt",
       key: "compensation",
       render: (record) => {
-        let penalty = 0;
-        let overdueDays = 0;
-        if (record.dueDate && !record.returnDate) {
-          const due = new Date(record.dueDate);
-          const today = new Date();
-          overdueDays = Math.max(0, Math.floor((today - due) / (1000 * 60 * 60 * 24)));
-          penalty = overdueDays * 500;
-        }
         const compensation = record.compensationAmount || 0;
-        const total = compensation + penalty;
-        return total > 0 ? (
-          <Tooltip title={`Phạt ${penalty.toLocaleString("vi-VN")} VNĐ (${overdueDays} ngày quá hạn)`}>
-            <div className="text-right font-semibold text-red-600">{total.toLocaleString("vi-VN")} VNĐ</div>
-          </Tooltip>
-        ) : (
-          "—"
-        );
+        return compensation > 0 ? (
+          <div className="text-right font-semibold text-red-600">{compensation.toLocaleString("vi-VN")} VNĐ</div>
+        ) : "—";
       },
     },
     {
@@ -290,41 +247,28 @@ const BorrowManager = () => {
       key: "action",
       render: (record) => (
         <Space size="small">
-          {!record.isPickedUp && record.status === "borrowed" && (
-            <Button size="small" type="primary" onClick={() => handlePickUp(record)}>
-              ✅ Đã lấy sách
-            </Button>
-          )}
-          {record.isPickedUp && record.status === "borrowed" && (
-            <Button size="small" type="primary" onClick={() => handleReturn(record)}>
-              Trả sách
-            </Button>
-          )}
-          {(record.status === "damaged" || record.status === "lost") && (
-            <Button
-              size="small"
-              type="dashed"
-              icon={<DollarOutlined />}
-              onClick={() => {
-                setCompensationAmount(record.compensationAmount || "50000");
-                setCompensationModal({ open: true, record });
-              }}
-            >
-              Sửa tiền đền
-            </Button>
-          )}
-          {(record.status === "damaged" || record.status === "lost") &&
-            record.paymentStatus === "pending" &&
-            record.paymentMethod === "bank" && (
+          {record.status === "overdue" && (
+            <>
+              <Button size="small" type="primary" onClick={() => handleReturn(record)}>
+                ✅ Trả sách
+              </Button>
               <Button
                 size="small"
                 type="primary"
                 style={{ backgroundColor: "#52c41a", borderColor: "#52c41a" }}
+                disabled={!record.hasReturned}
                 onClick={() => handleConfirmPayment(record)}
               >
                 ✅ Thanh toán
               </Button>
-            )}
+            </>
+          )}
+
+          {record.status === "borrowed" && record.isPickedUp && (
+            <Button size="small" type="primary" onClick={() => handleReturn(record)}>
+              ✅ Trả sách
+            </Button>
+          )}
         </Space>
       ),
     },
@@ -359,7 +303,7 @@ const BorrowManager = () => {
               { value: "overdue", label: "Quá hạn" },
               { value: "damaged", label: "Hỏng" },
               { value: "lost", label: "Mất" },
-              { value: "compensated", label: "Đã đền bù" },
+              { value: "compensated", label: "Đã thanh toán" },
             ]}
           />
           <DatePicker
@@ -391,24 +335,6 @@ const BorrowManager = () => {
           />
         </div>
       </div>
-
-      {/* Modal tiền đền */}
-      <Modal
-        title="Cập nhật tiền đền / phạt"
-        open={compensationModal.open}
-        onCancel={() => setCompensationModal({ open: false, record: null })}
-        onOk={handleCompensation}
-        okText="Cập nhật"
-        cancelText="Hủy"
-      >
-        <Input
-          type="number"
-          value={compensationAmount}
-          onChange={(e) => setCompensationAmount(e.target.value)}
-          placeholder="Nhập số tiền đền"
-          prefix="VNĐ"
-        />
-      </Modal>
     </div>
   );
 };
