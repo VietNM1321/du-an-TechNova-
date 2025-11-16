@@ -14,12 +14,36 @@ const upload = multer({ storage });
 
 const STATUS_ENUM = {
   BORROWED: "borrowed",
+  RENEWED: "renewed",
   RETURNED: "returned",
   DAMAGED: "damaged",
   LOST: "lost",
   OVERDUE: "overdue",
   COMPENSATED: "compensated",
 };
+// Gia hạn sách: chỉ khi đang mượn, tối đa 3 lần
+router.put('/:id/renew', verifyToken, async (req, res) => {
+  try {
+    const borrowing = await Borrowing.findById(req.params.id);
+    if (!borrowing) return res.status(404).json({ message: 'Không tìm thấy đơn mượn!' });
+    if (borrowing.status !== STATUS_ENUM.BORROWED) {
+      return res.status(400).json({ message: 'Chỉ có thể gia hạn khi đang mượn!' });
+    }
+    if ((borrowing.renewCount || 0) >= 3) {
+      return res.status(400).json({ message: 'Đã hết lượt gia hạn, vui lòng trả sách!' });
+    }
+    // Gia hạn thêm 1 tuần
+    const baseDue = borrowing.dueDate ? new Date(borrowing.dueDate) : new Date();
+    borrowing.dueDate = new Date(baseDue.getTime() + 7 * 24 * 60 * 60 * 1000);
+    borrowing.renewCount = (borrowing.renewCount || 0) + 1;
+    borrowing.status = STATUS_ENUM.RENEWED;
+    await borrowing.save();
+    res.json({ message: 'Gia hạn thành công!', borrowing });
+  } catch (err) {
+    console.error('Lỗi gia hạn:', err);
+    res.status(500).json({ message: 'Lỗi server khi gia hạn!' });
+  }
+});
 
 router.get("/can-review/:bookId", verifyToken, async (req, res) => {
   try {
@@ -145,7 +169,7 @@ router.get("/", verifyToken, async (req, res) => {
     const filter = {};
     if (user) filter.user = user;
     if (book) filter.book = book;
-    if (status && ["borrowed", "returned", "damaged", "lost", "compensated", "overdue"].includes(status)) {
+    if (status && ["borrowed", "renewed", "returned", "damaged", "lost", "compensated", "overdue"].includes(status)) {
       if (status !== "overdue") {
         filter.status = status;
       }

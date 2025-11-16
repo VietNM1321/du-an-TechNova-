@@ -7,6 +7,7 @@ import dayjs from "dayjs";
 
 const STATUS_LABEL = {
   borrowed: "Đang mượn",
+  renewed: "Đã gia hạn",
   pendingPickup: "Chưa lấy sách",
   returned: "Đã trả",
   damaged: "Hỏng",
@@ -17,6 +18,7 @@ const STATUS_LABEL = {
 
 const STATUS_COLOR = {
   borrowed: "cyan",
+  renewed: "cyan",
   pendingPickup: "blue",
   returned: "green",
   damaged: "red",
@@ -43,8 +45,17 @@ const History = ({ userId, refreshFlag }) => {
       const data = res.data || [];
       // Nếu admin đã xác nhận lấy sách, chuyển trạng thái pendingPickup -> borrowed
       const mapped = data.map((b) => {
-        if (b.status === "borrowed" && b.isPickedUp) b.status = "borrowed";
-        if (b.status === "borrowed" && !b.isPickedUp) b.status = "pendingPickup";
+  if ((b.status === "borrowed" || b.status === "renewed") && b.isPickedUp) b.status = b.status;
+  if ((b.status === "borrowed" || b.status === "renewed") && !b.isPickedUp) b.status = "pendingPickup";
+  const renewBorrowing = async (id) => {
+    try {
+      const res = await axios.put(`http://localhost:5000/api/borrowings/${id}/renew`, {}, { headers: { Authorization: `Bearer ${token}` } });
+      message.success(res.data.message || "Gia hạn thành công");
+      fetchHistory();
+    } catch (error) {
+      message.error(error?.response?.data?.message || "Không thể gia hạn!");
+    }
+  };
         return b;
       });
       setHistory(mapped);
@@ -165,6 +176,19 @@ const History = ({ userId, refreshFlag }) => {
       key: "borrowDate",
       render: (date) => (date ? dayjs(date).format("DD/MM/YYYY") : "—"),
     },
+      {
+        title: "Lần gia hạn",
+        dataIndex: "renewCount",
+        key: "renewCount",
+        render: (renewCount, record) => (
+          <span>
+            {renewCount || 0}
+            {renewCount >= 3 && (
+              <span className="ml-2 text-xs text-red-500">(Đã hết lượt gia hạn)</span>
+            )}
+          </span>
+        ),
+      },
     {
       title: "Ngày trả",
       dataIndex: "dueDate",
@@ -246,10 +270,15 @@ const History = ({ userId, refreshFlag }) => {
             Xem chi tiết
           </Button>
 
-          {(record.status === "borrowed" || record.status === "pendingPickup" || record.status === "overdue") && (
+          {(record.status === "borrowed" || record.status === "renewed" || record.status === "pendingPickup" || record.status === "overdue") && (
             <>
               <Button type="link" danger size="small" onClick={() => handleReportLost(record._id)}>Báo mất</Button>
               <Button type="link" danger size="small" onClick={() => handleReportBroken(record)}>Báo hỏng</Button>
+              {record.status === "borrowed" && (record.renewCount || 0) < 3 ? (
+                <Button type="link" size="small" onClick={() => renewBorrowing(record._id)}>Gia hạn</Button>
+              ) : record.status === "borrowed" && (record.renewCount || 0) >= 3 ? (
+                <span className="text-sm text-gray-500">Đã hết lượt gia hạn</span>
+              ) : null}
             </>
           )}
 

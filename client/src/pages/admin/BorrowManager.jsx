@@ -198,6 +198,19 @@ const BorrowManager = () => {
       ),
     },
     {
+      title: "Lần gia hạn",
+      dataIndex: "renewCount",
+      key: "renewCount",
+      render: (renewCount, record) => (
+        <span>
+          {renewCount || 0}
+          {renewCount >= 3 && (
+            <span className="ml-2 text-xs text-red-500">(Đã hết lượt gia hạn)</span>
+          )}
+        </span>
+      ),
+    },
+    {
       title: "Ngày mượn",
       dataIndex: "borrowDate",
       key: "borrowDate",
@@ -218,6 +231,10 @@ const BorrowManager = () => {
         switch (record.status) {
           case "borrowed":
             text = record.isPickedUp ? "Đang mượn" : "Chưa lấy sách";
+            color = record.isPickedUp ? "cyan" : "blue";
+            break;
+          case "renewed":
+            text = record.isPickedUp ? "Đã gia hạn" : "Chưa lấy sách";
             color = record.isPickedUp ? "cyan" : "blue";
             break;
           case "returned":
@@ -310,6 +327,7 @@ const BorrowManager = () => {
             placeholder="Trạng thái"
             options={[
               { value: "borrowed", label: "Đang mượn" },
+              { value: "renewed", label: "Đã gia hạn" },
               { value: "returned", label: "Đã trả" },
               { value: "overdue", label: "Quá hạn" },
               { value: "damaged", label: "Hỏng" },

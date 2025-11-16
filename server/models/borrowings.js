@@ -13,12 +13,15 @@ const BorrowingSchema = new mongoose.Schema(
     // 🟢 Trạng thái đơn mượn
     status: {
       type: String,
-      enum: ["borrowed", "returned", "damaged", "lost", "overdue"],
+      enum: ["borrowed", "renewed", "returned", "damaged", "lost", "overdue"],
       default: "borrowed",
     },
 
     // 🟦 NEW: Quản lý xác nhận sinh viên đã nhận sách
-    isPickedUp: { type: Boolean, default: false },
+  isPickedUp: { type: Boolean, default: false },
+
+  // Số lần gia hạn
+  renewCount: { type: Number, default: 0 },
 
     // 📸 Khi báo hỏng hoặc mất
     damageType: { type: String, enum: ["broken", "lost", null], default: null },
