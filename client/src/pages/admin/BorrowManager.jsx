@@ -48,9 +48,10 @@ const BorrowManager = () => {
         bt ? `borrowTo=${encodeURIComponent(bt)}` : "",
       ].filter(Boolean);
 
-      const res = await axios.get(`http://localhost:5000/api/borrowings?${parts.join("&")}`, {
-        headers: { Authorization: `Bearer ${token}` },
-      });
+      const res = await axios.get(
+        `http://localhost:5000/api/borrowings?${parts.join("&")}`,
+        { headers: { Authorization: `Bearer ${token}` } }
+      );
       const payload = res.data || {};
       setBorrowings(payload.borrowings || []);
       setTotalItems(payload.totalItems || 0);
@@ -78,6 +79,35 @@ const BorrowManager = () => {
     setTypingTimer(timer);
   };
 
+  // Xác nhận đã lấy sách
+  const handleConfirmPickup = (record) => {
+    confirm({
+      title: "Xác nhận đã lấy sách?",
+      icon: <ExclamationCircleOutlined />,
+      onOk: async () => {
+        try {
+          const res = await axios.put(
+            `http://localhost:5000/api/borrowings/${record._id}/pickup`,
+            {},
+            { headers: { Authorization: `Bearer ${token}` } }
+          );
+          message.success(res.data.message || "✅ Đã xác nhận lấy sách!");
+          setBorrowings((prev) =>
+            prev.map((b) =>
+              b._id === record._id ? { ...b, isPickedUp: true } : b
+            )
+          );
+        } catch (error) {
+          console.error(error);
+          message.error(
+            error.response?.data?.message || "Lỗi khi xác nhận lấy sách!"
+          );
+        }
+      },
+    });
+  };
+
+  // Xác nhận trả sách
   const handleReturn = (record) => {
     confirm({
       title: "Xác nhận đã trả sách?",
@@ -93,7 +123,7 @@ const BorrowManager = () => {
           setBorrowings((prev) =>
             prev.map((b) =>
               b._id === record._id
-                ? { ...b, hasReturned: true } // đánh dấu đã trả vật lý
+                ? { ...b, hasReturned: true }
                 : b
             )
           );
@@ -105,6 +135,7 @@ const BorrowManager = () => {
     });
   };
 
+  // Xác nhận thanh toán
   const handleConfirmPayment = (record) => {
     if (!record.hasReturned) {
       message.warning("Phải trả sách trước khi thanh toán!");
@@ -112,7 +143,9 @@ const BorrowManager = () => {
     }
     confirm({
       title: "Xác nhận thanh toán?",
-      content: `Xác nhận đã nhận thanh toán ${record.compensationAmount?.toLocaleString("vi-VN") || 0} VNĐ?`,
+      content: `Xác nhận đã nhận thanh toán ${
+        record.compensationAmount?.toLocaleString("vi-VN") || 0
+      } VNĐ?`,
       icon: <ExclamationCircleOutlined />,
       onOk: async () => {
         try {
@@ -258,6 +291,22 @@ const BorrowManager = () => {
       key: "action",
       render: (record) => (
         <Space size="small">
+          {record.status === "borrowed" && !record.isPickedUp && (
+            <Button
+              size="small"
+              type="primary"
+              onClick={() => handleConfirmPickup(record)}
+            >
+              ✅ Xác nhận lấy sách
+            </Button>
+          )}
+
+          {record.status === "borrowed" && record.isPickedUp && (
+            <Button size="small" type="primary" onClick={() => handleReturn(record)}>
+              ✅ Trả sách
+            </Button>
+          )}
+
           {record.status === "overdue" && (
             <>
               <Button size="small" type="primary" onClick={() => handleReturn(record)}>
@@ -273,12 +322,6 @@ const BorrowManager = () => {
                 ✅ Thanh toán
               </Button>
             </>
-          )}
-
-          {record.status === "borrowed" && record.isPickedUp && (
-            <Button size="small" type="primary" onClick={() => handleReturn(record)}>
-              ✅ Trả sách
-            </Button>
           )}
         </Space>
       ),
