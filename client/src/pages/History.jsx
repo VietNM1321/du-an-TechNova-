@@ -151,6 +151,16 @@ const History = ({ userId, refreshFlag }) => {
       },
     },
     {
+      title: "Số lượng",
+      dataIndex: "quantity",
+      key: "quantity",
+      render: (quantity) => (
+        <span className="font-semibold text-blue-600">
+          {quantity || 1} quyển
+        </span>
+      ),
+    },
+    {
       title: "Ngày mượn",
       dataIndex: "borrowDate",
       key: "borrowDate",
@@ -213,8 +223,12 @@ const History = ({ userId, refreshFlag }) => {
                   <div>
                     <p>Tên sách: {record.book?.title || record.bookSnapshot?.title || "—"}</p>
                     <p>Tác giả: {record.book?.author?.name || record.bookSnapshot?.author?.name || "—"}</p>
+                    <p><strong>Số lượng mượn:</strong> {record.quantity || 1} quyển</p>
                     <p>Ngày mượn: {dayjs(record.borrowDate).format("DD/MM/YYYY")}</p>
                     <p>Ngày trả: {dayjs(record.dueDate).format("DD/MM/YYYY")}</p>
+                    {record.returnDate && (
+                      <p>Ngày trả thực tế: {dayjs(record.returnDate).format("DD/MM/YYYY")}</p>
+                    )}
                     <p>Trạng thái: {STATUS_LABEL[record.status]}</p>
                     {record.compensationAmount > 0 && (
                       <>

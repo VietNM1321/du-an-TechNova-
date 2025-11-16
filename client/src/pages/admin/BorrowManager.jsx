@@ -187,6 +187,17 @@ const BorrowManager = () => {
       },
     },
     {
+      title: "Số lượng",
+      dataIndex: "quantity",
+      key: "quantity",
+      width: "10%",
+      render: (quantity) => (
+        <span className="font-semibold text-blue-600">
+          {quantity || 1} quyển
+        </span>
+      ),
+    },
+    {
       title: "Ngày mượn",
       dataIndex: "borrowDate",
       key: "borrowDate",

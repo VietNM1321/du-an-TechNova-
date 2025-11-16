@@ -150,14 +150,32 @@ function BookDetail() {
                             ? "bg-gradient-to-r from-green-50 to-green-100 text-green-700 ring-green-200"
                             : "bg-gradient-to-r from-rose-50 to-rose-100 text-rose-700 ring-rose-200"
                         }`}>
-                          {(book.available ?? 0) > 0 ? "✅ Còn sách" : "❌ Hết sách"}
+                          {(book.available ?? 0) > 0 
+                            ? `✅ Còn ${book.available} quyển` 
+                            : "❌ Hết sách"}
                         </span>
                       </div>
-                      <div className="bg-slate-50 border border-rose-100 rounded-xl px-4 py-3 inline-flex flex-col gap-1 shadow-inner w-full">
-                        <span className="text-sm uppercase tracking-wide text-slate-500">Giá đền bù</span>
-                        <span className="text-2xl font-bold text-rose-600">
-                          {(book.Pricebook ?? 0).toLocaleString("vi-VN")} VNĐ
-                        </span>
+                      <div className="flex items-center justify-between gap-4 mb-2">
+                        <div className="bg-slate-50 border border-blue-100 rounded-xl px-4 py-3 flex flex-col gap-1 shadow-inner flex-1">
+                          <span className="text-sm uppercase tracking-wide text-slate-500">Số lượng</span>
+                          <span className="text-xl font-bold text-blue-600">
+                            {book.available ?? 0} / {book.quantity ?? 0} quyển
+                          </span>
+                        </div>
+                        <div className="bg-slate-50 border border-purple-100 rounded-xl px-4 py-3 flex flex-col gap-1 shadow-inner flex-1">
+                          <span className="text-sm uppercase tracking-wide text-slate-500">Lượt mượn</span>
+                          <span className="text-xl font-bold text-purple-600">
+                            {book.borrowCount || 0} lượt
+                          </span>
+                        </div>
+                      </div>
+                      <div className="mb-2">
+                        <div className="bg-slate-50 border border-rose-100 rounded-xl px-4 py-3 flex flex-col gap-1 shadow-inner">
+                          <span className="text-sm uppercase tracking-wide text-slate-500">Giá đền bù</span>
+                          <span className="text-xl font-bold text-rose-600">
+                            {(book.Pricebook ?? 0).toLocaleString("vi-VN")} VNĐ
+                          </span>
+                        </div>
                       </div>
                     </div>
                     <div className="bg-gradient-to-br from-slate-50 to-blue-50/50 rounded-xl p-5 border border-slate-200 shadow-inner">

@@ -47,9 +47,38 @@ router.post("/", verifyToken, async (req, res) => {
     }
 
     const user = await User.findById(req.user.id).lean();
-    const borrowings = await Promise.all(
+    
+    // Kiểm tra số lượng available cho tất cả sách trước khi tạo đơn
+    const bookChecks = await Promise.all(
       items.map(async (item) => {
-        const book = await Book.findById(item.bookId).populate("author", "name").lean();
+        const book = await Book.findById(item.bookId);
+        if (!book) {
+          return { error: `Không tìm thấy sách với ID: ${item.bookId}` };
+        }
+        const borrowQty = item.quantity || 1;
+        if (book.available < borrowQty) {
+          return { 
+            error: `Không đủ sách "${book.title}" để mượn. Hiện chỉ còn ${book.available} quyển, bạn yêu cầu ${borrowQty} quyển.`,
+            bookId: item.bookId
+          };
+        }
+        return { book, borrowQty, item };
+      })
+    );
+
+    // Kiểm tra nếu có lỗi về số lượng
+    const errors = bookChecks.filter(check => check.error);
+    if (errors.length > 0) {
+      return res.status(400).json({ 
+        message: "Không đủ số lượng sách để mượn!",
+        errors: errors.map(e => e.error)
+      });
+    }
+
+    // Tạo các đơn mượn và cập nhật số lượng
+    const borrowings = await Promise.all(
+      bookChecks.map(async ({ book, borrowQty, item }) => {
+        const bookPopulated = await Book.findById(item.bookId).populate("author", "name").lean();
         const userSnapshot = user ? {
               fullName: user.fullName || "Khách vãng lai",
               studentId: user.studentCode || "",
@@ -61,12 +90,12 @@ router.post("/", verifyToken, async (req, res) => {
               course: "",
               email: "",
             };
-        const bookSnapshot = book ? {
-              title: book.title || "Không rõ",
+        const bookSnapshot = bookPopulated ? {
+              title: bookPopulated.title || "Không rõ",
               author:
-                (typeof book.author === "string" ? book.author : book.author?.name) ||
+                (typeof bookPopulated.author === "string" ? bookPopulated.author : bookPopulated.author?.name) ||
                 "Không rõ",
-              isbn: book.code || "N/A",
+              isbn: bookPopulated.code || "N/A",
             } : {
               title: "Không rõ",
               author: "Không rõ",
@@ -77,15 +106,27 @@ router.post("/", verifyToken, async (req, res) => {
           book: book?._id,
           borrowDate: item.borrowDate || new Date(),
           dueDate: item.dueDate || new Date(Date.now() + 7 * 24 * 60 * 60 * 1000),
-          quantity: item.quantity || 1,
+          quantity: borrowQty,
           status: STATUS_ENUM.BORROWED,
           userSnapshot,
           bookSnapshot,
-          compensationAmount: book?.Pricebook ?? 50000,
+          compensationAmount: bookPopulated?.Pricebook ?? 50000,
         };
       })
     );
+    
+    // Lưu các đơn mượn
     const saved = await Borrowing.insertMany(borrowings);
+    
+    // Cập nhật số lượng available cho từng sách
+    await Promise.all(
+      bookChecks.map(async ({ book, borrowQty }) => {
+        book.available -= borrowQty;
+        if (book.available < 0) book.available = 0;
+        await book.save();
+      })
+    );
+
     res.status(201).json({
       message: "✅ Tạo đơn mượn thành công!",
       borrowings: saved,
@@ -340,14 +381,43 @@ router.put("/:id/confirm-payment", verifyToken, requireRole("admin"), async (req
 });
 router.put("/:id/return", verifyToken, requireRole("admin"), async (req, res) => {
   try {
-    const borrowing = await Borrowing.findByIdAndUpdate(
-      req.params.id,
-      { status: STATUS_ENUM.RETURNED, returnDate: new Date() },
-      { new: true }
-    );
-    if (!borrowing)
+    const borrowing = await Borrowing.findById(req.params.id);
+    if (!borrowing) {
       return res.status(404).json({ message: "Không tìm thấy đơn mượn!" });
-    res.json({ message: "✅ Xác nhận trả thành công!", borrowing });
+    }
+
+    // Kiểm tra nếu đã trả rồi thì không cần xử lý lại
+    if (borrowing.status === STATUS_ENUM.RETURNED) {
+      return res.status(400).json({ message: "Đơn mượn này đã được trả trước đó!" });
+    }
+
+    // Lưu trạng thái trước đó để kiểm tra
+    const previousStatus = borrowing.status;
+    const returnQty = borrowing.quantity || 1;
+
+    // Cập nhật trạng thái đơn mượn
+    borrowing.status = STATUS_ENUM.RETURNED;
+    borrowing.returnDate = new Date();
+    await borrowing.save();
+
+    // Cập nhật số lượng available của sách (chỉ khi trả bình thường từ "borrowed", không phải hỏng/mất)
+    // Nếu sách bị hỏng/mất thì không tăng lại available vì sách không còn nữa
+    if (previousStatus === STATUS_ENUM.BORROWED && borrowing.book) {
+      const book = await Book.findById(borrowing.book);
+      if (book) {
+        book.available += returnQty;
+        // Đảm bảo available không vượt quá quantity
+        if (book.available > book.quantity) {
+          book.available = book.quantity;
+        }
+        await book.save();
+      }
+    }
+
+    res.json({ 
+      message: "✅ Xác nhận trả thành công!", 
+      borrowing 
+    });
   } catch (error) {
     console.error("❌ Lỗi xác nhận trả:", error);
     res.status(500).json({ message: "Lỗi server khi xác nhận trả sách!" });

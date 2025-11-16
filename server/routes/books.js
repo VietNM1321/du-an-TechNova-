@@ -74,8 +74,20 @@ router.get("/", async (req, res) => {
       .limit(limit)
       .sort(sortSpec);
 
+    // Tính toán borrowCount cho mỗi sách
+    const booksWithBorrowCount = await Promise.all(
+      books.map(async (book) => {
+        const borrowHistory = await Borrowing.find({ book: book._id });
+        const borrowCount = borrowHistory.reduce((sum, b) => sum + (b.quantity || 1), 0);
+        return {
+          ...book.toObject(),
+          borrowCount,
+        };
+      })
+    );
+
     res.json({
-      books,
+      books: booksWithBorrowCount,
       currentPage: page,
       totalPages: Math.ceil(totalBooks / limit),
       totalItems: totalBooks,
@@ -117,7 +129,19 @@ router.get("/search", async (req, res) => {
       return res.status(404).json({ message: "Không tìm thấy sản phẩm phù hợp." });
     }
 
-    res.json(books);
+    // Tính toán borrowCount cho mỗi sách
+    const booksWithBorrowCount = await Promise.all(
+      books.map(async (book) => {
+        const borrowHistory = await Borrowing.find({ book: book._id });
+        const borrowCount = borrowHistory.reduce((sum, b) => sum + (b.quantity || 1), 0);
+        return {
+          ...book.toObject(),
+          borrowCount,
+        };
+      })
+    );
+
+    res.json(booksWithBorrowCount);
   } catch (error) {
     console.error("❌ Lỗi khi tìm kiếm sách:", error);
     res.status(500).json({ message: "Lỗi server khi tìm kiếm sách.", error: error.message });

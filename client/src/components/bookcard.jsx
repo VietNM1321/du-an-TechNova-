@@ -43,7 +43,7 @@ function BookCard({ book, btnColor = "bg-yellow-400 hover:bg-yellow-500" }) {
           </p>
         </div>
 
-        <div className="flex justify-center items-center text-sm text-gray-700 mb-4 gap-6">
+        <div className="flex justify-center items-center text-sm text-gray-700 mb-3 gap-4 flex-wrap">
           <span className="flex items-center gap-1 text-blue-600 font-medium">
             <Eye size={15} />
             <span>{book.views || 0} lượt xem</span>
@@ -51,6 +51,25 @@ function BookCard({ book, btnColor = "bg-yellow-400 hover:bg-yellow-500" }) {
           <span className="flex items-center gap-1 text-yellow-500 font-semibold">
             <Star size={15} /> {avgRating} / 5
           </span>
+        </div>
+
+        <div className="mb-4 flex items-center justify-between gap-2 px-1">
+          <div className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-semibold ${
+            (book.available ?? 0) > 0
+              ? "bg-green-100 text-green-700 border border-green-200"
+              : "bg-red-100 text-red-700 border border-red-200"
+          }`}>
+            <span>📚</span>
+            <span>
+              {(book.available ?? 0) > 0 
+                ? `Còn ${book.available} quyển` 
+                : "Hết sách"}
+            </span>
+          </div>
+          <div className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-semibold bg-purple-100 text-purple-700 border border-purple-200">
+            <span>📖</span>
+            <span>{book.borrowCount || 0} lượt mượn</span>
+          </div>
         </div>
 
         <Link
