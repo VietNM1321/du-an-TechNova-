@@ -2,7 +2,7 @@ import React, { useEffect, useState } from "react";
 import axios from "axios";
 import { Table, Tag, Button, Space, Modal, message, Image, Input, Upload, Tooltip } from "antd";
 import { UploadOutlined, DollarOutlined } from "@ant-design/icons";
-import PaymentModal from "../components/PaymentModal";
+import { useNavigate } from "react-router-dom";
 import dayjs from "dayjs";
 
 const STATUS_LABEL = {
@@ -28,8 +28,7 @@ const STATUS_COLOR = {
 const History = ({ userId, refreshFlag }) => {
   const [history, setHistory] = useState([]);
   const [loading, setLoading] = useState(false);
-  const [paymentModalVisible, setPaymentModalVisible] = useState(false);
-  const [selectedBorrowing, setSelectedBorrowing] = useState(null);
+  const navigate = useNavigate();
   const token = localStorage.getItem("clientToken");
   const storedUser = JSON.parse(localStorage.getItem("clientUser") || "null");
   const effectiveUserId = userId || storedUser?._id || storedUser?.id;
@@ -259,7 +258,7 @@ const History = ({ userId, refreshFlag }) => {
               type="primary"
               size="small"
               icon={<DollarOutlined />}
-              onClick={() => { setSelectedBorrowing(record); setPaymentModalVisible(true); }}
+              onClick={() => navigate(`/payment/${record._id}`)}
               className="bg-blue-600 hover:bg-blue-700"
             >
               💳 Thanh toán
@@ -280,12 +279,6 @@ const History = ({ userId, refreshFlag }) => {
         loading={loading}
         pagination={{ pageSize: 5 }}
         bordered
-      />
-      <PaymentModal
-        visible={paymentModalVisible}
-        onClose={() => { setPaymentModalVisible(false); setSelectedBorrowing(null); }}
-        borrowing={selectedBorrowing}
-        onSuccess={() => { fetchHistory(); setPaymentModalVisible(false); setSelectedBorrowing(null); }}
       />
     </div>
   );

@@ -1,36 +1,20 @@
 import React, { useState } from "react";
 import axios from "axios";
-import { X, CreditCard, Wallet, Upload, Image as ImageIcon } from "lucide-react";
+import { X, CreditCard, Wallet } from "lucide-react";
 
 const PaymentModal = ({ visible, onClose, borrowing, onSuccess }) => {
   const [paymentMethod, setPaymentMethod] = useState("cash");
-  const [qrCodeFile, setQrCodeFile] = useState(null);
-  const [qrCodePreview, setQrCodePreview] = useState(null);
   const [paymentNote, setPaymentNote] = useState("");
   const [loading, setLoading] = useState(false);
 
   if (!visible || !borrowing) return null;
 
   const compensationAmount = borrowing.compensationAmount || 50000;
-
-  const handleFileChange = (e) => {
-    const file = e.target.files[0];
-    if (file) {
-      setQrCodeFile(file);
-      const reader = new FileReader();
-      reader.onloadend = () => {
-        setQrCodePreview(reader.result);
-      };
-      reader.readAsDataURL(file);
-    }
-  };
+  
+  // QR Code cố định - có thể thay bằng URL thực tế của QR code
+  const fixedQRCode = "https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=VCB%3A1234567890%3ATHU%20VIEN%20SACH";
 
   const handleSubmit = async () => {
-    if (paymentMethod === "bank" && !qrCodeFile && !borrowing.qrCodeImage) {
-      alert("⚠️ Vui lòng upload ảnh QR code khi thanh toán qua ngân hàng!");
-      return;
-    }
-
     try {
       setLoading(true);
       const token = localStorage.getItem("clientToken") || localStorage.getItem("adminToken");
@@ -38,9 +22,6 @@ const PaymentModal = ({ visible, onClose, borrowing, onSuccess }) => {
       const formData = new FormData();
       formData.append("paymentMethod", paymentMethod);
       formData.append("paymentNote", paymentNote);
-      if (qrCodeFile) {
-        formData.append("qrCodeImage", qrCodeFile);
-      }
 
       const res = await axios.put(
         `http://localhost:5000/api/borrowings/${borrowing._id}/pay`,
@@ -58,8 +39,6 @@ const PaymentModal = ({ visible, onClose, borrowing, onSuccess }) => {
       onClose();
       // Reset form
       setPaymentMethod("cash");
-      setQrCodeFile(null);
-      setQrCodePreview(null);
       setPaymentNote("");
     } catch (error) {
       console.error("❌ Lỗi thanh toán:", error.response?.data || error.message);
@@ -70,64 +49,70 @@ const PaymentModal = ({ visible, onClose, borrowing, onSuccess }) => {
   };
 
   return (
-    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-      <div className="bg-white rounded-xl shadow-2xl max-w-md w-full mx-4 max-h-[90vh] overflow-y-auto">
+    <div className="fixed inset-0 bg-black/30 backdrop-blur-sm flex items-center justify-center z-50 p-4">
+      <div className="bg-gradient-to-br from-white to-blue-50/30 rounded-2xl shadow-2xl max-w-lg w-full max-h-[90vh] overflow-y-auto border border-white/20">
         {/* Header */}
-        <div className="flex justify-between items-center p-6 border-b">
-          <h2 className="text-2xl font-bold text-gray-800">💳 Thanh toán đền bù</h2>
+        <div className="flex justify-between items-center p-6 border-b border-gray-200 bg-gradient-to-r from-blue-600 to-blue-700 text-white rounded-t-2xl">
+          <h2 className="text-2xl font-bold flex items-center gap-2">
+            <span>💳</span>
+            <span>Thanh toán đền bù</span>
+          </h2>
           <button
             onClick={onClose}
-            className="text-gray-500 hover:text-gray-700 transition"
+            className="text-white/90 hover:text-white hover:bg-white/20 rounded-full p-1 transition-all"
           >
             <X size={24} />
           </button>
         </div>
 
         {/* Content */}
-        <div className="p-6 space-y-6">
+        <div className="p-6 space-y-5 bg-white/50">
           {/* Thông tin đơn mượn */}
-          <div className="bg-blue-50 p-4 rounded-lg">
-            <p className="text-sm text-gray-600 mb-1">Sách:</p>
-            <p className="font-semibold text-gray-800">
+          <div className="bg-gradient-to-r from-blue-50 to-indigo-50 p-5 rounded-xl border border-blue-100 shadow-sm">
+            <p className="text-xs uppercase tracking-wide text-blue-600 font-semibold mb-2">📚 Sách mượn</p>
+            <p className="font-bold text-gray-900 text-lg mb-2">
               {borrowing.book?.title || borrowing.bookSnapshot?.title || "—"}
             </p>
-            <p className="text-sm text-gray-600 mt-2">
-              Loại: {borrowing.damageType === "lost" ? "Mất sách" : "Hỏng sách"}
-            </p>
+            <div className="inline-flex items-center gap-2 px-3 py-1.5 bg-white/80 rounded-full">
+              <span className="text-xs text-gray-600">Loại:</span>
+              <span className="text-xs font-semibold text-orange-600">
+                {borrowing.damageType === "lost" ? "Mất sách" : "Hỏng sách"}
+              </span>
+            </div>
           </div>
 
           {/* Số tiền cần thanh toán */}
-          <div className="bg-red-50 p-4 rounded-lg border-2 border-red-200">
-            <p className="text-sm text-gray-600 mb-1">Số tiền đền bù:</p>
-            <p className="text-3xl font-bold text-red-600">
+          <div className="bg-gradient-to-br from-red-50 via-pink-50 to-red-50 p-6 rounded-xl border-2 border-red-200 shadow-lg">
+            <p className="text-sm text-gray-600 mb-2 font-medium">Số tiền đền bù:</p>
+            <p className="text-4xl font-extrabold text-transparent bg-clip-text bg-gradient-to-r from-red-600 to-pink-600">
               {compensationAmount.toLocaleString("vi-VN")} VNĐ
             </p>
           </div>
 
           {/* Phương thức thanh toán */}
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-3">
-              Chọn phương thức thanh toán:
+            <label className="block text-sm font-semibold text-gray-700 mb-4">
+              💰 Chọn phương thức thanh toán:
             </label>
             <div className="grid grid-cols-2 gap-4">
               {/* Tiền mặt */}
               <button
                 onClick={() => setPaymentMethod("cash")}
-                className={`p-4 rounded-lg border-2 transition-all ${
+                className={`p-5 rounded-xl border-2 transition-all transform hover:scale-105 ${
                   paymentMethod === "cash"
-                    ? "border-blue-500 bg-blue-50"
-                    : "border-gray-200 hover:border-gray-300"
+                    ? "border-blue-500 bg-gradient-to-br from-blue-50 to-blue-100 shadow-lg shadow-blue-200/50"
+                    : "border-gray-200 bg-white hover:border-blue-300 hover:bg-blue-50/50"
                 }`}
               >
                 <Wallet
-                  size={32}
-                  className={`mx-auto mb-2 ${
+                  size={36}
+                  className={`mx-auto mb-3 ${
                     paymentMethod === "cash" ? "text-blue-600" : "text-gray-400"
                   }`}
                 />
                 <p
-                  className={`font-semibold ${
-                    paymentMethod === "cash" ? "text-blue-600" : "text-gray-600"
+                  className={`font-bold text-sm ${
+                    paymentMethod === "cash" ? "text-blue-700" : "text-gray-600"
                   }`}
                 >
                   Tiền mặt
@@ -137,21 +122,21 @@ const PaymentModal = ({ visible, onClose, borrowing, onSuccess }) => {
               {/* Ngân hàng */}
               <button
                 onClick={() => setPaymentMethod("bank")}
-                className={`p-4 rounded-lg border-2 transition-all ${
+                className={`p-5 rounded-xl border-2 transition-all transform hover:scale-105 ${
                   paymentMethod === "bank"
-                    ? "border-blue-500 bg-blue-50"
-                    : "border-gray-200 hover:border-gray-300"
+                    ? "border-blue-500 bg-gradient-to-br from-blue-50 to-blue-100 shadow-lg shadow-blue-200/50"
+                    : "border-gray-200 bg-white hover:border-blue-300 hover:bg-blue-50/50"
                 }`}
               >
                 <CreditCard
-                  size={32}
-                  className={`mx-auto mb-2 ${
+                  size={36}
+                  className={`mx-auto mb-3 ${
                     paymentMethod === "bank" ? "text-blue-600" : "text-gray-400"
                   }`}
                 />
                 <p
-                  className={`font-semibold ${
-                    paymentMethod === "bank" ? "text-blue-600" : "text-gray-600"
+                  className={`font-bold text-sm ${
+                    paymentMethod === "bank" ? "text-blue-700" : "text-gray-600"
                   }`}
                 >
                   Ngân hàng
@@ -160,122 +145,99 @@ const PaymentModal = ({ visible, onClose, borrowing, onSuccess }) => {
             </div>
           </div>
 
-          {/* QR Code (nếu chọn ngân hàng) */}
+          {/* QR Code cố định (nếu chọn ngân hàng) */}
           {paymentMethod === "bank" && (
-            <div className="space-y-4">
-              <label className="block text-sm font-medium text-gray-700">
-                Ảnh QR Code thanh toán:
+            <div className="space-y-5">
+              <label className="block text-sm font-semibold text-gray-700 text-center">
+                📱 Quét mã QR để thanh toán:
               </label>
 
-              {/* Hiển thị QR code hiện tại nếu có */}
-              {borrowing.qrCodeImage && !qrCodePreview && (
-                <div className="bg-gray-50 p-4 rounded-lg">
-                  <p className="text-sm text-gray-600 mb-2">QR Code hiện tại:</p>
+              {/* QR Code cố định */}
+              <div className="flex justify-center">
+                <div className="bg-white p-6 rounded-2xl border-2 border-blue-200 shadow-xl ring-4 ring-blue-100">
                   <img
-                    src={`http://localhost:5000/${borrowing.qrCodeImage}`}
-                    alt="QR Code"
-                    className="w-full max-w-xs mx-auto border rounded-lg"
+                    src={fixedQRCode}
+                    alt="QR Code thanh toán"
+                    className="w-64 h-64 mx-auto rounded-lg"
                   />
                 </div>
-              )}
-
-              {/* Upload QR code mới */}
-              <div className="border-2 border-dashed border-gray-300 rounded-lg p-6 text-center">
-                <input
-                  type="file"
-                  accept="image/*"
-                  onChange={handleFileChange}
-                  className="hidden"
-                  id="qrCodeUpload"
-                />
-                <label
-                  htmlFor="qrCodeUpload"
-                  className="cursor-pointer flex flex-col items-center"
-                >
-                  {qrCodePreview ? (
-                    <>
-                      <img
-                        src={qrCodePreview}
-                        alt="QR Code Preview"
-                        className="w-48 h-48 object-contain mx-auto mb-2 border rounded-lg"
-                      />
-                      <p className="text-sm text-blue-600">Click để thay đổi ảnh</p>
-                    </>
-                  ) : (
-                    <>
-                      <Upload size={48} className="text-gray-400 mx-auto mb-2" />
-                      <p className="text-sm text-gray-600">
-                        Click để upload ảnh QR Code
-                      </p>
-                      <p className="text-xs text-gray-500 mt-1">
-                        (JPG, PNG, max 5MB)
-                      </p>
-                    </>
-                  )}
-                </label>
               </div>
 
-              {/* Thông tin chuyển khoản (nếu cần) */}
-              <div className="bg-yellow-50 p-4 rounded-lg border border-yellow-200">
-                <p className="text-sm font-semibold text-yellow-800 mb-2">
-                  📋 Thông tin chuyển khoản:
+              {/* Thông tin chuyển khoản */}
+              <div className="bg-gradient-to-br from-amber-50 to-yellow-50 p-5 rounded-xl border-2 border-amber-200 shadow-md">
+                <p className="text-sm font-bold text-amber-800 mb-3 text-center flex items-center justify-center gap-2">
+                  <span>📋</span>
+                  <span>Thông tin chuyển khoản</span>
                 </p>
-                <p className="text-sm text-gray-700">
-                  Số tài khoản: <span className="font-semibold">1234567890</span>
-                </p>
-                <p className="text-sm text-gray-700">
-                  Ngân hàng: <span className="font-semibold">Vietcombank</span>
-                </p>
-                <p className="text-sm text-gray-700">
-                  Chủ tài khoản: <span className="font-semibold">THƯ VIỆN SÁCH</span>
-                </p>
-                <p className="text-sm text-gray-700 mt-2">
-                  Nội dung: <span className="font-semibold">Đền bù sách - {borrowing._id.slice(-6)}</span>
-                </p>
+                <div className="space-y-2 text-sm">
+                  <div className="flex justify-between items-center bg-white/60 px-3 py-2 rounded-lg">
+                    <span className="text-gray-600">Số tài khoản:</span>
+                    <span className="font-bold text-gray-900">1234567890</span>
+                  </div>
+                  <div className="flex justify-between items-center bg-white/60 px-3 py-2 rounded-lg">
+                    <span className="text-gray-600">Ngân hàng:</span>
+                    <span className="font-bold text-gray-900">Vietcombank</span>
+                  </div>
+                  <div className="flex justify-between items-center bg-white/60 px-3 py-2 rounded-lg">
+                    <span className="text-gray-600">Chủ tài khoản:</span>
+                    <span className="font-bold text-gray-900">THƯ VIỆN SÁCH</span>
+                  </div>
+                  <div className="mt-3 pt-3 border-t-2 border-amber-300 bg-white/60 px-3 py-2 rounded-lg">
+                    <div className="flex justify-between items-center">
+                      <span className="text-gray-600">Nội dung:</span>
+                      <span className="font-bold text-blue-600">Đền bù sách - {borrowing._id.slice(-6)}</span>
+                    </div>
+                  </div>
+                </div>
               </div>
             </div>
           )}
 
           {/* Ghi chú */}
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">
-              Ghi chú (tùy chọn):
+            <label className="block text-sm font-semibold text-gray-700 mb-2">
+              📝 Ghi chú (tùy chọn):
             </label>
             <textarea
               value={paymentNote}
               onChange={(e) => setPaymentNote(e.target.value)}
               placeholder="Nhập ghi chú về thanh toán..."
-              className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-400 focus:outline-none"
+              className="w-full border-2 border-gray-200 rounded-xl px-4 py-3 focus:ring-2 focus:ring-blue-400 focus:border-blue-400 focus:outline-none transition-all bg-white/80"
               rows={3}
             />
           </div>
 
           {/* Lưu ý */}
           {paymentMethod === "cash" && (
-            <div className="bg-blue-50 p-4 rounded-lg border border-blue-200">
-              <p className="text-sm text-blue-800">
-                💡 <strong>Lưu ý:</strong> Vui lòng thanh toán trực tiếp tại thư viện. Sau khi
-                thanh toán, đơn sẽ được cập nhật ngay lập tức.
+            <div className="bg-gradient-to-r from-blue-50 to-cyan-50 p-4 rounded-xl border-2 border-blue-200 shadow-sm">
+              <p className="text-sm text-blue-800 flex items-start gap-2">
+                <span className="text-lg">💡</span>
+                <span>
+                  <strong>Lưu ý:</strong> Vui lòng thanh toán trực tiếp tại thư viện. Sau khi
+                  thanh toán, đơn sẽ được cập nhật ngay lập tức.
+                </span>
               </p>
             </div>
           )}
 
           {paymentMethod === "bank" && (
-            <div className="bg-yellow-50 p-4 rounded-lg border border-yellow-200">
-              <p className="text-sm text-yellow-800">
-                💡 <strong>Lưu ý:</strong> Sau khi chuyển khoản, vui lòng upload ảnh QR Code hoặc
-                ảnh chụp màn hình biên lai. Thanh toán sẽ được xác nhận bởi quản trị viên trong
-                vòng 24 giờ.
+            <div className="bg-gradient-to-r from-amber-50 to-yellow-50 p-4 rounded-xl border-2 border-amber-200 shadow-sm">
+              <p className="text-sm text-amber-800 flex items-start gap-2">
+                <span className="text-lg">💡</span>
+                <span>
+                  <strong>Lưu ý:</strong> Sau khi chuyển khoản thành công, vui lòng xác nhận thanh toán. 
+                  Thanh toán sẽ được xác nhận bởi quản trị viên trong vòng 24 giờ.
+                </span>
               </p>
             </div>
           )}
         </div>
 
         {/* Footer */}
-        <div className="flex justify-end gap-3 p-6 border-t">
+        <div className="flex justify-end gap-3 p-6 border-t border-gray-200 bg-gradient-to-r from-gray-50 to-white rounded-b-2xl">
           <button
             onClick={onClose}
-            className="px-4 py-2 border border-gray-300 rounded-lg text-gray-700 hover:bg-gray-50 transition"
+            className="px-6 py-3 border-2 border-gray-300 rounded-xl text-gray-700 font-semibold hover:bg-gray-100 hover:border-gray-400 transition-all transform hover:scale-105"
             disabled={loading}
           >
             Hủy
@@ -283,9 +245,9 @@ const PaymentModal = ({ visible, onClose, borrowing, onSuccess }) => {
           <button
             onClick={handleSubmit}
             disabled={loading}
-            className="px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition disabled:opacity-50 disabled:cursor-not-allowed"
+            className="px-8 py-3 bg-gradient-to-r from-blue-600 to-blue-700 text-white font-bold rounded-xl hover:from-blue-700 hover:to-blue-800 transition-all transform hover:scale-105 shadow-lg shadow-blue-500/50 disabled:opacity-50 disabled:cursor-not-allowed disabled:transform-none"
           >
-            {loading ? "Đang xử lý..." : "Xác nhận thanh toán"}
+            {loading ? "⏳ Đang xử lý..." : "✅ Xác nhận thanh toán"}
           </button>
         </div>
       </div>
