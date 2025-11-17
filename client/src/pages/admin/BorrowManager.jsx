@@ -23,6 +23,8 @@ const STATUS_ENUM = {
   DAMAGED: "damaged",
   LOST: "lost",
   COMPENSATED: "compensated",
+  RENEWED: "renewed",
+  PENDING_PICKUP: "pendingPickup",
 };
 
 const BorrowManager = () => {
@@ -283,15 +285,11 @@ const BorrowManager = () => {
             text = record.isPickedUp ? "Đang mượn" : "Chưa lấy sách";
             color = record.isPickedUp ? "cyan" : "blue";
             break;
-<<<<<<< HEAD
-          case STATUS_ENUM.RETURNED:
-=======
-          case "renewed":
+          case STATUS_ENUM.RENEWED:
             text = record.isPickedUp ? "Đã gia hạn" : "Chưa lấy sách";
             color = record.isPickedUp ? "cyan" : "blue";
             break;
-          case "returned":
->>>>>>> fd16597c2a34827b7c164d5d2d9d170a6543761d
+          case STATUS_ENUM.RETURNED:
             text = "Đã trả";
             color = "green";
             break;
@@ -307,6 +305,10 @@ const BorrowManager = () => {
           case STATUS_ENUM.COMPENSATED:
             text = "Đã thanh toán";
             color = "gold";
+            break;
+          case STATUS_ENUM.PENDING_PICKUP:
+            text = "Chưa lấy sách";
+            color = "blue";
             break;
         }
         return <Tag color={color}>{text}</Tag>;
@@ -392,22 +394,14 @@ const BorrowManager = () => {
             allowClear
             placeholder="Trạng thái"
             options={[
-<<<<<<< HEAD
               { value: STATUS_ENUM.BORROWED, label: "Đang mượn" },
+              { value: STATUS_ENUM.RENEWED, label: "Đã gia hạn" },
               { value: STATUS_ENUM.RETURNED, label: "Đã trả" },
               { value: STATUS_ENUM.OVERDUE, label: "Quá hạn" },
               { value: STATUS_ENUM.DAMAGED, label: "Hỏng" },
               { value: STATUS_ENUM.LOST, label: "Mất" },
               { value: STATUS_ENUM.COMPENSATED, label: "Đã thanh toán" },
-=======
-              { value: "borrowed", label: "Đang mượn" },
-              { value: "renewed", label: "Đã gia hạn" },
-              { value: "returned", label: "Đã trả" },
-              { value: "overdue", label: "Quá hạn" },
-              { value: "damaged", label: "Hỏng" },
-              { value: "lost", label: "Mất" },
-              { value: "compensated", label: "Đã thanh toán" },
->>>>>>> fd16597c2a34827b7c164d5d2d9d170a6543761d
+              { value: STATUS_ENUM.PENDING_PICKUP, label: "Chưa lấy sách" },
             ]}
           />
           <DatePicker

@@ -31,36 +31,25 @@ const BorrowingSchema = new mongoose.Schema(
     // 🟢 Trạng thái đơn mượn
     status: {
       type: String,
-<<<<<<< HEAD
       enum: [
         "pendingPickup",   // Chờ sinh viên đến lấy
         "borrowed",        // Đã nhận sách
+        "renewed",         // Đã gia hạn
         "returned",        // Đã trả
         "overdue",         // Quá hạn
         "damaged",         // Báo hỏng
         "lost",            // Báo mất
-        "compensated",     // Đã bồi thường
+        "compensated"      // Đã bồi thường
       ],
       default: "pendingPickup",
       required: true,
     },
 
     // 🟦 Đánh dấu sinh viên đã nhận sách
-    isPickedUp: {
-      type: Boolean,
-      default: false,
-    },
-=======
-      enum: ["borrowed", "renewed", "returned", "damaged", "lost", "overdue"],
-      default: "borrowed",
-    },
+    isPickedUp: { type: Boolean, default: false },
 
-    // 🟦 NEW: Quản lý xác nhận sinh viên đã nhận sách
-  isPickedUp: { type: Boolean, default: false },
-
-  // Số lần gia hạn
-  renewCount: { type: Number, default: 0 },
->>>>>>> fd16597c2a34827b7c164d5d2d9d170a6543761d
+    // 🔄 Số lần gia hạn
+    renewCount: { type: Number, default: 0 },
 
     // 🧾 Ghi chú xử lý hỏng/mất
     damageType: { 

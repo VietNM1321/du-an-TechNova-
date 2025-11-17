@@ -17,22 +17,17 @@ const upload = multer({ storage });
 
 // Trạng thái
 const STATUS_ENUM = {
-<<<<<<< HEAD
-  PENDING_PICKUP: "pendingPickup",
-  BORROWED: "borrowed",
-=======
-  BORROWED: "borrowed",
-  RENEWED: "renewed",
   PENDING_PICKUP: "pendingPickup", // sinh viên chưa lấy sách
   BORROWED: "borrowed",            // đã lấy sách
->>>>>>> fd16597c2a34827b7c164d5d2d9d170a6543761d
+  RENEWED: "renewed",
   RETURNED: "returned",
   DAMAGED: "damaged",
   LOST: "lost",
   OVERDUE: "overdue",
   COMPENSATED: "compensated",
 };
-// Gia hạn sách: chỉ khi đang mượn, tối đa 3 lần
+
+// ──────────────── GIA HẠN SÁCH ────────────────
 router.put('/:id/renew', verifyToken, async (req, res) => {
   try {
     const borrowing = await Borrowing.findById(req.params.id);
@@ -43,12 +38,13 @@ router.put('/:id/renew', verifyToken, async (req, res) => {
     if ((borrowing.renewCount || 0) >= 3) {
       return res.status(400).json({ message: 'Đã hết lượt gia hạn, vui lòng trả sách!' });
     }
-    // Gia hạn thêm 1 tuần
+
     const baseDue = borrowing.dueDate ? new Date(borrowing.dueDate) : new Date();
     borrowing.dueDate = new Date(baseDue.getTime() + 7 * 24 * 60 * 60 * 1000);
     borrowing.renewCount = (borrowing.renewCount || 0) + 1;
     borrowing.status = STATUS_ENUM.RENEWED;
     await borrowing.save();
+
     res.json({ message: 'Gia hạn thành công!', borrowing });
   } catch (err) {
     console.error('Lỗi gia hạn:', err);
@@ -84,7 +80,6 @@ router.post("/", verifyToken, async (req, res) => {
 
     const user = await User.findById(req.user.id).lean();
 
-    // Kiểm tra số lượng available
     const bookChecks = await Promise.all(
       items.map(async (item) => {
         const book = await Book.findById(item.bookId);
@@ -98,7 +93,6 @@ router.post("/", verifyToken, async (req, res) => {
     const errors = bookChecks.filter(c => c.error);
     if (errors.length) return res.status(400).json({ message: "Không đủ số lượng sách!", errors: errors.map(e => e.error) });
 
-    // Tạo borrowings
     const borrowings = await Promise.all(
       bookChecks.map(async ({ book, borrowQty, item }) => {
         const bookPopulated = await Book.findById(item.bookId).populate("author", "name").lean();
@@ -108,6 +102,7 @@ router.post("/", verifyToken, async (req, res) => {
           course: user.course || "",
           email: user.email || "",
         } : { fullName: "Khách vãng lai", studentId: "", course: "", email: "" };
+
         const bookSnapshot = {
           title: bookPopulated?.title || "Không rõ",
           author: typeof bookPopulated?.author === "string" ? bookPopulated.author : bookPopulated?.author?.name || "Không rõ",
@@ -131,7 +126,6 @@ router.post("/", verifyToken, async (req, res) => {
 
     const saved = await Borrowing.insertMany(borrowings);
 
-    // Update tồn kho
     await Promise.all(
       bookChecks.map(async ({ book, borrowQty }) => {
         book.available -= borrowQty;
@@ -156,35 +150,12 @@ router.get("/", verifyToken, async (req, res) => {
     const { q, status, borrowFrom, borrowTo } = req.query;
 
     const filter = {};
-<<<<<<< HEAD
 
     if (borrowFrom || borrowTo) filter.borrowDate = {};
     if (borrowFrom) filter.borrowDate.$gte = new Date(borrowFrom);
     if (borrowTo) filter.borrowDate.$lte = new Date(borrowTo);
 
     if (q?.trim()) {
-=======
-    if (user) filter.user = user;
-    if (book) filter.book = book;
-    if (status && ["borrowed", "renewed", "returned", "damaged", "lost", "compensated", "overdue"].includes(status)) {
-      if (status !== "overdue") {
-        filter.status = status;
-      }
-    if (status && ["pendingPickup","borrowed", "returned", "damaged", "lost", "compensated", "overdue"].includes(status)) {
-      if (status !== "overdue") filter.status = status;
-    }
-    if (borrowFrom || borrowTo) {
-      filter.borrowDate = {};
-      if (borrowFrom) filter.borrowDate.$gte = new Date(borrowFrom);
-      if (borrowTo) filter.borrowDate.$lte = new Date(borrowTo);
-    }
-    if (dueFrom || dueTo) {
-      filter.dueDate = {};
-      if (dueFrom) filter.dueDate.$gte = new Date(dueFrom);
-      if (dueTo) filter.dueDate.$lte = new Date(dueTo);
-    }
-    if (q && q.trim()) {
->>>>>>> fd16597c2a34827b7c164d5d2d9d170a6543761d
       const text = q.trim();
       filter.$or = [
         { "userSnapshot.fullName": { $regex: text, $options: "i" } },
@@ -392,7 +363,6 @@ router.put("/:id/return", verifyToken, requireRole("admin"), async (req,res)=>{
     borrowing.returnDate = new Date();
     await borrowing.save();
 
-    // Update tồn kho
     if(borrowing.book){
       const book = await Book.findById(borrowing.book);
       if(book){
