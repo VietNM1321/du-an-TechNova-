@@ -102,22 +102,58 @@ const Profile = () => {
                 <tr className="bg-gray-100 text-gray-700">
                   <th className="p-3 text-left">Tên sách</th>
                   <th className="p-3 text-left">Ngày mượn</th>
+                  <th className="p-3 text-left">Hạn trả</th>
+                  <th className="p-3 text-left">Lần gia hạn</th>
                   <th className="p-3 text-left">Trạng thái</th>
+                  <th className="p-3 text-left">Hành động</th>
                 </tr>
               </thead>
               <tbody>
                 {borrowedBooks.map((b) => (
                   <tr key={b._id} className="border-t hover:bg-gray-50">
                     <td className="p-3">{b.book?.title || "Không xác định"}</td>
+                    <td className="p-3">{new Date(b.borrowDate).toLocaleDateString("vi-VN")}</td>
+                    <td className="p-3">{b.dueDate ? new Date(b.dueDate).toLocaleDateString("vi-VN") : '-'}</td>
                     <td className="p-3">
-                      {new Date(b.borrowDate).toLocaleDateString("vi-VN")}
+                      {b.renewCount || 0}
+                      {b.renewCount >= 3 && (
+                        <span className="ml-2 text-xs text-red-500">(Đã hết lượt gia hạn)</span>
+                      )}
                     </td>
                     <td className="p-3">
                       {b.status === "borrowed"
                         ? "Đang mượn"
+                        : b.status === "renewed"
+                        ? "Đã gia hạn"
                         : b.status === "overdue"
                         ? "Trễ hạn"
                         : "Đã trả"}
+                    </td>
+                    <td className="p-3">
+                      {b.status === "borrowed" && (b.renewCount || 0) < 3 ? (
+                        <button
+                          onClick={async () => {
+                            try {
+                              const res = await axios.put(`http://localhost:5000/api/borrowings/${b._id}/renew`, {}, {
+                                headers: { Authorization: `Bearer ${token}` },
+                              });
+                              setBorrowedBooks((prev) => prev.map((item) => item._id === b._id ? { ...item, ...res.data.borrowing } : item));
+                              alert(res.data.message || "Gia hạn thành công!");
+                            } catch (err) {
+                              alert(err?.response?.data?.message || "Không thể gia hạn!");
+                            }
+                          }}
+                          className="bg-green-500 text-white px-3 py-1 rounded-md hover:bg-green-600 transition"
+                        >
+                          Gia hạn
+                        </button>
+                      ) : (
+                        b.status === "borrowed" && (b.renewCount || 0) >= 3 ? (
+                          <span className="text-sm text-gray-500">Đã hết lượt gia hạn</span>
+                        ) : (
+                          <span className="text-sm text-gray-400">-</span>
+                        )
+                      )}
                     </td>
                   </tr>
                 ))}

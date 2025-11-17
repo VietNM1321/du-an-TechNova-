@@ -17,14 +17,44 @@ const upload = multer({ storage });
 
 // Trạng thái
 const STATUS_ENUM = {
+<<<<<<< HEAD
   PENDING_PICKUP: "pendingPickup",
   BORROWED: "borrowed",
+=======
+  BORROWED: "borrowed",
+  RENEWED: "renewed",
+  PENDING_PICKUP: "pendingPickup", // sinh viên chưa lấy sách
+  BORROWED: "borrowed",            // đã lấy sách
+>>>>>>> fd16597c2a34827b7c164d5d2d9d170a6543761d
   RETURNED: "returned",
   DAMAGED: "damaged",
   LOST: "lost",
   OVERDUE: "overdue",
   COMPENSATED: "compensated",
 };
+// Gia hạn sách: chỉ khi đang mượn, tối đa 3 lần
+router.put('/:id/renew', verifyToken, async (req, res) => {
+  try {
+    const borrowing = await Borrowing.findById(req.params.id);
+    if (!borrowing) return res.status(404).json({ message: 'Không tìm thấy đơn mượn!' });
+    if (borrowing.status !== STATUS_ENUM.BORROWED) {
+      return res.status(400).json({ message: 'Chỉ có thể gia hạn khi đang mượn!' });
+    }
+    if ((borrowing.renewCount || 0) >= 3) {
+      return res.status(400).json({ message: 'Đã hết lượt gia hạn, vui lòng trả sách!' });
+    }
+    // Gia hạn thêm 1 tuần
+    const baseDue = borrowing.dueDate ? new Date(borrowing.dueDate) : new Date();
+    borrowing.dueDate = new Date(baseDue.getTime() + 7 * 24 * 60 * 60 * 1000);
+    borrowing.renewCount = (borrowing.renewCount || 0) + 1;
+    borrowing.status = STATUS_ENUM.RENEWED;
+    await borrowing.save();
+    res.json({ message: 'Gia hạn thành công!', borrowing });
+  } catch (err) {
+    console.error('Lỗi gia hạn:', err);
+    res.status(500).json({ message: 'Lỗi server khi gia hạn!' });
+  }
+});
 
 // ──────────────── KIỂM TRA QUYỀN REVIEW SÁCH ────────────────
 router.get("/can-review/:bookId", verifyToken, async (req, res) => {
@@ -126,12 +156,35 @@ router.get("/", verifyToken, async (req, res) => {
     const { q, status, borrowFrom, borrowTo } = req.query;
 
     const filter = {};
+<<<<<<< HEAD
 
     if (borrowFrom || borrowTo) filter.borrowDate = {};
     if (borrowFrom) filter.borrowDate.$gte = new Date(borrowFrom);
     if (borrowTo) filter.borrowDate.$lte = new Date(borrowTo);
 
     if (q?.trim()) {
+=======
+    if (user) filter.user = user;
+    if (book) filter.book = book;
+    if (status && ["borrowed", "renewed", "returned", "damaged", "lost", "compensated", "overdue"].includes(status)) {
+      if (status !== "overdue") {
+        filter.status = status;
+      }
+    if (status && ["pendingPickup","borrowed", "returned", "damaged", "lost", "compensated", "overdue"].includes(status)) {
+      if (status !== "overdue") filter.status = status;
+    }
+    if (borrowFrom || borrowTo) {
+      filter.borrowDate = {};
+      if (borrowFrom) filter.borrowDate.$gte = new Date(borrowFrom);
+      if (borrowTo) filter.borrowDate.$lte = new Date(borrowTo);
+    }
+    if (dueFrom || dueTo) {
+      filter.dueDate = {};
+      if (dueFrom) filter.dueDate.$gte = new Date(dueFrom);
+      if (dueTo) filter.dueDate.$lte = new Date(dueTo);
+    }
+    if (q && q.trim()) {
+>>>>>>> fd16597c2a34827b7c164d5d2d9d170a6543761d
       const text = q.trim();
       filter.$or = [
         { "userSnapshot.fullName": { $regex: text, $options: "i" } },

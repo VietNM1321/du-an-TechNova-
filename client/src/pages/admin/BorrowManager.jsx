@@ -248,6 +248,19 @@ const BorrowManager = () => {
       ),
     },
     {
+      title: "Lần gia hạn",
+      dataIndex: "renewCount",
+      key: "renewCount",
+      render: (renewCount, record) => (
+        <span>
+          {renewCount || 0}
+          {renewCount >= 3 && (
+            <span className="ml-2 text-xs text-red-500">(Đã hết lượt gia hạn)</span>
+          )}
+        </span>
+      ),
+    },
+    {
       title: "Ngày mượn",
       dataIndex: "borrowDate",
       key: "borrowDate",
@@ -270,7 +283,15 @@ const BorrowManager = () => {
             text = record.isPickedUp ? "Đang mượn" : "Chưa lấy sách";
             color = record.isPickedUp ? "cyan" : "blue";
             break;
+<<<<<<< HEAD
           case STATUS_ENUM.RETURNED:
+=======
+          case "renewed":
+            text = record.isPickedUp ? "Đã gia hạn" : "Chưa lấy sách";
+            color = record.isPickedUp ? "cyan" : "blue";
+            break;
+          case "returned":
+>>>>>>> fd16597c2a34827b7c164d5d2d9d170a6543761d
             text = "Đã trả";
             color = "green";
             break;
@@ -371,12 +392,22 @@ const BorrowManager = () => {
             allowClear
             placeholder="Trạng thái"
             options={[
+<<<<<<< HEAD
               { value: STATUS_ENUM.BORROWED, label: "Đang mượn" },
               { value: STATUS_ENUM.RETURNED, label: "Đã trả" },
               { value: STATUS_ENUM.OVERDUE, label: "Quá hạn" },
               { value: STATUS_ENUM.DAMAGED, label: "Hỏng" },
               { value: STATUS_ENUM.LOST, label: "Mất" },
               { value: STATUS_ENUM.COMPENSATED, label: "Đã thanh toán" },
+=======
+              { value: "borrowed", label: "Đang mượn" },
+              { value: "renewed", label: "Đã gia hạn" },
+              { value: "returned", label: "Đã trả" },
+              { value: "overdue", label: "Quá hạn" },
+              { value: "damaged", label: "Hỏng" },
+              { value: "lost", label: "Mất" },
+              { value: "compensated", label: "Đã thanh toán" },
+>>>>>>> fd16597c2a34827b7c164d5d2d9d170a6543761d
             ]}
           />
           <DatePicker
