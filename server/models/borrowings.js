@@ -2,38 +2,83 @@ import mongoose from "mongoose";
 
 const BorrowingSchema = new mongoose.Schema(
   {
-    user: { type: mongoose.Schema.Types.ObjectId, ref: "User", required: true },
-    book: { type: mongoose.Schema.Types.ObjectId, ref: "Book", required: true },
-    quantity: { type: Number, required: true, default: 1 },
+    // 🧍 Người mượn
+    user: { 
+      type: mongoose.Schema.Types.ObjectId, 
+      ref: "User", 
+      required: true 
+    },
 
-    borrowDate: { type: Date, default: Date.now },
-    dueDate: { type: Date },
-    returnDate: { type: Date },
+    // 📚 Sách mượn
+    book: { 
+      type: mongoose.Schema.Types.ObjectId, 
+      ref: "Book", 
+      required: true 
+    },
+
+    // 🔢 Số lượng
+    quantity: { 
+      type: Number, 
+      required: true, 
+      default: 1 
+    },
+
+    // 📅 Các mốc thời gian
+    borrowDate: { type: Date, default: Date.now },     // Ngày mượn
+    dueDate: { type: Date },                           // Ngày hẹn trả
+    returnDate: { type: Date },                        // Ngày trả
 
     // 🟢 Trạng thái đơn mượn
     status: {
       type: String,
-      enum: ["borrowed", "returned", "damaged", "lost", "overdue"],
-      default: "borrowed",
+      enum: [
+        "pendingPickup",   // Chờ sinh viên đến lấy
+        "borrowed",        // Đã nhận sách
+        "returned",        // Đã trả
+        "overdue",         // Quá hạn
+        "damaged",         // Báo hỏng
+        "lost",            // Báo mất
+        "compensated",     // Đã bồi thường
+      ],
+      default: "pendingPickup",
+      required: true,
     },
 
-    // 🟦 NEW: Quản lý xác nhận sinh viên đã nhận sách
-    isPickedUp: { type: Boolean, default: false },
+    // 🟦 Đánh dấu sinh viên đã nhận sách
+    isPickedUp: {
+      type: Boolean,
+      default: false,
+    },
 
-    // 📸 Khi báo hỏng hoặc mất
-    damageType: { type: String, enum: ["broken", "lost", null], default: null },
+    // 🧾 Ghi chú xử lý hỏng/mất
+    damageType: { 
+      type: String, 
+      enum: ["broken", "lost", null], 
+      default: null 
+    },
     damageReason: { type: String },
-    damageImage: { type: String },
-    compensationAmount: { type: Number, default: 50000 },
+    damageImage: { type: String },   // đường dẫn ảnh báo hỏng/mất
+    compensationAmount: { 
+      type: Number, 
+      default: 50000 
+    },
 
     // 💰 Thông tin thanh toán
-    paymentMethod: { type: String, enum: ["cash", "bank", null], default: null },
-    paymentStatus: { type: String, enum: ["pending", "paid", "completed"], default: "pending" },
+    paymentMethod: { 
+      type: String, 
+      enum: ["cash", "bank", null], 
+      default: null 
+    },
+    paymentStatus: { 
+      type: String, 
+      enum: ["pending", "paid", "completed"], 
+      default: "pending" 
+    },
     paymentDate: { type: Date },
     qrCodeImage: { type: String },
     paymentNote: { type: String },
 
-    // 🧍 Snapshot sinh viên
+    // 🧍 Lưu lại thông tin sinh viên tại thời điểm mượn
     userSnapshot: {
       fullName: String,
       studentId: String,
@@ -41,7 +86,7 @@ const BorrowingSchema = new mongoose.Schema(
       email: String,
     },
 
-    // 📚 Snapshot sách
+    // 📚 Lưu lại thông tin sách tại thời điểm mượn
     bookSnapshot: {
       title: String,
       author: String,

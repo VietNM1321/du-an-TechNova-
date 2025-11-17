@@ -16,6 +16,15 @@ import { ExclamationCircleOutlined } from "@ant-design/icons";
 
 const { confirm } = Modal;
 
+const STATUS_ENUM = {
+  BORROWED: "borrowed",
+  RETURNED: "returned",
+  OVERDUE: "overdue",
+  DAMAGED: "damaged",
+  LOST: "lost",
+  COMPENSATED: "compensated",
+};
+
 const BorrowManager = () => {
   const [borrowings, setBorrowings] = useState([]);
   const [loading, setLoading] = useState(false);
@@ -52,8 +61,16 @@ const BorrowManager = () => {
         `http://localhost:5000/api/borrowings?${parts.join("&")}`,
         { headers: { Authorization: `Bearer ${token}` } }
       );
+
       const payload = res.data || {};
-      setBorrowings(payload.borrowings || []);
+      const mappedBorrowings = (payload.borrowings || []).map((b) => ({
+        ...b,
+        status: b.status || STATUS_ENUM.BORROWED,
+        isPickedUp: b.isPickedUp ?? false,
+        hasReturned: b.status === STATUS_ENUM.RETURNED,
+      }));
+
+      setBorrowings(mappedBorrowings);
       setTotalItems(payload.totalItems || 0);
       setPage(payload.currentPage || pageNum);
     } catch (error) {
@@ -79,7 +96,6 @@ const BorrowManager = () => {
     setTypingTimer(timer);
   };
 
-  // Xác nhận đã lấy sách
   const handleConfirmPickup = (record) => {
     confirm({
       title: "Xác nhận đã lấy sách?",
@@ -94,7 +110,9 @@ const BorrowManager = () => {
           message.success(res.data.message || "✅ Đã xác nhận lấy sách!");
           setBorrowings((prev) =>
             prev.map((b) =>
-              b._id === record._id ? { ...b, isPickedUp: true } : b
+              b._id === record._id
+                ? { ...b, isPickedUp: true, status: STATUS_ENUM.BORROWED }
+                : b
             )
           );
         } catch (error) {
@@ -107,23 +125,22 @@ const BorrowManager = () => {
     });
   };
 
-  // Xác nhận trả sách
   const handleReturn = (record) => {
     confirm({
       title: "Xác nhận đã trả sách?",
       icon: <ExclamationCircleOutlined />,
       onOk: async () => {
         try {
-          await axios.put(
+          const res = await axios.put(
             `http://localhost:5000/api/borrowings/${record._id}/return`,
             {},
             { headers: { Authorization: `Bearer ${token}` } }
           );
-          message.success("Đã ghi nhận trả sách!");
+          message.success("✅ Đã ghi nhận trả sách!");
           setBorrowings((prev) =>
             prev.map((b) =>
               b._id === record._id
-                ? { ...b, hasReturned: true }
+                ? { ...b, hasReturned: true, status: STATUS_ENUM.RETURNED }
                 : b
             )
           );
@@ -135,7 +152,6 @@ const BorrowManager = () => {
     });
   };
 
-  // Xác nhận thanh toán
   const handleConfirmPayment = (record) => {
     if (!record.hasReturned) {
       message.warning("Phải trả sách trước khi thanh toán!");
@@ -149,7 +165,7 @@ const BorrowManager = () => {
       icon: <ExclamationCircleOutlined />,
       onOk: async () => {
         try {
-          await axios.put(
+          const res = await axios.put(
             `http://localhost:5000/api/borrowings/${record._id}/confirm-payment`,
             {},
             { headers: { Authorization: `Bearer ${token}` } }
@@ -158,7 +174,7 @@ const BorrowManager = () => {
           setBorrowings((prev) =>
             prev.map((b) =>
               b._id === record._id
-                ? { ...b, status: "returned", paymentStatus: "done" }
+                ? { ...b, status: STATUS_ENUM.COMPENSATED, paymentStatus: "done" }
                 : b
             )
           );
@@ -202,7 +218,8 @@ const BorrowManager = () => {
         const title = book.title || "Không rõ";
         const author = (book.author && book.author.name) || book.author || "N/A";
         let thumb = book.image || (book.images && book.images[0]) || null;
-        if (thumb && !thumb.startsWith("http")) thumb = `http://localhost:5000/${thumb}`;
+        if (thumb && !thumb.startsWith("http"))
+          thumb = `http://localhost:5000/${thumb}`;
         const placeholder = "https://via.placeholder.com/40x60?text=?";
         return (
           <div className="flex items-center gap-2">
@@ -246,32 +263,30 @@ const BorrowManager = () => {
       title: "Trạng thái",
       key: "status",
       render: (record) => {
-        let text = "";
-        let color = "default";
+        let text = "Chưa lấy sách";
+        let color = "blue";
         switch (record.status) {
-          case "borrowed":
+          case STATUS_ENUM.BORROWED:
             text = record.isPickedUp ? "Đang mượn" : "Chưa lấy sách";
             color = record.isPickedUp ? "cyan" : "blue";
             break;
-          case "returned":
+          case STATUS_ENUM.RETURNED:
             text = "Đã trả";
             color = "green";
             break;
-          case "overdue":
+          case STATUS_ENUM.OVERDUE:
             text = record.hasReturned ? "Quá hạn (Đã trả vật lý)" : "Quá hạn";
             color = "orange";
             break;
-          case "damaged":
-          case "lost":
+          case STATUS_ENUM.DAMAGED:
+          case STATUS_ENUM.LOST:
             text = "Hỏng / Mất";
             color = "red";
             break;
-          case "compensated":
+          case STATUS_ENUM.COMPENSATED:
             text = "Đã thanh toán";
             color = "gold";
             break;
-          default:
-            text = "—";
         }
         return <Tag color={color}>{text}</Tag>;
       },
@@ -282,7 +297,9 @@ const BorrowManager = () => {
       render: (record) => {
         const compensation = record.compensationAmount || 0;
         return compensation > 0 ? (
-          <div className="text-right font-semibold text-red-600">{compensation.toLocaleString("vi-VN")} VNĐ</div>
+          <div className="text-right font-semibold text-red-600">
+            {compensation.toLocaleString("vi-VN")} VNĐ
+          </div>
         ) : "—";
       },
     },
@@ -291,7 +308,7 @@ const BorrowManager = () => {
       key: "action",
       render: (record) => (
         <Space size="small">
-          {record.status === "borrowed" && !record.isPickedUp && (
+          {!record.isPickedUp && record.status !== STATUS_ENUM.RETURNED && (
             <Button
               size="small"
               type="primary"
@@ -300,14 +317,12 @@ const BorrowManager = () => {
               ✅ Xác nhận lấy sách
             </Button>
           )}
-
-          {record.status === "borrowed" && record.isPickedUp && (
+          {record.isPickedUp && record.status === STATUS_ENUM.BORROWED && (
             <Button size="small" type="primary" onClick={() => handleReturn(record)}>
               ✅ Trả sách
             </Button>
           )}
-
-          {record.status === "overdue" && (
+          {record.status === STATUS_ENUM.OVERDUE && (
             <>
               <Button size="small" type="primary" onClick={() => handleReturn(record)}>
                 ✅ Trả sách
@@ -332,13 +347,17 @@ const BorrowManager = () => {
     <div className="min-h-screen bg-gradient-to-br from-blue-50 via-slate-50 to-purple-50 py-8 px-4 md:px-8">
       <div className="max-w-7xl mx-auto space-y-6">
         <div className="bg-white rounded-3xl shadow-lg border border-slate-100 px-6 py-5 flex flex-wrap items-center justify-between gap-4">
-          <h2 className="text-2xl md:text-3xl font-bold text-slate-900">Quản lý đơn mượn sách</h2>
-          <Button onClick={() => fetchBorrowings(page)} className="!rounded-2xl !bg-blue-600 !text-white hover:!bg-blue-700">
+          <h2 className="text-2xl md:text-3xl font-bold text-slate-900">
+            Quản lý đơn mượn sách
+          </h2>
+          <Button
+            onClick={() => fetchBorrowings(1)}
+            className="!rounded-2xl !bg-blue-600 !text-white hover:!bg-blue-700"
+          >
             Làm mới
           </Button>
         </div>
 
-        {/* Filters */}
         <div className="bg-white rounded-3xl shadow-lg border border-slate-100 p-6 grid grid-cols-1 lg:grid-cols-4 gap-5">
           <Input
             value={query}
@@ -352,12 +371,12 @@ const BorrowManager = () => {
             allowClear
             placeholder="Trạng thái"
             options={[
-              { value: "borrowed", label: "Đang mượn" },
-              { value: "returned", label: "Đã trả" },
-              { value: "overdue", label: "Quá hạn" },
-              { value: "damaged", label: "Hỏng" },
-              { value: "lost", label: "Mất" },
-              { value: "compensated", label: "Đã thanh toán" },
+              { value: STATUS_ENUM.BORROWED, label: "Đang mượn" },
+              { value: STATUS_ENUM.RETURNED, label: "Đã trả" },
+              { value: STATUS_ENUM.OVERDUE, label: "Quá hạn" },
+              { value: STATUS_ENUM.DAMAGED, label: "Hỏng" },
+              { value: STATUS_ENUM.LOST, label: "Mất" },
+              { value: STATUS_ENUM.COMPENSATED, label: "Đã thanh toán" },
             ]}
           />
           <DatePicker
@@ -372,7 +391,6 @@ const BorrowManager = () => {
           />
         </div>
 
-        {/* Table */}
         <div className="bg-white rounded-3xl shadow-lg border border-slate-100 p-4 overflow-x-auto">
           <Table
             columns={columns}
