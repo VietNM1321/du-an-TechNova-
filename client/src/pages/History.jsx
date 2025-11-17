@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from "react";
 import axios from "axios";
-import { Table, Tag, Button, Space, Modal, message, Image, Input, Upload, Tooltip } from "antd";
-import { UploadOutlined, DollarOutlined } from "@ant-design/icons";
+import { Table, Tag, Button, Space, Modal, message, Image, Tooltip } from "antd";
+import { DollarOutlined, ExclamationCircleOutlined } from "@ant-design/icons";
 import { useNavigate } from "react-router-dom";
 import dayjs from "dayjs";
 
@@ -27,13 +27,15 @@ const STATUS_COLOR = {
   overdue: "orange",
 };
 
+const OVERDUE_FEE_PER_DAY = 5000;
+
 const History = ({ userId, refreshFlag }) => {
   const [history, setHistory] = useState([]);
   const [loading, setLoading] = useState(false);
-  const navigate = useNavigate();
   const token = localStorage.getItem("clientToken");
   const storedUser = JSON.parse(localStorage.getItem("clientUser") || "null");
   const effectiveUserId = userId || storedUser?._id || storedUser?.id;
+  const navigate = useNavigate();
 
   const fetchHistory = async () => {
     try {
@@ -59,13 +61,16 @@ const History = ({ userId, refreshFlag }) => {
         return b;
       });
       setHistory(mapped);
+
+      const res = await axios.get(
+        `http://localhost:5000/api/borrowings/history/${effectiveUserId}`,
+        { headers: { Authorization: `Bearer ${token}` } }
+      );
+
+      setHistory(res.data || []);
     } catch (error) {
-      console.error("❌ Lỗi fetch history:", error.response?.data || error.message);
-      if (error.message === "UNAUTHENTICATED" || error.response?.status === 401) {
-        message.warning("Vui lòng đăng nhập để xem lịch sử mượn.");
-      } else {
-        message.error("Không thể tải lịch sử mượn!");
-      }
+      console.error("❌ Lỗi fetch history:", error);
+      message.error("Không thể tải lịch sử mượn!");
     } finally {
       setLoading(false);
     }
@@ -78,6 +83,7 @@ const History = ({ userId, refreshFlag }) => {
   const handleReportLost = (id) => {
     Modal.confirm({
       title: "Xác nhận báo mất",
+      icon: <ExclamationCircleOutlined />,
       content: "Bạn có chắc chắn muốn báo sách này mất không?",
       okText: "Xác nhận",
       cancelText: "Hủy",
@@ -85,13 +91,13 @@ const History = ({ userId, refreshFlag }) => {
         try {
           await axios.put(
             `http://localhost:5000/api/borrowings/${id}/report-lost`,
-            null,
+            {},
             { headers: { Authorization: `Bearer ${token}` } }
           );
           message.success("✅ Đã báo mất!");
           fetchHistory();
         } catch (error) {
-          console.error("❌ Lỗi báo mất:", error.response?.data || error.message);
+          console.error(error);
           message.error("Không thể báo mất!");
         }
       },
@@ -106,14 +112,12 @@ const History = ({ userId, refreshFlag }) => {
       title: "Báo hỏng sách",
       content: (
         <div>
-          <Input
+          <input
             placeholder="Nhập lý do hỏng"
             onChange={(e) => (reason = e.target.value)}
-            style={{ marginBottom: 10 }}
+            style={{ width: "100%", marginBottom: 10, padding: 4 }}
           />
-          <Upload beforeUpload={(f) => { file = f; return false; }} maxCount={1}>
-            <Button icon={<UploadOutlined />}>Chọn ảnh hỏng</Button>
-          </Upload>
+          <input type="file" onChange={(e) => (file = e.target.files[0])} />
         </div>
       ),
       okText: "Báo hỏng",
@@ -127,6 +131,7 @@ const History = ({ userId, refreshFlag }) => {
           const formData = new FormData();
           formData.append("reason", reason);
           if (file) formData.append("image", file);
+
           await axios.put(
             `http://localhost:5000/api/borrowings/${record._id}/report-broken`,
             formData,
@@ -135,11 +140,22 @@ const History = ({ userId, refreshFlag }) => {
           message.success("✅ Đã báo hỏng!");
           fetchHistory();
         } catch (error) {
-          console.error("❌ Lỗi báo hỏng:", error.response?.data || error.message);
+          console.error(error);
           message.error("Không thể báo hỏng!");
         }
       },
     });
+  };
+
+  const calculateOverdueFee = (record) => {
+    if (!record.dueDate) return 0;
+    const due = new Date(record.dueDate);
+    const now = new Date();
+    if (record.status === "borrowed" && now > due) {
+      const diffDays = Math.ceil((now - due) / (1000 * 60 * 60 * 24));
+      return diffDays * OVERDUE_FEE_PER_DAY;
+    }
+    return 0;
   };
 
   const columns = [
@@ -148,14 +164,13 @@ const History = ({ userId, refreshFlag }) => {
       key: "book",
       render: (_, record) => {
         const book = record.book || record.bookSnapshot || {};
-        const authorName = book.author?.name || record.book?.author?.name || "";
-        let thumb = book.images?.[0] || null;
+        let thumb = book.images?.[0];
         if (thumb && !thumb.startsWith("http")) thumb = `http://localhost:5000/${thumb}`;
         const placeholder = "https://via.placeholder.com/40x60?text=?";
         return (
           <Space>
-            <Image src={thumb || placeholder} width={40} height={60} />
-            <span>{book?.title || "—"}{authorName ? ` — ${authorName}` : ""}</span>
+            <Image width={40} height={60} src={thumb || placeholder} />
+            <span>{book.title || "—"}{book.author ? ` — ${book.author.name || book.author}` : ""}</span>
           </Space>
         );
       },
@@ -195,37 +210,35 @@ const History = ({ userId, refreshFlag }) => {
       key: "dueDate",
       render: (date) => (date ? dayjs(date).format("DD/MM/YYYY") : "—"),
     },
+    { title: "Số lượng", dataIndex: "quantity", key: "quantity", render: q => <b>{q || 1} quyển</b> },
+    { title: "Ngày mượn", dataIndex: "borrowDate", key: "borrowDate", render: d => d ? dayjs(d).format("DD/MM/YYYY") : "—" },
+    { title: "Ngày trả", dataIndex: "dueDate", key: "dueDate", render: d => d ? dayjs(d).format("DD/MM/YYYY") : "—" },
     {
       title: "Trạng thái",
       key: "status",
       render: (_, record) => {
-        let penalty = 0;
-        let overdueDays = 0;
-        if (record.dueDate && !record.returnDate) {
-          const due = new Date(record.dueDate);
-          const today = new Date();
-          overdueDays = Math.max(0, Math.floor((today - due) / (1000 * 60 * 60 * 24)));
-          penalty = overdueDays * 500;
+        let displayStatus = !record.isPickedUp
+          ? "pendingPickup"
+          : record.status === "borrowed" && new Date(record.dueDate) < new Date()
+            ? "overdue"
+            : record.status;
+
+        let total = 0;
+        if (["damaged", "lost"].includes(record.status)) {
+          total = record.compensationAmount || 0;
+        } else if (displayStatus === "overdue") {
+          total = calculateOverdueFee(record);
         }
-        const compensation = record.compensationAmount || 0;
-        const total = penalty + compensation;
 
         return (
           <div>
-            <Tag color={STATUS_COLOR[record.status] || "default"}>
-              {STATUS_LABEL[record.status] || record.status}
+            <Tag color={STATUS_COLOR[displayStatus] || "default"}>
+              {STATUS_LABEL[displayStatus] || displayStatus}
             </Tag>
             {total > 0 && (
-              <Tooltip title={`Phạt ${penalty.toLocaleString("vi-VN")} VNĐ (${overdueDays} ngày quá hạn)`}>
-                <div className="text-right font-semibold text-red-600 mt-1">
-                  {total.toLocaleString("vi-VN")} VNĐ
-                </div>
+              <Tooltip title={`Tổng: ${total.toLocaleString("vi-VN")} VNĐ`}>
+                <div style={{ color: "red", fontWeight: 600 }}>{total.toLocaleString("vi-VN")} VNĐ</div>
               </Tooltip>
-            )}
-            {record.paymentStatus && (record.status === "damaged" || record.status === "lost") && (
-              <Tag color={record.paymentStatus === "completed" ? "green" : "orange"} className="mt-1">
-                {record.paymentStatus === "completed" ? "Đã thanh toán" : "Chờ thanh toán"}
-              </Tag>
             )}
           </div>
         );
@@ -236,39 +249,21 @@ const History = ({ userId, refreshFlag }) => {
       key: "action",
       render: (_, record) => (
         <Space direction="vertical" size="small">
-          <Button
-            type="link"
-            size="small"
-            onClick={() =>
-              Modal.info({
-                title: "Chi tiết sách mượn",
-                content: (
-                  <div>
-                    <p>Tên sách: {record.book?.title || record.bookSnapshot?.title || "—"}</p>
-                    <p>Tác giả: {record.book?.author?.name || record.bookSnapshot?.author?.name || "—"}</p>
-                    <p><strong>Số lượng mượn:</strong> {record.quantity || 1} quyển</p>
-                    <p>Ngày mượn: {dayjs(record.borrowDate).format("DD/MM/YYYY")}</p>
-                    <p>Ngày trả: {dayjs(record.dueDate).format("DD/MM/YYYY")}</p>
-                    {record.returnDate && (
-                      <p>Ngày trả thực tế: {dayjs(record.returnDate).format("DD/MM/YYYY")}</p>
-                    )}
-                    <p>Trạng thái: {STATUS_LABEL[record.status]}</p>
-                    {record.compensationAmount > 0 && (
-                      <>
-                        <p>Tiền đền: {record.compensationAmount.toLocaleString("vi-VN")} VNĐ</p>
-                        <p>Phương thức: {record.paymentMethod === "cash" ? "Tiền mặt" : "Ngân hàng"}</p>
-                        <p>Trạng thái thanh toán: {record.paymentStatus === "completed" ? "Đã hoàn tất" : "Chờ thanh toán"}</p>
-                      </>
-                    )}
-                  </div>
-                ),
-                okText: "Đóng",
-                width: 500,
-              })
-            }
-          >
-            Xem chi tiết
-          </Button>
+          <Button type="link" onClick={() => Modal.info({
+            title: "Chi tiết sách mượn",
+            content: (
+              <div>
+                <p>{record.book?.title || record.bookSnapshot?.title}</p>
+                <p>Trạng thái: {STATUS_LABEL[!record.isPickedUp ? "pendingPickup" : record.status]}</p>
+                {["damaged", "lost"].includes(record.status) && record.compensationAmount > 0 &&
+                  <p>Tiền đền: {record.compensationAmount.toLocaleString("vi-VN")} VNĐ</p>}
+                {record.status === "borrowed" && new Date(record.dueDate) < new Date() &&
+                  <p>Tiền quá hạn: {calculateOverdueFee(record).toLocaleString("vi-VN")} VNĐ</p>}
+              </div>
+            ),
+            width: 400,
+            okText: "Đóng",
+          })}>Xem chi tiết</Button>
 
           {(record.status === "borrowed" || record.status === "renewed" || record.status === "pendingPickup" || record.status === "overdue") && (
             <>
@@ -279,18 +274,16 @@ const History = ({ userId, refreshFlag }) => {
               ) : record.status === "borrowed" && (record.renewCount || 0) >= 3 ? (
                 <span className="text-sm text-gray-500">Đã hết lượt gia hạn</span>
               ) : null}
+          {(record.isPickedUp && ["borrowed", "overdue"].includes(record.status)) && (
+            <>
+              <Button type="link" danger onClick={() => handleReportLost(record._id)}>Báo mất</Button>
+              <Button type="link" danger onClick={() => handleReportBroken(record)}>Báo hỏng</Button>
             </>
           )}
 
-          {(record.status === "damaged" || record.status === "lost") && record.compensationAmount > 0 && record.paymentStatus !== "completed" && (
-            <Button
-              type="primary"
-              size="small"
-              icon={<DollarOutlined />}
-              onClick={() => navigate(`/payment/${record._id}`)}
-              className="bg-blue-600 hover:bg-blue-700"
-            >
-              💳 Thanh toán
+          {["damaged", "lost"].includes(record.status) && record.compensationAmount > 0 && record.paymentStatus !== "completed" && (
+            <Button type="primary" icon={<DollarOutlined />} onClick={() => navigate(`/payment/${record._id}`)}>
+              Thanh toán
             </Button>
           )}
         </Space>
@@ -302,7 +295,7 @@ const History = ({ userId, refreshFlag }) => {
     <div style={{ padding: 24 }}>
       <h2>📖 Lịch sử mượn sách</h2>
       <Table
-        rowKey={(record) => record._id}
+        rowKey={r => r._id}
         columns={columns}
         dataSource={history}
         loading={loading}
