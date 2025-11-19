@@ -73,7 +73,8 @@ const BorrowForm = ({ book, onClose }) => {
       onClose();
     } catch (error) {
       console.error("Lỗi khi mượn sách:", error);
-      alert("❌ Mượn sách thất bại.");
+      const errorMessage = error.message || "❌ Mượn sách thất bại.";
+      alert(errorMessage);
     }
   };
   return (

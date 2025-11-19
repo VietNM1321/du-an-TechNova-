@@ -46,8 +46,11 @@ export function CartProvider({ children }) {
       };
       const res = await axios.post(`${API}/add`, payload);
       setCart(res.data);
+      return { success: true };
     } catch (err) {
       console.error("❌ Lỗi addToCart:", err);
+      const errorMessage = err.response?.data?.message || "Không thể thêm sách vào giỏ hàng!";
+      throw new Error(errorMessage);
     }
   };
 

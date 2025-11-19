@@ -44,8 +44,12 @@ export function CartProvider({ children }) {
       );
       setCart(res.data);
       localStorage.setItem("cart", JSON.stringify(res.data));
+      return { success: true };
     } catch (err) {
       console.error("❌ Lỗi addToCart:", err);
+      const errorMessage = err.response?.data?.message || "Không thể thêm sách vào giỏ hàng!";
+      alert(errorMessage);
+      throw new Error(errorMessage);
     }
   };
   const updateItem = async ({ bookId, quantity }) => {

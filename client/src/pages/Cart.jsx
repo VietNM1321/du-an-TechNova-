@@ -165,9 +165,17 @@ const Cart = () => {
             "❌ Borrow error:",
             error.response?.data || error.message
           );
-          message.error(
-            error.response?.data?.message || "Không thể tạo đơn mượn!"
-          );
+          const errorData = error.response?.data;
+          if (errorData?.errors && Array.isArray(errorData.errors)) {
+            // Hiển thị tất cả các lỗi nếu có nhiều
+            errorData.errors.forEach((err, index) => {
+              message.error(`${index + 1}. ${err}`, 5);
+            });
+          } else {
+            message.error(
+              errorData?.message || "Không thể tạo đơn mượn!"
+            );
+          }
         } finally {
           setLoading(false);
         }

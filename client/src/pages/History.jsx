@@ -37,6 +37,16 @@ const History = ({ userId, refreshFlag }) => {
   const effectiveUserId = userId || storedUser?._id || storedUser?.id;
   const navigate = useNavigate();
 
+  const renewBorrowing = async (id) => {
+    try {
+      const res = await axios.put(`http://localhost:5000/api/borrowings/${id}/renew`, {}, { headers: { Authorization: `Bearer ${token}` } });
+      message.success(res.data.message || "Gia hạn thành công");
+      fetchHistory();
+    } catch (error) {
+      message.error(error?.response?.data?.message || "Không thể gia hạn!");
+    }
+  };
+
   const fetchHistory = async () => {
     try {
       setLoading(true);
@@ -47,27 +57,11 @@ const History = ({ userId, refreshFlag }) => {
       const data = res.data || [];
       // Nếu admin đã xác nhận lấy sách, chuyển trạng thái pendingPickup -> borrowed
       const mapped = data.map((b) => {
-  if ((b.status === "borrowed" || b.status === "renewed") && b.isPickedUp) b.status = b.status;
-  if ((b.status === "borrowed" || b.status === "renewed") && !b.isPickedUp) b.status = "pendingPickup";
-  const renewBorrowing = async (id) => {
-    try {
-      const res = await axios.put(`http://localhost:5000/api/borrowings/${id}/renew`, {}, { headers: { Authorization: `Bearer ${token}` } });
-      message.success(res.data.message || "Gia hạn thành công");
-      fetchHistory();
-    } catch (error) {
-      message.error(error?.response?.data?.message || "Không thể gia hạn!");
-    }
-  };
+        if ((b.status === "borrowed" || b.status === "renewed") && b.isPickedUp) b.status = b.status;
+        if ((b.status === "borrowed" || b.status === "renewed") && !b.isPickedUp) b.status = "pendingPickup";
         return b;
       });
       setHistory(mapped);
-
-      const res = await axios.get(
-        `http://localhost:5000/api/borrowings/history/${effectiveUserId}`,
-        { headers: { Authorization: `Bearer ${token}` } }
-      );
-
-      setHistory(res.data || []);
     } catch (error) {
       console.error("❌ Lỗi fetch history:", error);
       message.error("Không thể tải lịch sử mượn!");
@@ -210,9 +204,6 @@ const History = ({ userId, refreshFlag }) => {
       key: "dueDate",
       render: (date) => (date ? dayjs(date).format("DD/MM/YYYY") : "—"),
     },
-    { title: "Số lượng", dataIndex: "quantity", key: "quantity", render: q => <b>{q || 1} quyển</b> },
-    { title: "Ngày mượn", dataIndex: "borrowDate", key: "borrowDate", render: d => d ? dayjs(d).format("DD/MM/YYYY") : "—" },
-    { title: "Ngày trả", dataIndex: "dueDate", key: "dueDate", render: d => d ? dayjs(d).format("DD/MM/YYYY") : "—" },
     {
       title: "Trạng thái",
       key: "status",
@@ -267,17 +258,17 @@ const History = ({ userId, refreshFlag }) => {
 
           {(record.status === "borrowed" || record.status === "renewed" || record.status === "pendingPickup" || record.status === "overdue") && (
             <>
-              <Button type="link" danger size="small" onClick={() => handleReportLost(record._id)}>Báo mất</Button>
-              <Button type="link" danger size="small" onClick={() => handleReportBroken(record)}>Báo hỏng</Button>
+              {(record.isPickedUp && ["borrowed", "overdue"].includes(record.status)) && (
+                <>
+                  <Button type="link" danger size="small" onClick={() => handleReportLost(record._id)}>Báo mất</Button>
+                  <Button type="link" danger size="small" onClick={() => handleReportBroken(record)}>Báo hỏng</Button>
+                </>
+              )}
               {record.status === "borrowed" && (record.renewCount || 0) < 3 ? (
                 <Button type="link" size="small" onClick={() => renewBorrowing(record._id)}>Gia hạn</Button>
               ) : record.status === "borrowed" && (record.renewCount || 0) >= 3 ? (
                 <span className="text-sm text-gray-500">Đã hết lượt gia hạn</span>
               ) : null}
-          {(record.isPickedUp && ["borrowed", "overdue"].includes(record.status)) && (
-            <>
-              <Button type="link" danger onClick={() => handleReportLost(record._id)}>Báo mất</Button>
-              <Button type="link" danger onClick={() => handleReportBroken(record)}>Báo hỏng</Button>
             </>
           )}
 

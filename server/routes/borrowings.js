@@ -80,18 +80,186 @@ router.post("/", verifyToken, async (req, res) => {
 
     const user = await User.findById(req.user.id).lean();
 
+    // Kiểm tra xem user có sách nào bị mất chưa thanh toán không (chặn mượn tất cả sách)
+    const unpaidLostBook = await Borrowing.findOne({
+      user: req.user.id,
+      status: "lost",
+      $or: [
+        { paymentStatus: { $ne: "completed" } },
+        { paymentStatus: { $exists: false } }
+      ]
+    }).populate("book", "title");
+
+    if (unpaidLostBook) {
+      const bookTitle = unpaidLostBook.book?.title || unpaidLostBook.bookSnapshot?.title || "một cuốn sách";
+      return res.status(400).json({ 
+        message: `Bạn có sách "${bookTitle}" bị mất chưa thanh toán. Vui lòng hoàn tất thanh toán trước khi mượn sách khác!`,
+        errors: [`Bạn có sách "${bookTitle}" bị mất chưa thanh toán. Vui lòng hoàn tất thanh toán trước khi mượn sách khác!`]
+      });
+    }
+
+    // Kiểm tra xem user có sách nào đang mượn chưa trả không (chặn mượn tất cả sách)
+    const activeBorrowing = await Borrowing.findOne({
+      user: req.user.id,
+      status: { $in: ["borrowed", "renewed", "pendingPickup", "overdue"] }
+    }).populate("book", "title");
+
+    if (activeBorrowing) {
+      const bookTitle = activeBorrowing.book?.title || activeBorrowing.bookSnapshot?.title || "một cuốn sách";
+      const statusLabels = {
+        borrowed: "đang mượn",
+        renewed: "đã gia hạn (đang mượn)",
+        pendingPickup: "chưa lấy sách",
+        overdue: "quá hạn"
+      };
+      const statusLabel = statusLabels[activeBorrowing.status] || activeBorrowing.status;
+      return res.status(400).json({ 
+        message: `Bạn đang có sách "${bookTitle}" ở trạng thái "${statusLabel}" chưa trả. Vui lòng trả sách trước khi mượn sách khác!`,
+        errors: [`Bạn đang có sách "${bookTitle}" ở trạng thái "${statusLabel}" chưa trả. Vui lòng trả sách trước khi mượn sách khác!`]
+      });
+    }
+
     const bookChecks = await Promise.all(
       items.map(async (item) => {
         const book = await Book.findById(item.bookId);
         if (!book) return { error: `Không tìm thấy sách với ID: ${item.bookId}` };
         const borrowQty = item.quantity || 1;
         if (book.available < borrowQty) return { error: `Không đủ sách "${book.title}" để mượn. Hiện còn ${book.available}, yêu cầu ${borrowQty}` };
+        
+        // Kiểm tra sách mất/hỏng chưa thanh toán
+        const lostOrDamagedBorrowing = await Borrowing.findOne({
+          user: req.user.id,
+          book: item.bookId,
+          status: { $in: ["lost", "damaged"] },
+          $or: [
+            { paymentStatus: { $ne: "completed" } },
+            { paymentStatus: { $exists: false } }
+          ]
+        });
+
+        if (lostOrDamagedBorrowing) {
+          const statusLabels = {
+            lost: "mất",
+            damaged: "hỏng"
+          };
+          const statusLabel = statusLabels[lostOrDamagedBorrowing.status] || lostOrDamagedBorrowing.status;
+          return { error: `Bạn đã mượn sách "${book.title}" và sách đã bị ${statusLabel}. Vui lòng hoàn tất thanh toán trước khi mượn lại!` };
+        }
+
+        // Kiểm tra các trạng thái khác (đang mượn, đã gia hạn, chưa lấy sách)
+        const activeBorrowing = await Borrowing.findOne({
+          user: req.user.id,
+          book: item.bookId,
+          status: { $in: ["borrowed", "renewed", "pendingPickup"] }
+        });
+
+        if (activeBorrowing) {
+          const statusLabels = {
+            borrowed: "đang mượn",
+            renewed: "đã gia hạn (đang mượn)",
+            pendingPickup: "chưa lấy sách"
+          };
+          const statusLabel = statusLabels[activeBorrowing.status] || activeBorrowing.status;
+          return { error: `Bạn đã mượn sách "${book.title}" và đang ở trạng thái "${statusLabel}". Vui lòng trả sách trước khi mượn lại!` };
+        }
+
+        // Kiểm tra trạng thái quá hạn
+        const overdueBorrowing = await Borrowing.findOne({
+          user: req.user.id,
+          book: item.bookId,
+          status: { $in: ["borrowed", "renewed"] },
+          dueDate: { $lt: new Date() }
+        });
+
+        if (overdueBorrowing) {
+          return { error: `Bạn đang mượn sách "${book.title}" và đã quá hạn trả. Vui lòng trả sách trước khi mượn lại!` };
+        }
+
         return { book, borrowQty, item };
       })
     );
 
     const errors = bookChecks.filter(c => c.error);
-    if (errors.length) return res.status(400).json({ message: "Không đủ số lượng sách!", errors: errors.map(e => e.error) });
+    if (errors.length) {
+      const errorMessages = errors.map(e => e.error);
+      return res.status(400).json({ 
+        message: errorMessages.length === 1 ? errorMessages[0] : "Có lỗi xảy ra khi tạo đơn mượn!", 
+        errors: errorMessages 
+      });
+    }
+
+    // Kiểm tra và gộp đơn theo ngày mượn (tối đa 5 cuốn/đơn)
+    const firstBorrowDate = items[0]?.borrowDate ? new Date(items[0].borrowDate) : new Date();
+    // Chuẩn hóa ngày (chỉ lấy Y-M-D, không tính giờ)
+    const normalizedDate = new Date(firstBorrowDate);
+    normalizedDate.setHours(0, 0, 0, 0);
+    const endOfDay = new Date(normalizedDate);
+    endOfDay.setHours(23, 59, 59, 999);
+
+    // Đếm tổng số lượng sách đã mượn trong ngày
+    const existingBorrowingsSameDay = await Borrowing.find({
+      user: req.user.id,
+      borrowDate: {
+        $gte: normalizedDate,
+        $lte: endOfDay
+      },
+      status: { $in: ["pendingPickup", "borrowed", "renewed", "overdue"] }
+    });
+
+    const totalExistingQuantity = existingBorrowingsSameDay.reduce((sum, b) => sum + (b.quantity || 1), 0);
+    const totalNewQuantity = bookChecks.reduce((sum, { borrowQty }) => sum + borrowQty, 0);
+    const MAX_BOOKS_PER_ORDER = 5;
+
+    if (totalExistingQuantity + totalNewQuantity > MAX_BOOKS_PER_ORDER) {
+      const availableSlots = MAX_BOOKS_PER_ORDER - totalExistingQuantity;
+      if (availableSlots <= 0) {
+        return res.status(400).json({ 
+          message: `Bạn đã mượn ${totalExistingQuantity} cuốn sách trong ngày ${normalizedDate.toLocaleDateString("vi-VN")}. Mỗi đơn mượn chỉ tối đa ${MAX_BOOKS_PER_ORDER} cuốn sách. Vui lòng chọn ngày khác hoặc trả sách cũ trước!`,
+          errors: [`Bạn đã mượn ${totalExistingQuantity} cuốn sách trong ngày. Mỗi đơn mượn chỉ tối đa ${MAX_BOOKS_PER_ORDER} cuốn sách.`]
+        });
+      }
+
+      // Chỉ cho phép mượn số lượng còn lại
+      let remainingSlots = availableSlots;
+      const allowedItems = [];
+      const rejectedItems = [];
+
+      for (const check of bookChecks) {
+        if (remainingSlots >= check.borrowQty) {
+          allowedItems.push(check);
+          remainingSlots -= check.borrowQty;
+        } else if (remainingSlots > 0) {
+          // Cho phép mượn một phần
+          allowedItems.push({ ...check, borrowQty: remainingSlots });
+          rejectedItems.push({
+            ...check,
+            originalQty: check.borrowQty,
+            allowedQty: remainingSlots
+          });
+          remainingSlots = 0;
+        } else {
+          rejectedItems.push(check);
+        }
+      }
+
+      if (rejectedItems.length > 0) {
+        const rejectionMessages = rejectedItems.map(({ book, borrowQty, originalQty, allowedQty }) => {
+          if (allowedQty !== undefined && allowedQty > 0) {
+            return `Sách "${book.title}": chỉ có thể mượn ${allowedQty}/${originalQty} cuốn (đã đạt giới hạn ${MAX_BOOKS_PER_ORDER} cuốn/đơn)`;
+          }
+          return `Sách "${book.title}": không thể mượn ${borrowQty} cuốn (đã đạt giới hạn ${MAX_BOOKS_PER_ORDER} cuốn/đơn trong ngày)`;
+        });
+
+        return res.status(400).json({
+          message: `Bạn đã mượn ${totalExistingQuantity} cuốn sách trong ngày. Chỉ có thể mượn thêm ${availableSlots} cuốn nữa (tối đa ${MAX_BOOKS_PER_ORDER} cuốn/đơn).`,
+          errors: rejectionMessages
+        });
+      }
+
+      // Cập nhật bookChecks để chỉ tạo những sách được phép
+      bookChecks.length = 0;
+      bookChecks.push(...allowedItems);
+    }
 
     const borrowings = await Promise.all(
       bookChecks.map(async ({ book, borrowQty, item }) => {
@@ -109,10 +277,14 @@ router.post("/", verifyToken, async (req, res) => {
           isbn: bookPopulated?.code || "N/A",
         };
 
+        // Sử dụng ngày đã chuẩn hóa để đảm bảo tất cả cùng một đơn
+        const borrowDateToUse = item.borrowDate ? new Date(item.borrowDate) : normalizedDate;
+        borrowDateToUse.setHours(0, 0, 0, 0);
+
         return {
           user: user?._id,
           book: book?._id,
-          borrowDate: item.borrowDate || new Date(),
+          borrowDate: borrowDateToUse,
           dueDate: item.dueDate || new Date(Date.now() + 7*24*60*60*1000),
           quantity: borrowQty,
           status: STATUS_ENUM.PENDING_PICKUP,
