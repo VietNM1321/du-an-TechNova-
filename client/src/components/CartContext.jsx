@@ -1,4 +1,3 @@
-// src/components/CartContext.jsx
 import React, { createContext, useContext, useState, useEffect, useCallback } from "react";
 import axios from "axios";
 
@@ -21,7 +20,6 @@ export function CartProvider({ children }) {
     }
     try {
       const res = await axios.get(API, { params: { userId } });
-      // Backend trả về cart.items.bookId đã populate
       setCart(res.data || { userId, items: [] });
     } catch (err) {
       console.error("❌ Lỗi fetchCart:", err);

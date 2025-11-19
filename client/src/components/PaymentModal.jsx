@@ -6,26 +6,18 @@ const PaymentModal = ({ visible, onClose, borrowing, onSuccess }) => {
   const [paymentMethod, setPaymentMethod] = useState("cash");
   const [paymentNote, setPaymentNote] = useState("");
   const [loading, setLoading] = useState(false);
-
   if (!visible || !borrowing) return null;
-
   const compensationAmount = borrowing.compensationAmount || 50000;
-  
-  // QR Code cố định - có thể thay bằng URL thực tế của QR code
   const fixedQRCode = "https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=VCB%3A1234567890%3ATHU%20VIEN%20SACH";
-
   const handleSubmit = async () => {
     try {
       setLoading(true);
       const token = localStorage.getItem("clientToken") || localStorage.getItem("adminToken");
-
       const formData = new FormData();
       formData.append("paymentMethod", paymentMethod);
       formData.append("paymentNote", paymentNote);
 
-      const res = await axios.put(
-        `http://localhost:5000/api/borrowings/${borrowing._id}/pay`,
-        formData,
+      const res = await axios.put(`http://localhost:5000/api/borrowings/${borrowing._id}/pay`,formData,
         {
           headers: {
             "Content-Type": "multipart/form-data",
@@ -33,11 +25,9 @@ const PaymentModal = ({ visible, onClose, borrowing, onSuccess }) => {
           },
         }
       );
-
       alert(res.data.message || "✅ Thanh toán thành công!");
       onSuccess?.();
       onClose();
-      // Reset form
       setPaymentMethod("cash");
       setPaymentNote("");
     } catch (error) {

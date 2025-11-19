@@ -1,15 +1,6 @@
 import { useState, useEffect, useRef } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import {
-  Search,
-  ShoppingCart,
-  User,
-  Menu,
-  LogOut,
-  LayoutDashboard,
-  History,
-  Bell,
-} from "lucide-react";
+import {Search,ShoppingCart,User,Menu,LogOut,LayoutDashboard,History,Bell,} from "lucide-react";
 import { Link, useNavigate, useLocation } from "react-router-dom";
 import logo from "../assets/logo.png";
 import axios from "axios";
