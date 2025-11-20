@@ -340,7 +340,7 @@ const BorrowManager = () => {
               ✅ Xác nhận lấy sách
             </Button>
           )}
-          {record.isPickedUp && record.status === STATUS_ENUM.BORROWED && (
+          {record.isPickedUp && (record.status === STATUS_ENUM.BORROWED || record.status === STATUS_ENUM.RENEWED) && (
             <Button size="small" type="primary" onClick={() => handleReturn(record)}>
               ✅ Trả sách
             </Button>
