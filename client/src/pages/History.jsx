@@ -185,6 +185,18 @@ const History = ({ userId, refreshFlag }) => {
       key: "borrowDate",
       render: (date) => (date ? dayjs(date).format("DD/MM/YYYY") : "—"),
     },
+    {
+      title: "Mã đơn mượn",
+      dataIndex: "borrowingCode",
+      key: "borrowingCode",
+      render: (code) => (
+        <Tooltip title={code || "Chưa có mã đơn"}>
+          <Tag color={code ? "cyan" : "default"} icon="🔖">
+            {code ? code : "—"}
+          </Tag>
+        </Tooltip>
+      ),
+    },
       {
         title: "Lần gia hạn",
         dataIndex: "renewCount",

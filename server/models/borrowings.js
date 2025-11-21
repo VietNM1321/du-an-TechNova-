@@ -93,6 +93,14 @@ const BorrowingSchema = new mongoose.Schema(
       author: String,
       isbn: String,
     },
+
+    // 🔖 Mã đơn mượn (gộp những đơn cùng ngày)
+    // Lưu ý: KHÔNG để `unique: true` ở đây vì nhiều document cùng ngày
+    // sẽ có cùng mã (gộp đơn). Chỉ giữ index để tìm kiếm nhanh.
+    borrowingCode: {
+      type: String,
+      index: true,
+    },
   },
   { timestamps: true }
 );
