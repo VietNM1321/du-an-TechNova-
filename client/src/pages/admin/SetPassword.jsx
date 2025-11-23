@@ -1,15 +1,14 @@
 import React, { useEffect, useState } from "react";
 import axios from "axios";
-import { Input, Select, Space, Button, Row, Col, Form, message } from "antd";
-import { SearchOutlined } from "@ant-design/icons";
+import { Select, Space, Button, Row, Col, Form, message } from "antd";
 import { KeyRound } from "lucide-react";
 
 const SetPassword = () => {
   const [users, setUsers] = useState([]);
   const [filteredUsers, setFilteredUsers] = useState([]);
-  const [passwords, setPasswords] = useState({});
   const [loading, setLoading] = useState(true);
   const [loadingIds, setLoadingIds] = useState([]);
+  const [showPasswordIds, setShowPasswordIds] = useState([]);
   const [searchForm] = Form.useForm();
 
   // Lấy danh sách sinh viên
@@ -34,41 +33,7 @@ const SetPassword = () => {
     fetchUsers();
   }, []);
 
-  // Cập nhật mật khẩu local state khi nhập
-  const handlePasswordChange = (id, value) => {
-    setPasswords((prev) => ({ ...prev, [id]: value }));
-  };
-
-  // Cấp mật khẩu
-  const handleSetPassword = async (id) => {
-    const password = passwords[id];
-    if (!password) return message.warning("Vui lòng nhập mật khẩu!");
-
-    setLoadingIds((prev) => [...prev, id]);
-
-    try {
-      const token = localStorage.getItem("adminToken");
-      const res = await axios.put(
-        `http://localhost:5000/api/auth/setpassword/${id}`,
-        { password },
-        { headers: { Authorization: `Bearer ${token}` } }
-      );
-      message.success(res.data.message || "✅ Mật khẩu đã cấp thành công!");
-
-      // cập nhật trạng thái user
-      setUsers((prev) =>
-        prev.map((u) => (u._id === id ? { ...u, password: true } : u))
-      );
-      setPasswords((prev) => ({ ...prev, [id]: "" }));
-    } catch (err) {
-      console.error(err);
-      message.error(err.response?.data?.message || "❌ Lỗi khi cấp mật khẩu!");
-    } finally {
-      setLoadingIds((prev) => prev.filter((uid) => uid !== id));
-    }
-  };
-
-  // Reset mật khẩu
+  // Reset mật khẩu và lấy mật khẩu mới từ backend
   const handleResetPassword = async (id) => {
     setLoadingIds((prev) => [...prev, id]);
     try {
@@ -78,9 +43,19 @@ const SetPassword = () => {
         {},
         { headers: { Authorization: `Bearer ${token}` } }
       );
-      message.success(res.data.message || "✅ Mật khẩu đã reset!");
+      const newPassword = res.data.password || "Không có mật khẩu";
+      message.success(`Mật khẩu mới: ${newPassword}`);
+
+      // Cập nhật password trong bảng
       setUsers((prev) =>
-        prev.map((u) => (u._id === id ? { ...u, password: false } : u))
+        prev.map((u) =>
+          u._id === id ? { ...u, password: newPassword } : u
+        )
+      );
+      setFilteredUsers((prev) =>
+        prev.map((u) =>
+          u._id === id ? { ...u, password: newPassword } : u
+        )
       );
     } catch (err) {
       console.error(err);
@@ -88,6 +63,15 @@ const SetPassword = () => {
     } finally {
       setLoadingIds((prev) => prev.filter((uid) => uid !== id));
     }
+  };
+
+  // Toggle hiện/ẩn mật khẩu
+  const toggleShowPassword = (id) => {
+    setShowPasswordIds((prev) =>
+      prev.includes(id)
+        ? prev.filter((uid) => uid !== id)
+        : [...prev, id]
+    );
   };
 
   // Tìm kiếm & lọc
@@ -121,23 +105,24 @@ const SetPassword = () => {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-blue-50 via-slate-50 to-purple-50 flex items-center justify-center text-slate-500">
+      <div className="min-h-screen flex items-center justify-center text-slate-500">
         Đang tải dữ liệu...
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-blue-50 via-slate-50 to-purple-50 py-8 px-4 md:px-8">
+    <div className="min-h-screen py-8 px-4 md:px-8 bg-gradient-to-br from-blue-50 via-slate-50 to-purple-50">
       <div className="max-w-7xl mx-auto space-y-6">
+        {/* Header */}
         <div className="bg-white rounded-3xl shadow-lg border border-slate-100 px-6 py-5 flex flex-wrap items-center justify-between gap-4">
           <div className="flex items-center gap-3">
             <div className="p-3 bg-blue-100 rounded-2xl text-blue-700 shadow-inner">
               <KeyRound className="w-7 h-7" />
             </div>
             <div>
-              <h2 className="text-2xl md:text-3xl font-bold text-slate-900">Cấp / Reset mật khẩu</h2>
-              <p className="text-sm text-slate-500">Quản lý mật khẩu cho sinh viên hệ thống</p>
+              <h2 className="text-2xl md:text-3xl font-bold text-slate-900">Quản lý mật khẩu</h2>
+              <p className="text-sm text-slate-500">Xem mật khẩu sinh viên trực tiếp</p>
             </div>
           </div>
           <div className="text-right">
@@ -146,17 +131,15 @@ const SetPassword = () => {
           </div>
         </div>
 
+        {/* Form tìm kiếm */}
         <div className="bg-white rounded-3xl shadow-lg border border-slate-100 p-6">
           <Form form={searchForm} onFinish={handleSearch}>
             <Row gutter={[16, 16]}>
               <Col xs={24} md={12} lg={8}>
                 <Form.Item name="searchText" className="mb-0">
-                  <Input
+                  <input
                     placeholder="Tìm theo mã SV, họ tên, email"
-                    prefix={<SearchOutlined />}
-                    allowClear
-                    size="large"
-                    className="rounded-2xl"
+                    className="w-full p-2 border rounded-2xl"
                   />
                 </Form.Item>
               </Col>
@@ -181,9 +164,7 @@ const SetPassword = () => {
               </Col>
               <Col xs={24} md={12} lg={4} className="flex items-end">
                 <Space size="middle">
-                  <Button type="primary" htmlType="submit" className="!rounded-2xl">
-                    🔍 Tìm
-                  </Button>
+                  <Button type="primary" htmlType="submit" className="!rounded-2xl">🔍 Tìm</Button>
                   <Button
                     className="!rounded-2xl"
                     onClick={() => {
@@ -199,6 +180,7 @@ const SetPassword = () => {
           </Form>
         </div>
 
+        {/* Table */}
         <div className="bg-white rounded-3xl shadow-lg border border-slate-100 overflow-hidden">
           <div className="overflow-x-auto">
             <table className="min-w-full divide-y divide-slate-100">
@@ -223,31 +205,24 @@ const SetPassword = () => {
                       {!u.active ? (
                         <span className="text-rose-600 font-semibold">Đã khóa</span>
                       ) : u.password ? (
-                        <span className="text-emerald-600 font-semibold">Đã cấp</span>
+                        <span className="text-emerald-600 font-semibold">
+                          {showPasswordIds.includes(u._id) ? u.password : "••••••"}
+                          <Button
+                            size="small"
+                            type="link"
+                            className="ml-2 p-0"
+                            onClick={() => toggleShowPassword(u._id)}
+                          >
+                            {showPasswordIds.includes(u._id) ? "Ẩn" : "Xem"}
+                          </Button>
+                        </span>
                       ) : (
-                        <Input
-                          type="password"
-                          value={passwords[u._id] || ""}
-                          onChange={(e) => handlePasswordChange(u._id, e.target.value)}
-                          placeholder="Nhập mật khẩu..."
-                          className="max-w-xs mx-auto"
-                        />
+                        <span className="text-slate-500">Chưa có mật khẩu</span>
                       )}
                     </td>
                     <td className="p-4 text-center">
                       <div className="flex flex-wrap items-center justify-center gap-2">
-                        {u.active && !u.password && (
-                          <Button
-                            type="primary"
-                            size="small"
-                            onClick={() => handleSetPassword(u._id)}
-                            loading={loadingIds.includes(u._id)}
-                            className="!rounded-2xl"
-                          >
-                            Cấp mật khẩu
-                          </Button>
-                        )}
-                        {u.active && u.password && (
+                        {u.active && (
                           <Button
                             type="default"
                             size="small"
@@ -263,7 +238,6 @@ const SetPassword = () => {
                     </td>
                   </tr>
                 ))}
-
                 {filteredUsers.length === 0 && (
                   <tr>
                     <td colSpan="6" className="py-10 text-center text-slate-400">
