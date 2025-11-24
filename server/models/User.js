@@ -8,7 +8,7 @@ const userSchema = new mongoose.Schema(
     email: { type: String, required: true, unique: true },
     password: { type: String, default: null },
     passwordChangedAt: Date,
-    role: { type: String, enum: ["client", "admin", "student"], default: "client" },
+    role: { type: String, enum: ["client", "admin", "student","librarian"], default: "client" },
     phone: {
       type: String,
       validate: {

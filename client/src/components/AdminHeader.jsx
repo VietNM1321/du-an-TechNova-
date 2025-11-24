@@ -6,7 +6,8 @@ import { useEffect, useState } from "react";
 
 const AdminHeader = () => {
   const navigate = useNavigate();
-  const [adminName, setAdminName] = useState("Admin");
+  const [userName, setUserName] = useState("Người dùng");
+  const [userRole, setUserRole] = useState("");
 
   useEffect(() => {
     // Lấy thông tin user từ localStorage
@@ -14,8 +15,9 @@ const AdminHeader = () => {
     if (storedUser) {
       try {
         const user = JSON.parse(storedUser);
-        if (user.role === "admin") {
-          setAdminName(user.email?.split("@")[0] || "Admin");
+        if (user.role === "admin" || user.role === "librarian") {
+          setUserName(user.email?.split("@")[0] || (user.role === "admin" ? "Admin" : "Thủ thư"));
+          setUserRole(user.role);
         }
       } catch (err) {
         console.error("Lỗi khi đọc thông tin user:", err);
@@ -31,23 +33,26 @@ const AdminHeader = () => {
     localStorage.removeItem("clientUser");
     localStorage.removeItem("token");
     localStorage.removeItem("user");
-    
+
     // Dispatch event để các component khác biết đã logout
     window.dispatchEvent(new Event("authChange"));
     window.dispatchEvent(new Event("storage"));
-    
-    // Force reload để đảm bảo tất cả state được reset
+
+    // Force reload để reset state
     window.location.href = "/login";
   };
+
+  // Đặt tiêu đề hiển thị theo role
+  const roleTitle = userRole === "admin" ? "Admin" : userRole === "librarian" ? "Thủ thư" : "";
 
   return (
     <header className="bg-white border-b border-gray-200 shadow-sm sticky top-0 z-50">
       <div className="flex justify-between items-center px-6 py-3">
-        {/* Logo + tên admin */}
+        {/* Logo + tên user */}
         <div className="flex items-center gap-3">
           <motion.img
             src={logo}
-            alt="LiNova Admin Logo"
+            alt="LiNova Logo"
             className="h-10 w-auto"
             initial={{ opacity: 0, scale: 0.9 }}
             animate={{ opacity: 1, scale: 1 }}
@@ -55,14 +60,14 @@ const AdminHeader = () => {
           />
           <h1 className="text-xl font-semibold text-blue-600 tracking-wide flex items-center gap-2">
             <LayoutDashboard size={20} className="text-blue-500" />
-          Thủ thư
+            {roleTitle}
           </h1>
         </div>
 
-        {/* Thông tin admin + nút đăng xuất */}
+        {/* Thông tin user + nút đăng xuất */}
         <div className="flex items-center gap-5">
           <span className="text-gray-700 font-medium">
-            Xin chào, {adminName} 👋
+            Xin chào, {userName} 👋
           </span>
 
           <motion.button

@@ -18,20 +18,29 @@ const Login = () => {
 
       const { token, user } = res.data;
 
-      if (user.role === "admin") {
+      // ✅ Xác định vai trò admin/librarian
+      const adminRoles = ["admin", "librarian"];
+
+      if (adminRoles.includes(user.role)) {
+        // Admin + thủ thư
         localStorage.setItem("adminToken", token);
         localStorage.setItem("adminUser", JSON.stringify(user));
-        localStorage.setItem("clientToken", token);
-        localStorage.setItem("clientUser", JSON.stringify(user));
-      } else {
-        localStorage.setItem("clientToken", token);
-        localStorage.setItem("clientUser", JSON.stringify(user));
       }
 
+      // Tất cả user đều lưu clientToken/clientUser
+      localStorage.setItem("clientToken", token);
+      localStorage.setItem("clientUser", JSON.stringify(user));
+
+      // Thông báo cho các component khác
       window.dispatchEvent(new Event("authChange"));
 
-      setMessage("✅ Đăng nhập thành công!");
-      setTimeout(() => navigate("/"), 800);
+      // Redirect theo role
+      if (user.role === "admin" || user.role === "librarian") {
+        navigate("/admin"); // admin + thủ thư vào dashboard
+      } else {
+        navigate("/"); // sinh viên vào client homepage
+      }
+
     } catch (err) {
       if (err.response?.status === 403) {
         setMessage("❌ Tài khoản của bạn đã bị khóa, không thể đăng nhập!");
@@ -42,8 +51,6 @@ const Login = () => {
   };
 
   const handleRegisterRedirect = () => navigate("/register");
-
-  // ✅ Chuyển sang trang quên mật khẩu
   const handleForgotPasswordRedirect = () => navigate("/forgot-password");
 
   return (
@@ -99,7 +106,6 @@ const Login = () => {
             Đăng ký tài khoản mới
           </button>
 
-          {/* ✅ Chuyển sang ForgotPassword */}
           <p className="mt-2 text-center text-green-600 text-sm">
             <span
               onClick={handleForgotPasswordRedirect}
@@ -121,8 +127,7 @@ const Login = () => {
         )}
 
         <p className="text-center text-gray-500 text-sm mt-6">
-          © 2025 <span className="font-semibold text-blue-600">TechNova</span>.
-          All rights reserved.
+          © 2025 <span className="font-semibold text-blue-600">TechNova</span>. All rights reserved.
         </p>
       </div>
     </div>
