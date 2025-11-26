@@ -9,6 +9,7 @@ const SidebarAdmin = () => {
         <Link to="/admin/books">Quản lý Sách</Link>
         <Link to="/admin/users">Quản lý Người dùng</Link>
         <Link to="/admin/borrowings">Quản lý Đơn Mượn</Link>
+        <Link to="/admin/fund">Quỹ thư viện</Link>
       </nav>
     </aside>
   )

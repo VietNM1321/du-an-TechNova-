@@ -33,7 +33,8 @@ router.put('/:id/renew', verifyToken, async (req, res) => {
   try {
     const borrowing = await Borrowing.findById(req.params.id);
     if (!borrowing) return res.status(404).json({ message: 'Không tìm thấy đơn mượn!' });
-    if (borrowing.status !== STATUS_ENUM.BORROWED) {
+    // Cho phép gia hạn khi đang mượn hoặc đã được gia hạn trước đó
+    if (![STATUS_ENUM.BORROWED, STATUS_ENUM.RENEWED].includes(borrowing.status)) {
       return res.status(400).json({ message: 'Chỉ có thể gia hạn khi đang mượn!' });
     }
     if ((borrowing.renewCount || 0) >= 3) {
@@ -520,22 +521,24 @@ router.put("/:id/pay", verifyToken, upload.single("qrCodeImage"), async (req,res
     if(!["damaged","lost"].includes(borrowing.status)) 
       return res.status(400).json({ message:"Chỉ thanh toán khi sách bị hỏng hoặc mất!" });
 
-    if(paymentMethod==="bank" && !qrCodeImage && !borrowing.qrCodeImage) 
-      return res.status(400).json({ message:"Vui lòng upload ảnh QR code khi thanh toán qua ngân hàng!" });
+    // Nếu thanh toán qua ngân hàng: cho phép KHÔNG bắt buộc upload QR mỗi lần
+    // Nếu có ảnh mới thì lưu, còn không sẽ giữ nguyên (nếu trước đó đã có)
 
+    // Khi người dùng thanh toán (tiền mặt hoặc ngân hàng), luôn chuyển sang trạng thái
+    // "chờ xác nhận thanh toán". Admin sẽ xác nhận ở endpoint /confirm-payment.
     const updateData = {
       paymentMethod,
-      paymentStatus: paymentMethod==="cash"?"completed":"pending",
-      paymentDate: paymentMethod==="cash"?new Date():null,
-      paymentNote: paymentNote||"",
-      status: paymentMethod==="cash"?STATUS_ENUM.COMPENSATED:borrowing.status,
+      paymentStatus: "pending",
+      paymentDate: null,
+      paymentNote: paymentNote || "",
+      status: borrowing.status,
     };
     if(qrCodeImage) updateData.qrCodeImage = qrCodeImage;
     if(paymentMethod==="bank" && borrowing.qrCodeImage && !qrCodeImage) updateData.qrCodeImage = borrowing.qrCodeImage;
 
     const updated = await Borrowing.findByIdAndUpdate(req.params.id, updateData, { new:true });
     res.json({ 
-      message: paymentMethod==="cash" ? "✅ Đã thanh toán bằng tiền mặt thành công!" : "✅ Đã gửi thông tin thanh toán qua ngân hàng! Vui lòng chờ xác nhận.", 
+      message: "✅ Đã ghi nhận thanh toán, vui lòng chờ quản trị viên xác nhận!", 
       borrowing: updated 
     });
   } catch(error){
@@ -557,6 +560,44 @@ router.put("/:id/confirm-payment", verifyToken, requireRole("admin"), async (req
   } catch(error){
     console.error("❌ Lỗi xác nhận thanh toán:", error);
     res.status(500).json({ message:"Lỗi server khi xác nhận thanh toán!" });
+  }
+});
+
+// ──────────────── THỐNG KÊ QUỸ THƯ VIỆN (TIỀN ĐỀN BÙ) ────────────────
+router.get("/fund/summary", verifyToken, requireRole("admin", "librarian"), async (req, res) => {
+  try {
+    const [stats] = await Borrowing.aggregate([
+      {
+        $match: {
+          paymentStatus: "completed",
+          compensationAmount: { $gt: 0 },
+        },
+      },
+      {
+        $group: {
+          _id: null,
+          totalFund: { $sum: "$compensationAmount" },
+          totalRecords: { $sum: 1 },
+        },
+      },
+    ]);
+
+    const recent = await Borrowing.find({
+      paymentStatus: "completed",
+      compensationAmount: { $gt: 0 },
+    })
+      .sort({ paymentDate: -1 })
+      .limit(20)
+      .select("bookSnapshot userSnapshot compensationAmount paymentDate status");
+
+    res.json({
+      totalFund: stats?.totalFund || 0,
+      totalRecords: stats?.totalRecords || 0,
+      recent,
+    });
+  } catch (error) {
+    console.error("❌ Lỗi lấy quỹ thư viện:", error);
+    res.status(500).json({ message: "Lỗi server khi lấy quỹ thư viện!" });
   }
 });
 

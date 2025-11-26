@@ -155,10 +155,6 @@ const BorrowManager = () => {
   };
 
   const handleConfirmPayment = (record) => {
-    if (!record.hasReturned) {
-      message.warning("Phải trả sách trước khi thanh toán!");
-      return;
-    }
     confirm({
       title: "Xác nhận thanh toán?",
       content: `Xác nhận đã nhận thanh toán ${
@@ -172,11 +168,11 @@ const BorrowManager = () => {
             {},
             { headers: { Authorization: `Bearer ${token}` } }
           );
-          message.success("✅ Đã thanh toán!");
+          message.success(res.data?.message || "✅ Đã thanh toán!");
           setBorrowings((prev) =>
             prev.map((b) =>
               b._id === record._id
-                ? { ...b, status: STATUS_ENUM.COMPENSATED, paymentStatus: "done" }
+                ? { ...b, status: STATUS_ENUM.COMPENSATED, paymentStatus: "completed" }
                 : b
             )
           );
@@ -346,21 +342,22 @@ const BorrowManager = () => {
             </Button>
           )}
           {record.status === STATUS_ENUM.OVERDUE && (
-            <>
-              <Button size="small" type="primary" onClick={() => handleReturn(record)}>
-                ✅ Trả sách
-              </Button>
+            <Button size="small" type="primary" onClick={() => handleReturn(record)}>
+              ✅ Trả sách
+            </Button>
+          )}
+          {["damaged", "lost", "overdue"].includes(record.status) &&
+            record.compensationAmount > 0 &&
+            record.paymentStatus !== "completed" && (
               <Button
                 size="small"
                 type="primary"
                 style={{ backgroundColor: "#52c41a", borderColor: "#52c41a" }}
-                disabled={!record.hasReturned}
                 onClick={() => handleConfirmPayment(record)}
               >
-                ✅ Thanh toán
+                ✅ Xác nhận thanh toán
               </Button>
-            </>
-          )}
+            )}
         </Space>
       ),
     },
