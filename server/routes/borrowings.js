@@ -5,6 +5,7 @@ import Book from "../models/books.js";
 import User from "../models/User.js";
 import multer from "multer";
 import { verifyToken, isSelfOrAdmin, requireRole } from "../middleware/auth.js";
+import { getOrCreateBorrowingCodeForDay, generateBorrowingCode } from "../utils/generateBorrowingCode.js";
 
 const router = express.Router();
 
@@ -296,7 +297,39 @@ router.post("/", verifyToken, async (req, res) => {
       })
     );
 
-    const saved = await Borrowing.insertMany(borrowings);
+    // Tạo hoặc lấy mã đơn cho ngày mượn này (gộp đơn cùng ngày)
+    const borrowingCode = await getOrCreateBorrowingCodeForDay(user?._id, normalizedDate);
+    
+    // Thêm borrowingCode vào tất cả các borrowings
+    borrowings.forEach(b => {
+      b.borrowingCode = borrowingCode;
+    });
+
+    // Thử insert với cơ chế retry khi gặp duplicate key trên borrowingCode
+    let saved;
+    let attempts = 0;
+    const MAX_ATTEMPTS = 5;
+    while (attempts < MAX_ATTEMPTS) {
+      try {
+        saved = await Borrowing.insertMany(borrowings);
+        break;
+      } catch (err) {
+        // Mongo duplicate key error
+        if (err?.code === 11000 && /borrowingCode/.test(err.message)) {
+          attempts++;
+          console.warn(`Duplicate borrowingCode detected, retrying (${attempts}/${MAX_ATTEMPTS})`);
+          // Sinh mã mới đảm bảo tăng số thứ tự
+          const newCode = await generateBorrowingCode(normalizedDate);
+          borrowings.forEach(b => { b.borrowingCode = newCode; });
+          // Nếu đạt giới hạn thử lại, ném lỗi để báo cho client
+          if (attempts >= MAX_ATTEMPTS) throw err;
+          // tiếp tục vòng lặp để thử insert lại
+        } else {
+          // lỗi khác -> ném tiếp
+          throw err;
+        }
+      }
+    }
 
     await Promise.all(
       bookChecks.map(async ({ book, borrowQty }) => {
@@ -306,7 +339,11 @@ router.post("/", verifyToken, async (req, res) => {
       })
     );
 
-    res.status(201).json({ message: "✅ Tạo đơn mượn thành công!", borrowings: saved });
+    res.status(201).json({ 
+      message: "✅ Tạo đơn mượn thành công!", 
+      borrowings: saved,
+      borrowingCode: borrowingCode 
+    });
   } catch (error) {
     console.error("❌ Borrow error:", error);
     res.status(500).json({ message: "Lỗi server khi tạo đơn mượn!", error: error.message });

@@ -163,6 +163,14 @@ const Payment = () => {
                   </span>
                 </div>
               </div>
+              {borrowing.borrowingCode && (
+                <div className="md:col-span-2">
+                  <p className="text-blue-100 text-xs mb-1">🔖 Mã đơn mượn:</p>
+                  <p className="font-mono font-bold text-lg text-yellow-300 bg-white/10 px-3 py-2 rounded-lg inline-block">
+                    {borrowing.borrowingCode}
+                  </p>
+                </div>
+              )}
             </div>
           </div>
 

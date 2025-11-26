@@ -173,7 +173,7 @@ const Cart = () => {
             });
           } else {
             message.error(
-              errorData?.message || "Không thể tạo đơn mượn!"
+              errorData?.message || error?.message || "Không thể tạo đơn mượn!"
             );
           }
         } finally {
