@@ -30,7 +30,7 @@ const Payment = () => {
 
         // Lấy danh sách borrowings của user và tìm borrowing có ID phù hợp
         const res = await axios.get(
-          `http://localhost:5000/api/borrowings/history/${userId}`,
+          `http://localhost:5001/api/borrowings/history/${userId}`,
           {
             headers: { Authorization: `Bearer ${token}` }
           }
@@ -67,7 +67,7 @@ const Payment = () => {
       formData.append("paymentNote", paymentNote);
 
       const res = await axios.put(
-        `http://localhost:5000/api/borrowings/${borrowing._id}/pay`,
+        `http://localhost:5001/api/borrowings/${borrowing._id}/pay`,
         formData,
         {
           headers: {

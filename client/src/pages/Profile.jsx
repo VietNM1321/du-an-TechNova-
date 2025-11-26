@@ -20,7 +20,7 @@ const Profile = () => {
 
       try {
         setLoading(true);
-        const res = await axios.get("http://localhost:5000/api/users/profile", {
+        const res = await axios.get("http://localhost:5001/api/users/profile", {
           headers: { Authorization: `Bearer ${token}` },
         });
 
@@ -134,7 +134,7 @@ const Profile = () => {
                         <button
                           onClick={async () => {
                             try {
-                              const res = await axios.put(`http://localhost:5000/api/borrowings/${b._id}/renew`, {}, {
+                              const res = await axios.put(`http://localhost:5001/api/borrowings/${b._id}/renew`, {}, {
                                 headers: { Authorization: `Bearer ${token}` },
                               });
                               setBorrowedBooks((prev) => prev.map((item) => item._id === b._id ? { ...item, ...res.data.borrowing } : item));

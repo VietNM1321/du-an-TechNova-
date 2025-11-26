@@ -41,7 +41,7 @@ const BookLManager = () => {
         yt ? `yearTo=${encodeURIComponent(yt)}` : "",
         av !== "" ? `availableMin=${encodeURIComponent(av)}` : "",
       ].filter(Boolean);
-      const res = await axios.get(`http://localhost:5000/api/books?${parts.join("&")}`);
+      const res = await axios.get(`http://localhost:5001/api/books?${parts.join("&")}`);
       const data = res.data;
       if (Array.isArray(data)) {
         setBooks(data);
@@ -78,8 +78,8 @@ const BookLManager = () => {
     const init = async () => {
       try {
         const [catRes, authorRes] = await Promise.all([
-          axios.get("http://localhost:5000/api/category?limit=1000"),
-          axios.get("http://localhost:5000/api/authors?limit=1000"),
+          axios.get("http://localhost:5001/api/category?limit=1000"),
+          axios.get("http://localhost:5001/api/authors?limit=1000"),
         ]);
         setCategories(catRes.data.categories || catRes.data || []);
         setAuthors(authorRes.data.authors || authorRes.data || []);
@@ -122,7 +122,7 @@ const BookLManager = () => {
           navigate("/admin/login");
           return;
         }
-        await axios.delete(`http://localhost:5000/api/books/${id}`, {
+        await axios.delete(`http://localhost:5001/api/books/${id}`, {
           headers: {
             Authorization: `Bearer ${token}`,
           },

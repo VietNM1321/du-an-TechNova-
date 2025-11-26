@@ -26,9 +26,9 @@ const BookEdit = () => {
         const token = localStorage.getItem("adminToken");
         const authConfig = token ? { headers: { Authorization: `Bearer ${token}` } } : undefined;
         const [catRes, authorRes, bookRes] = await Promise.all([
-          axios.get("http://localhost:5000/api/category?limit=1000&sort=createdAt&order=asc", authConfig),
-          axios.get("http://localhost:5000/api/authors?limit=1000", authConfig),
-          axios.get(`http://localhost:5000/api/books/${id}`, authConfig),
+          axios.get("http://localhost:5001/api/category?limit=1000&sort=createdAt&order=asc", authConfig),
+          axios.get("http://localhost:5001/api/authors?limit=1000", authConfig),
+          axios.get(`http://localhost:5001/api/books/${id}`, authConfig),
         ]);
         setCategories(catRes.data.categories || catRes.data);
         setAuthors(authorRes.data.authors || authorRes.data);
@@ -58,7 +58,7 @@ const BookEdit = () => {
       try {
         const token = localStorage.getItem("adminToken");
         const authConfig = token? { headers: { Authorization: `Bearer ${token}` } }: undefined;
-        const res = await axios.get(`http://localhost:5000/api/bookcodes/category/${form.category}`,authConfig);
+        const res = await axios.get(`http://localhost:5001/api/bookcodes/category/${form.category}`,authConfig);
         if (res.data?.prefix) {
           const { prefix, lastNumber = 0 } = res.data;
           const nextCode = `${prefix}-${String((lastNumber || 0) + 1).padStart(3,"0")}`;
@@ -99,7 +99,7 @@ const BookEdit = () => {
       const token = localStorage.getItem("adminToken");
       const headers = {"Content-Type": "multipart/form-data",};
       if (token) headers.Authorization = `Bearer ${token}`;
-      const res = await axios.put(`http://localhost:5000/api/books/${id}`,formData,{headers,} )
+      const res = await axios.put(`http://localhost:5001/api/books/${id}`,formData,{headers,} )
       alert(res.data.message || "✅ Cập nhật sách thành công!");
       navigate("/admin/bookmanager", {
         state: { updatedBook: res.data.book },
@@ -214,7 +214,7 @@ const BookEdit = () => {
                     ? URL.createObjectURL(img)
                     : img.startsWith("http")
                     ? img
-                    : `http://localhost:5000${img}`
+                    : `http://localhost:5001${img}`
                 }
                 alt="book"
                 className="w-24 h-32 object-cover rounded-lg border"

@@ -60,7 +60,7 @@ const BorrowManager = () => {
       ].filter(Boolean);
 
       const res = await axios.get(
-        `http://localhost:5000/api/borrowings?${parts.join("&")}`,
+        `http://localhost:5001/api/borrowings?${parts.join("&")}`,
         { headers: { Authorization: `Bearer ${token}` } }
       );
 
@@ -105,7 +105,7 @@ const BorrowManager = () => {
       onOk: async () => {
         try {
           const res = await axios.put(
-            `http://localhost:5000/api/borrowings/${record._id}/pickup`,
+            `http://localhost:5001/api/borrowings/${record._id}/pickup`,
             {},
             { headers: { Authorization: `Bearer ${token}` } }
           );
@@ -134,7 +134,7 @@ const BorrowManager = () => {
       onOk: async () => {
         try {
           const res = await axios.put(
-            `http://localhost:5000/api/borrowings/${record._id}/return`,
+            `http://localhost:5001/api/borrowings/${record._id}/return`,
             {},
             { headers: { Authorization: `Bearer ${token}` } }
           );
@@ -168,7 +168,7 @@ const BorrowManager = () => {
       onOk: async () => {
         try {
           const res = await axios.put(
-            `http://localhost:5000/api/borrowings/${record._id}/confirm-payment`,
+            `http://localhost:5001/api/borrowings/${record._id}/confirm-payment`,
             {},
             { headers: { Authorization: `Bearer ${token}` } }
           );
@@ -221,7 +221,7 @@ const BorrowManager = () => {
         const author = (book.author && book.author.name) || book.author || "N/A";
         let thumb = book.image || (book.images && book.images[0]) || null;
         if (thumb && !thumb.startsWith("http"))
-          thumb = `http://localhost:5000/${thumb}`;
+          thumb = `http://localhost:5001/${thumb}`;
         const placeholder = "https://via.placeholder.com/40x60?text=?";
         return (
           <div className="flex items-center gap-2">

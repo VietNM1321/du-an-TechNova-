@@ -16,8 +16,8 @@ const BookAdd = () => {
     const fetchData = async () => {
       try {
         const [catRes, authorRes] = await Promise.all([
-          axios.get("http://localhost:5000/api/category?limit=1000&sort=createdAt&order=asc"),
-          axios.get("http://localhost:5000/api/authors?limit=1000"),
+          axios.get("http://localhost:5001/api/category?limit=1000&sort=createdAt&order=asc"),
+          axios.get("http://localhost:5001/api/authors?limit=1000"),
         ]);
         setCategories(catRes.data.categories || catRes.data);
         setAuthors(authorRes.data.authors || authorRes.data);
@@ -59,7 +59,7 @@ const BookAdd = () => {
     fileList.forEach((f) => formData.append("images", f.originFileObj || f));
     try {
       const token = localStorage.getItem("adminToken");
-      await axios.post("http://localhost:5000/api/books", formData, {
+      await axios.post("http://localhost:5001/api/books", formData, {
         headers: {
           "Content-Type": "multipart/form-data",
           Authorization: `Bearer ${token}`,
@@ -121,7 +121,7 @@ const BookAdd = () => {
                       onChange={(val) => {
                         if (val) {
                           setLoadingCode(true);
-                          axios.get(`http://localhost:5000/api/bookcodes/category/${val}`)
+                          axios.get(`http://localhost:5001/api/bookcodes/category/${val}`)
                             .then(res => {
                               if (res.data) {
                                 const { prefix, lastNumber } = res.data;

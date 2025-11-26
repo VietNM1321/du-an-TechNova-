@@ -54,7 +54,7 @@ const AddAuthor = () => {
         formData.append("image", imageFile.originFileObj || imageFile);
       }
 
-      await axios.post("http://localhost:5000/api/authors", formData, {
+      await axios.post("http://localhost:5001/api/authors", formData, {
         headers: { "Content-Type": "multipart/form-data" },
       });
       message.success("✅ Thêm tác giả thành công!");

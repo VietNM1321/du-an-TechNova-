@@ -16,7 +16,7 @@ function BookDetail() {
   useEffect(() => {
     const fetchBook = async () => {
       try {
-        const res = await axios.get(`http://localhost:5000/api/books/${id}`);
+        const res = await axios.get(`http://localhost:5001/api/books/${id}`);
         setBook(res.data);
       } catch (err) {
         console.error("❌ Lỗi khi tải chi tiết sách:", err);
@@ -29,7 +29,7 @@ function BookDetail() {
   if (book?.category?._id) {
     const fetchRelated = async () => {
       try {
-        const res = await axios.get(`http://localhost:5000/api/books?category=${book.category._id}`);
+        const res = await axios.get(`http://localhost:5001/api/books?category=${book.category._id}`);
         let booksArray = [];
         if (Array.isArray(res.data)) {
           booksArray = res.data;
@@ -63,7 +63,7 @@ function BookDetail() {
     if (!id) return;
     try {
       setLoadingReviews(true);
-      const res = await axios.get(`http://localhost:5000/api/reviews?bookId=${id}`);
+      const res = await axios.get(`http://localhost:5001/api/reviews?bookId=${id}`);
       setReviews(res.data || []);
     } catch (err) {
       console.error("❌ Lỗi khi tải đánh giá:", err);

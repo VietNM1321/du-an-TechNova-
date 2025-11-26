@@ -21,14 +21,14 @@ function Home() {
     try {
       if (!silent) setIsLoading(true);
       const resCat = await axios.get(
-        "http://localhost:5000/api/category?limit=1000&sort=createdAt&order=asc"
+        "http://localhost:5001/api/category?limit=1000&sort=createdAt&order=asc"
       );
       const cats = resCat.data.categories || [];
 
       const dataWithBooks = await Promise.all(
         cats.map(async (cat) => {
           const resBooks = await axios.get(
-            `http://localhost:5000/api/books?category=${cat.name}`
+            `http://localhost:5001/api/books?category=${cat.name}`
           );
           return { ...cat, books: resBooks.data.books || [] };
         })
@@ -52,7 +52,7 @@ function Home() {
       if (document.visibilityState === "visible") {
         fetchData(true);
       }
-    }, 5000);
+    }, 5001);
     return () => clearInterval(intervalId);
   }, []);
 

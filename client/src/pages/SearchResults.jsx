@@ -19,8 +19,8 @@ const SearchResults = () => {
     const fetchFilters = async () => {
       try {
         const [authorRes, categoryRes] = await Promise.all([
-          axios.get("http://localhost:5000/api/authors"),
-          axios.get("http://localhost:5000/api/category?sort=createdAt&order=asc"),
+          axios.get("http://localhost:5001/api/authors"),
+          axios.get("http://localhost:5001/api/category?sort=createdAt&order=asc"),
         ]);
 
         const authorData = Array.isArray(authorRes.data)
@@ -42,7 +42,7 @@ const SearchResults = () => {
   // 🟢 Gọi API tìm kiếm
   const fetchSearch = async () => {
     try {
-      let url = `http://localhost:5000/api/books/search?q=${encodeURIComponent(query)}`;
+      let url = `http://localhost:5001/api/books/search?q=${encodeURIComponent(query)}`;
       if (selectedAuthor) url += `&author=${selectedAuthor}`;
       if (selectedCategory) url += `&category=${selectedCategory}`;
 

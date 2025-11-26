@@ -14,7 +14,7 @@ const NotificationDetail = ({ show, onClose, currentUser }) => {
 
     const fetchNotifications = async () => {
       try {
-        let res = await axios.get("http://localhost:5000/api/notifications");
+        let res = await axios.get("http://localhost:5001/api/notifications");
         let data = res.data;
 
         // Lọc theo user role
@@ -140,7 +140,7 @@ const NotificationDetail = ({ show, onClose, currentUser }) => {
                 <div className="mb-4">
                   <p className="font-medium mb-2 text-gray-700">Ảnh minh họa:</p>
                   <img
-                    src={`http://localhost:5000/${selectedNotif.data.image}`}
+                    src={`http://localhost:5001/${selectedNotif.data.image}`}
                     alt="minh họa"
                     className="rounded-lg shadow max-w-full border"
                   />
@@ -149,7 +149,7 @@ const NotificationDetail = ({ show, onClose, currentUser }) => {
 
               {selectedNotif.data?.wordFile && (
                 <a
-                  href={`http://localhost:5000/${selectedNotif.data.wordFile}`}
+                  href={`http://localhost:5001/${selectedNotif.data.wordFile}`}
                   download
                   className="text-blue-600 hover:underline block mb-2"
                 >
@@ -159,7 +159,7 @@ const NotificationDetail = ({ show, onClose, currentUser }) => {
 
               {selectedNotif.data?.excelFile && (
                 <a
-                  href={`http://localhost:5000/${selectedNotif.data.excelFile}`}
+                  href={`http://localhost:5001/${selectedNotif.data.excelFile}`}
                   download
                   className="text-green-600 hover:underline block mb-2"
                 >

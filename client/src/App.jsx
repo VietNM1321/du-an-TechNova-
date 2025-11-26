@@ -21,6 +21,9 @@ import Payment from "./pages/Payment";
 import ChangePassword from "./pages/ChangePassword";
 import ForgotPassword from "./pages/ForgotPassword";
 
+// AI Chat page
+import Chat from "./pages/Chat";
+
 // Admin pages
 import AdminHome from "./pages/admin/AdminHome";
 import Users from "./pages/admin/Users";
@@ -47,7 +50,7 @@ import AddNotification from "./pages/admin/AddNotification";
 import EditNotification from "./pages/admin/EditNotification";
 import NotificationDetail from "./components/NotificationDetail";
 
-// ----- Route Guards -----
+// -------- ROUTE GUARDS --------
 const AdminRoute = ({ children }) => {
   const stored = localStorage.getItem("adminUser");
   const adminUser = stored ? JSON.parse(stored) : null;
@@ -64,7 +67,7 @@ const AdminOnly = ({ children }) => {
   const adminUser = stored ? JSON.parse(stored) : null;
 
   if (!adminUser || adminUser.role !== "admin") {
-    return <Navigate to="/admin" replace />; // redirect thủ thư về dashboard
+    return <Navigate to="/admin" replace />;
   }
 
   return children;
@@ -88,10 +91,13 @@ function App() {
           <Route path="policies" element={<Policies />} />
           <Route path="search" element={<SearchResults />} />
           <Route path="profile/:id" element={<Profile />} />
-          <Route path="/history" element={<History />} />
-          <Route path="/payment/:id" element={<Payment />} />
-          <Route path="/changepassword" element={<ChangePassword />} />
-          <Route path="/forgot-password" element={<ForgotPassword />} />
+          <Route path="history" element={<History />} />
+          <Route path="payment/:id" element={<Payment />} />
+          <Route path="changepassword" element={<ChangePassword />} />
+          <Route path="forgot-password" element={<ForgotPassword />} />
+
+          {/* 💬 Thêm route Chat AI */}
+          <Route path="chat" element={<Chat />} />
         </Route>
 
         {/* Admin routes */}
@@ -110,7 +116,7 @@ function App() {
           <Route path="setpassword" element={<AdminOnly><SetPassword /></AdminOnly>} />
           <Route path="course" element={<AdminOnly><CourseManager /></AdminOnly>} />
 
-          {/* Common admin + librarian pages */}
+          {/* Admin + Librarian pages */}
           <Route path="bookmanager" element={<BookManager />} />
           <Route path="bookadd" element={<BookAdd />} />
           <Route path="book/edit/:id" element={<BookEdit />} />

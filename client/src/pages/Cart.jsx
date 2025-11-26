@@ -19,7 +19,7 @@ const Cart = () => {
         setCart({ items: [], userId: null });
         return;
       }
-      const res = await axios.get("http://localhost:5000/api/cart", {
+      const res = await axios.get("http://localhost:5001/api/cart", {
         headers: { Authorization: `Bearer ${token}` },
       });
       const data = res.data || { items: [] };
@@ -150,11 +150,11 @@ const Cart = () => {
           };
 
           await axios.post(
-            "http://localhost:5000/api/borrowings",
+            "http://localhost:5001/api/borrowings",
             payload,
             { headers: { Authorization: `Bearer ${token}` } }
           );
-          await axios.delete("http://localhost:5000/api/cart/clear", {
+          await axios.delete("http://localhost:5001/api/cart/clear", {
             headers: { Authorization: `Bearer ${token}` },
           });
 
@@ -193,7 +193,7 @@ const Cart = () => {
         return;
       }
       const bookId = record.bookId?._id || record.bookId || record.book;
-      await axios.delete("http://localhost:5000/api/cart/remove", {
+      await axios.delete("http://localhost:5001/api/cart/remove", {
         headers: { Authorization: `Bearer ${token}` },
         data: { bookId },
       });
@@ -218,7 +218,7 @@ const Cart = () => {
             return;
           }
           if (!token) throw new Error("UNAUTHENTICATED");
-          await axios.delete("http://localhost:5000/api/cart/clear", {
+          await axios.delete("http://localhost:5001/api/cart/clear", {
             headers: { Authorization: `Bearer ${token}` },
           });
           setCart({ items: [] });

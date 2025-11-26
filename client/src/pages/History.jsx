@@ -27,7 +27,7 @@ const STATUS_COLOR = {
   overdue: "orange",
 };
 
-const OVERDUE_FEE_PER_DAY = 5000;
+const OVERDUE_FEE_PER_DAY = 5001;
 
 const History = ({ userId, refreshFlag }) => {
   const [history, setHistory] = useState([]);
@@ -39,7 +39,7 @@ const History = ({ userId, refreshFlag }) => {
 
   const renewBorrowing = async (id) => {
     try {
-      const res = await axios.put(`http://localhost:5000/api/borrowings/${id}/renew`, {}, { headers: { Authorization: `Bearer ${token}` } });
+      const res = await axios.put(`http://localhost:5001/api/borrowings/${id}/renew`, {}, { headers: { Authorization: `Bearer ${token}` } });
       message.success(res.data.message || "Gia hạn thành công");
       fetchHistory();
     } catch (error) {
@@ -51,7 +51,7 @@ const History = ({ userId, refreshFlag }) => {
     try {
       setLoading(true);
       if (!token || !effectiveUserId) throw new Error("UNAUTHENTICATED");
-      const res = await axios.get(`http://localhost:5000/api/borrowings/history/${effectiveUserId}`, {
+      const res = await axios.get(`http://localhost:5001/api/borrowings/history/${effectiveUserId}`, {
         headers: { Authorization: `Bearer ${token}` },
       });
       const data = res.data || [];
@@ -84,7 +84,7 @@ const History = ({ userId, refreshFlag }) => {
       async onOk() {
         try {
           await axios.put(
-            `http://localhost:5000/api/borrowings/${id}/report-lost`,
+            `http://localhost:5001/api/borrowings/${id}/report-lost`,
             {},
             { headers: { Authorization: `Bearer ${token}` } }
           );
@@ -127,7 +127,7 @@ const History = ({ userId, refreshFlag }) => {
           if (file) formData.append("image", file);
 
           await axios.put(
-            `http://localhost:5000/api/borrowings/${record._id}/report-broken`,
+            `http://localhost:5001/api/borrowings/${record._id}/report-broken`,
             formData,
             { headers: { "Content-Type": "multipart/form-data", Authorization: `Bearer ${token}` } }
           );
@@ -159,7 +159,7 @@ const History = ({ userId, refreshFlag }) => {
       render: (_, record) => {
         const book = record.book || record.bookSnapshot || {};
         let thumb = book.images?.[0];
-        if (thumb && !thumb.startsWith("http")) thumb = `http://localhost:5000/${thumb}`;
+        if (thumb && !thumb.startsWith("http")) thumb = `http://localhost:5001/${thumb}`;
         const placeholder = "https://via.placeholder.com/40x60?text=?";
         return (
           <Space>
