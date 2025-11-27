@@ -79,6 +79,11 @@ const BorrowingSchema = new mongoose.Schema(
     qrCodeImage: { type: String },
     paymentNote: { type: String },
 
+    studentPickupImage: { type: String },
+studentCardImage: { type: String },
+
+
+
     // 🧍 Lưu lại thông tin sinh viên tại thời điểm mượn
     userSnapshot: {
       fullName: String,
@@ -106,3 +111,4 @@ const BorrowingSchema = new mongoose.Schema(
 );
 
 export default mongoose.model("Borrowing", BorrowingSchema);
+  
