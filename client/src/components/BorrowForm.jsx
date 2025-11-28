@@ -1,6 +1,8 @@
 import React, { useState, useEffect } from "react";
 import axios from "axios";
 import { useCart } from "../components/cart";
+import { message } from "antd";
+
 const BorrowForm = ({ book, onClose }) => {
   const { addToCart } = useCart();
   const user = JSON.parse(localStorage.getItem("clientUser")) || {};
@@ -44,22 +46,22 @@ const BorrowForm = ({ book, onClose }) => {
     e.preventDefault();
     try {
       if (isAdmin) {
-        alert("Tài khoản quản trị không thể mượn sách.");
+        message.error("Tài khoản quản trị không thể mượn sách.");
         return;
       }
       const borrowDate = new Date(formData.borrowDate);
       const returnDate = new Date(formData.returnDate);
       if (borrowDate < new Date().setHours(0, 0, 0, 0)) {
-        alert("Ngày mượn không thể là ngày trong quá khứ!");
+        message.error("Ngày mượn không thể là ngày trong quá khứ!");
         return;
       }
       if (returnDate <= borrowDate) {
-        alert("Ngày trả phải lớn hơn ngày mượn!");
+        message.error("Ngày trả phải lớn hơn ngày mượn!");
         return;
       }
       const daysDiff = Math.floor((returnDate - borrowDate) / (1000 * 60 * 60 * 24));
       if (daysDiff > 30) {
-        alert("Thời gian mượn không được quá 30 ngày!");
+        message.error("Thời gian mượn không được quá 30 ngày!");
         return;
       }
       await addToCart({
@@ -69,12 +71,12 @@ const BorrowForm = ({ book, onClose }) => {
         borrowDate: formData.borrowDate,
         returnDate: formData.returnDate
       });
-      alert("✅ Sách đã thêm vào giỏ hàng!");
+      message.success("✅ Sách đã thêm vào giỏ hàng!");
       onClose();
     } catch (error) {
       console.error("Lỗi khi mượn sách:", error);
       const errorMessage = error.message || "❌ Mượn sách thất bại.";
-      alert(errorMessage);
+      message.error(errorMessage, 5);
     }
   };
   return (

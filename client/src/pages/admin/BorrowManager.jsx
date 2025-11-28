@@ -10,9 +10,10 @@ import {
   message,
   Select,
   DatePicker,
+  Upload,
 } from "antd";
 import dayjs from "dayjs";
-import { ExclamationCircleOutlined } from "@ant-design/icons";
+import { ExclamationCircleOutlined, UploadOutlined } from "@ant-design/icons";
 
 const { confirm } = Modal;
 
@@ -38,6 +39,14 @@ const BorrowManager = () => {
   const [borrowFrom, setBorrowFrom] = useState(null);
   const [borrowTo, setBorrowTo] = useState(null);
   const [typingTimer, setTypingTimer] = useState(null);
+
+  // Modal upload ảnh
+  const [modalVisible, setModalVisible] = useState(false);
+  const [selectedRecord, setSelectedRecord] = useState(null);
+  const [imgStudent, setImgStudent] = useState(null);
+  const [imgCard, setImgCard] = useState(null);
+  const [previewStudent, setPreviewStudent] = useState(null);
+  const [previewCard, setPreviewCard] = useState(null);
 
   const token = localStorage.getItem("adminToken");
 
@@ -70,6 +79,8 @@ const BorrowManager = () => {
         status: b.status || STATUS_ENUM.BORROWED,
         isPickedUp: b.isPickedUp ?? false,
         hasReturned: b.status === STATUS_ENUM.RETURNED,
+        imgStudent: b.imgStudent || null,
+        imgCard: b.imgCard || null,
       }));
 
       setBorrowings(mappedBorrowings);
@@ -122,43 +133,103 @@ const BorrowManager = () => {
           message.error(
             error.response?.data?.message || "Lỗi khi xác nhận lấy sách!"
           );
-        }
-      },
-    });
+  // ===== Modal xác nhận lấy sách =====
+  const openPickupModal = (record) => {
+    setSelectedRecord(record);
+    setImgStudent(null);
+    setImgCard(null);
+    setPreviewStudent(null);
+    setPreviewCard(null);
+    setModalVisible(true);
   };
 
-  const handleReturn = (record) => {
+  const handlePickupConfirm = async () => {
+    if (!imgStudent || !imgCard) {
+      message.error("Vui lòng upload đủ 2 ảnh!");
+      return;
+    }
+    try {
+      const formData = new FormData();
+      formData.append("imgStudent", imgStudent);
+      formData.append("imgCard", imgCard);
+
+      const res = await axios.put(
+        `http://localhost:5000/api/borrowings/${selectedRecord._id}/pickup`,
+        formData,
+        {
+          headers: {
+            Authorization: `Bearer ${token}`,
+            "Content-Type": "multipart/form-data",
+          },
+        }
+      );
+
+      const { imgStudent: sUrl, imgCard: cUrl } = res.data;
+
+      message.success(res.data.message || "✅ Đã xác nhận lấy sách!");
+
+      setBorrowings((prev) =>
+        prev.map((b) =>
+          b._id === selectedRecord._id
+            ? {
+                ...b,
+                isPickedUp: true,
+                status: STATUS_ENUM.BORROWED,
+                imgStudent: sUrl,
+                imgCard: cUrl,
+              }
+            : b
+        )
+      );
+      setModalVisible(false);
+    } catch (error) {
+      console.error(error);
+      message.error(
+        error.response?.data?.message || "Lỗi khi xác nhận lấy sách!"
+      );
+    }
+  };
+
+  // ===== Xử lý trả sách hoặc đổi trạng thái =====
+  const handleReturnOrStatusChange = (record, newStatus) => {
     confirm({
-      title: "Xác nhận đã trả sách?",
+      title: "Xác nhận?",
       icon: <ExclamationCircleOutlined />,
       onOk: async () => {
         try {
           const res = await axios.put(
-            `http://localhost:5001/api/borrowings/${record._id}/return`,
+            `http://localhost:5000/api/borrowings/${record._id}/return`,
             {},
+          const url =
+            newStatus === STATUS_ENUM.RETURNED
+              ? `http://localhost:5000/api/borrowings/${record._id}/return`
+              : `http://localhost:5000/api/borrowings/${record._id}/status`;
+          await axios.put(
+            url,
+            { status: newStatus },
             { headers: { Authorization: `Bearer ${token}` } }
           );
-          message.success("✅ Đã ghi nhận trả sách!");
+          message.success("✅ Cập nhật trạng thái thành công!");
           setBorrowings((prev) =>
             prev.map((b) =>
               b._id === record._id
-                ? { ...b, hasReturned: true, status: STATUS_ENUM.RETURNED }
+                ? {
+                    ...b,
+                    status: newStatus,
+                    hasReturned: newStatus === STATUS_ENUM.RETURNED,
+                  }
                 : b
             )
           );
         } catch (error) {
           console.error(error);
-          message.error("Lỗi khi ghi nhận trả sách!");
+          message.error("Lỗi khi cập nhật trạng thái!");
         }
       },
     });
   };
 
   const handleConfirmPayment = (record) => {
-    if (!record.hasReturned) {
-      message.warning("Phải trả sách trước khi thanh toán!");
-      return;
-    }
     confirm({
       title: "Xác nhận thanh toán?",
       content: `Xác nhận đã nhận thanh toán ${
@@ -172,11 +243,15 @@ const BorrowManager = () => {
             {},
             { headers: { Authorization: `Bearer ${token}` } }
           );
-          message.success("✅ Đã thanh toán!");
+          message.success(res.data?.message || "✅ Đã thanh toán!");
           setBorrowings((prev) =>
             prev.map((b) =>
               b._id === record._id
-                ? { ...b, status: STATUS_ENUM.COMPENSATED, paymentStatus: "done" }
+                ? {
+                    ...b,
+                    status: STATUS_ENUM.COMPENSATED,
+                    paymentStatus: "completed",
+                  }
                 : b
             )
           );
@@ -228,7 +303,12 @@ const BorrowManager = () => {
             <img
               src={thumb || placeholder}
               alt="cover"
-              style={{ width: 40, height: 60, objectFit: "cover", borderRadius: 4 }}
+              style={{
+                width: 40,
+                height: 60,
+                objectFit: "cover",
+                borderRadius: 4,
+              }}
             />
             <div>
               <div className="font-medium">{title}</div>
@@ -239,21 +319,41 @@ const BorrowManager = () => {
       },
     },
     {
+      title: "Ảnh xác nhận",
+      key: "images",
+      render: (record) => (
+        <div className="flex gap-2">
+          {record.imgStudent && (
+            <img
+              src={`http://localhost:5000/${record.imgStudent}`}
+              alt="Student"
+              width={60}
+            />
+          )}
+          {record.imgCard && (
+            <img
+              src={`http://localhost:5000/${record.imgCard}`}
+              alt="Card"
+              width={60}
+            />
+          )}
+        </div>
+      ),
+    },
+    {
       title: "Số lượng",
       dataIndex: "quantity",
       key: "quantity",
       width: "10%",
       render: (quantity) => (
-        <span className="font-semibold text-blue-600">
-          {quantity || 1} quyển
-        </span>
+        <span className="font-semibold text-blue-600">{quantity || 1} quyển</span>
       ),
     },
     {
       title: "Lần gia hạn",
       dataIndex: "renewCount",
       key: "renewCount",
-      render: (renewCount, record) => (
+      render: (renewCount) => (
         <span>
           {renewCount || 0}
           {renewCount >= 3 && (
@@ -294,7 +394,9 @@ const BorrowManager = () => {
             color = "green";
             break;
           case STATUS_ENUM.OVERDUE:
-            text = record.hasReturned ? "Quá hạn (Đã trả vật lý)" : "Quá hạn";
+            text = record.hasReturned
+              ? "Quá hạn (Đã trả vật lý)"
+              : "Quá hạn";
             color = "orange";
             break;
           case STATUS_ENUM.DAMAGED:
@@ -323,7 +425,9 @@ const BorrowManager = () => {
           <div className="text-right font-semibold text-red-600">
             {compensation.toLocaleString("vi-VN")} VNĐ
           </div>
-        ) : "—";
+        ) : (
+          "—"
+        );
       },
     },
     {
@@ -331,36 +435,42 @@ const BorrowManager = () => {
       key: "action",
       render: (record) => (
         <Space size="small">
-          {!record.isPickedUp && record.status !== STATUS_ENUM.RETURNED && (
-            <Button
-              size="small"
-              type="primary"
-              onClick={() => handleConfirmPickup(record)}
-            >
-              ✅ Xác nhận lấy sách
-            </Button>
-          )}
-          {record.isPickedUp && (record.status === STATUS_ENUM.BORROWED || record.status === STATUS_ENUM.RENEWED) && (
-            <Button size="small" type="primary" onClick={() => handleReturn(record)}>
-              ✅ Trả sách
-            </Button>
-          )}
-          {record.status === STATUS_ENUM.OVERDUE && (
-            <>
-              <Button size="small" type="primary" onClick={() => handleReturn(record)}>
+          {!record.isPickedUp &&
+            record.status === STATUS_ENUM.PENDING_PICKUP && (
+              <Button
+                size="small"
+                type="primary"
+                onClick={() => openPickupModal(record)}
+              >
+                ✅ Xác nhận lấy sách
+              </Button>
+            )}
+          {record.isPickedUp &&
+            [STATUS_ENUM.BORROWED, STATUS_ENUM.RENEWED, STATUS_ENUM.OVERDUE].includes(
+              record.status
+            ) && (
+              <Button
+                size="small"
+                type="primary"
+                onClick={() =>
+                  handleReturnOrStatusChange(record, STATUS_ENUM.RETURNED)
+                }
+              >
                 ✅ Trả sách
               </Button>
+            )}
+          {["damaged", "lost", "overdue"].includes(record.status) &&
+            record.compensationAmount > 0 &&
+            record.paymentStatus !== "completed" && (
               <Button
                 size="small"
                 type="primary"
                 style={{ backgroundColor: "#52c41a", borderColor: "#52c41a" }}
-                disabled={!record.hasReturned}
                 onClick={() => handleConfirmPayment(record)}
               >
-                ✅ Thanh toán
+                ✅ Xác nhận thanh toán
               </Button>
-            </>
-          )}
+            )}
         </Space>
       ),
     },
@@ -390,7 +500,10 @@ const BorrowManager = () => {
           />
           <Select
             value={status}
-            onChange={(v) => { setStatus(v); setPage(1); }}
+            onChange={(v) => {
+              setStatus(v);
+              setPage(1);
+            }}
             allowClear
             placeholder="Trạng thái"
             options={[
@@ -406,12 +519,18 @@ const BorrowManager = () => {
           />
           <DatePicker
             value={borrowFrom ? dayjs(borrowFrom) : null}
-            onChange={(d) => { setBorrowFrom(d ? d.format("YYYY-MM-DD") : null); setPage(1); }}
+            onChange={(d) => {
+              setBorrowFrom(d ? d.format("YYYY-MM-DD") : null);
+              setPage(1);
+            }}
             placeholder="Mượn từ"
           />
           <DatePicker
             value={borrowTo ? dayjs(borrowTo) : null}
-            onChange={(d) => { setBorrowTo(d ? d.format("YYYY-MM-DD") : null); setPage(1); }}
+            onChange={(d) => {
+              setBorrowTo(d ? d.format("YYYY-MM-DD") : null);
+              setPage(1);
+            }}
             placeholder="Mượn đến"
           />
         </div>
@@ -427,10 +546,69 @@ const BorrowManager = () => {
               pageSize: limit,
               total: totalItems,
               showSizeChanger: true,
-              onChange: (p, l) => { setPage(p); setLimit(l); },
+              onChange: (p, l) => {
+                setPage(p);
+                setLimit(l);
+              },
             }}
           />
         </div>
+
+        {/* Modal upload xác nhận lấy sách */}
+        <Modal
+          title="Xác nhận đã lấy sách?"
+          open={modalVisible}
+          onOk={handlePickupConfirm}
+          onCancel={() => setModalVisible(false)}
+          okText="Xác nhận"
+          cancelText="Hủy"
+        >
+          <div className="flex flex-col gap-4">
+            <div>
+              <Upload
+                beforeUpload={(file) => {
+                  setImgStudent(file);
+                  const reader = new FileReader();
+                  reader.onload = (e) => setPreviewStudent(e.target.result);
+                  reader.readAsDataURL(file);
+                  return false;
+                }}
+                showUploadList={false}
+              >
+                <Button icon={<UploadOutlined />}>Upload ảnh học sinh</Button>
+              </Upload>
+              {previewStudent && (
+                <img
+                  src={previewStudent}
+                  alt="Student"
+                  className="mt-2 w-32 h-40 object-cover rounded"
+                />
+              )}
+            </div>
+
+            <div>
+              <Upload
+                beforeUpload={(file) => {
+                  setImgCard(file);
+                  const reader = new FileReader();
+                  reader.onload = (e) => setPreviewCard(e.target.result);
+                  reader.readAsDataURL(file);
+                  return false;
+                }}
+                showUploadList={false}
+              >
+                <Button icon={<UploadOutlined />}>Upload ảnh CMND/CCCD</Button>
+              </Upload>
+              {previewCard && (
+                <img
+                  src={previewCard}
+                  alt="Card"
+                  className="mt-2 w-32 h-40 object-cover rounded"
+                />
+              )}
+            </div>
+          </div>
+        </Modal>
       </div>
     </div>
   );

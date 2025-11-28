@@ -30,7 +30,8 @@ const STATUS_COLOR = {
 const OVERDUE_FEE_PER_DAY = 5001;
 
 const History = ({ userId, refreshFlag }) => {
-  const [history, setHistory] = useState([]);
+  const [history, setHistory] = useState([]);           // dữ liệu thô từ API (từng sách)
+  const [groupedHistory, setGroupedHistory] = useState([]); // danh sách đơn lớn đã gộp
   const [loading, setLoading] = useState(false);
   const token = localStorage.getItem("clientToken");
   const storedUser = JSON.parse(localStorage.getItem("clientUser") || "null");
@@ -61,7 +62,76 @@ const History = ({ userId, refreshFlag }) => {
         if ((b.status === "borrowed" || b.status === "renewed") && !b.isPickedUp) b.status = "pendingPickup";
         return b;
       });
+
+      // Gom các đơn mượn cùng ngày (và cùng mã đơn) thành 1 "đơn lớn"
+      const groupsMap = new Map();
+
+      mapped.forEach((b) => {
+        // Nếu backend đã gộp mã đơn cho cùng ngày thì ưu tiên group theo borrowingCode
+        // nếu không có thì fallback theo ngày mượn + ngày trả (định dạng YYYY-MM-DD)
+        const borrowDate = b.borrowDate ? dayjs(b.borrowDate).format("YYYY-MM-DD") : "N/A";
+        const dueDate = b.dueDate ? dayjs(b.dueDate).format("YYYY-MM-DD") : "N/A";
+        const key = b.borrowingCode || `${borrowDate}_${dueDate}`;
+
+        if (!groupsMap.has(key)) {
+          groupsMap.set(key, {
+            key,
+            borrowingCode: b.borrowingCode,
+            borrowDate: b.borrowDate,
+            dueDate: b.dueDate,
+            items: [],
+          });
+        }
+        const group = groupsMap.get(key);
+        group.items.push(b);
+      });
+
+      const groups = Array.from(groupsMap.values()).map((g) => {
+        const totalQuantity = g.items.reduce((sum, it) => sum + (it.quantity || 1), 0);
+
+        // Xác định trạng thái tổng quát của đơn lớn
+        let summaryStatus = "returned";
+        if (g.items.some((it) => ["lost", "damaged"].includes(it.status))) summaryStatus = "damaged";
+        else if (g.items.some((it) => it.status === "overdue")) summaryStatus = "overdue";
+        else if (g.items.some((it) => it.status === "compensated")) summaryStatus = "compensated";
+        else if (g.items.some((it) => ["borrowed", "renewed", "pendingPickup"].includes(it.status)))
+          summaryStatus = "borrowed";
+
+        const hasPendingPickup = g.items.some(
+          (it) => !it.isPickedUp || it.status === "pendingPickup"
+        );
+        const hasPickedUpBorrowed = g.items.some(
+          (it) =>
+            it.isPickedUp &&
+            ["borrowed", "renewed", "overdue"].includes(it.status)
+        );
+
+        // Tổng tiền (quá hạn + đền bù) nếu có
+        const totalCompensation = g.items.reduce((sum, it) => {
+          // Nếu có tiền đền bù (kể cả khi status đã là compensated) thì cộng trực tiếp
+          if (it.compensationAmount && it.compensationAmount > 0) {
+            return sum + it.compensationAmount;
+          }
+          // Nếu không có tiền đền bù nhưng đang quá hạn thì tính phí quá hạn
+          const fee = calculateOverdueFee(it);
+          return sum + fee;
+        }, 0);
+
+        return {
+          ...g,
+          totalQuantity,
+          summaryStatus,
+          totalCompensation,
+          hasPendingPickup,
+          hasPickedUpBorrowed,
+        };
+      });
+
+      // Sắp xếp đơn lớn theo ngày mượn mới nhất
+      groups.sort((a, b) => new Date(b.borrowDate) - new Date(a.borrowDate));
+
       setHistory(mapped);
+      setGroupedHistory(groups);
     } catch (error) {
       console.error("❌ Lỗi fetch history:", error);
       message.error("Không thể tải lịch sử mượn!");
@@ -152,7 +222,97 @@ const History = ({ userId, refreshFlag }) => {
     return 0;
   };
 
-  const columns = [
+  // Cột cho bảng "đơn lớn" (đã gộp)
+  const groupedColumns = [
+    {
+      title: "Mã đơn mượn",
+      dataIndex: "borrowingCode",
+      key: "borrowingCode",
+      render: (code) => (
+        <Tooltip title={code || "Chưa có mã đơn"}>
+          <Tag color={code ? "cyan" : "default"} icon="🔖">
+            {code ? code : "—"}
+          </Tag>
+        </Tooltip>
+      ),
+    },
+    {
+      title: "Ngày mượn",
+      dataIndex: "borrowDate",
+      key: "borrowDate",
+      render: (date) => (date ? dayjs(date).format("DD/MM/YYYY") : "—"),
+    },
+    {
+      title: "Ngày trả",
+      dataIndex: "dueDate",
+      key: "dueDate",
+      render: (date) => (date ? dayjs(date).format("DD/MM/YYYY") : "—"),
+    },
+    {
+      title: "Số sách trong đơn",
+      dataIndex: "totalQuantity",
+      key: "totalQuantity",
+      render: (q) => (
+        <span className="font-semibold text-blue-600">
+          {q} quyển
+        </span>
+      ),
+    },
+    {
+      title: "Trạng thái",
+      dataIndex: "summaryStatus",
+      key: "summaryStatus",
+      render: (_, record) => {
+        // Nếu trong đơn có cả sách đã lấy và sách chưa lấy -> hiển thị rõ là trạng thái hỗn hợp
+        if (record.hasPendingPickup && record.hasPickedUpBorrowed) {
+          return (
+            <Tag color="blue">
+              Đang mượn &amp; Chưa lấy sách
+            </Tag>
+          );
+        }
+
+        const status = record.summaryStatus;
+        return (
+          <Tag color={STATUS_COLOR[status] || "default"}>
+            {STATUS_LABEL[status] || status}
+          </Tag>
+        );
+      },
+    },
+    {
+      title: "Tổng tiền (quá hạn / đền bù)",
+      dataIndex: "totalCompensation",
+      key: "totalCompensation",
+      render: (total) =>
+        total > 0 ? (
+          <span style={{ color: "red", fontWeight: 600 }}>
+            {total.toLocaleString("vi-VN")} VNĐ
+          </span>
+        ) : (
+          "—"
+        ),
+    },
+    {
+      title: "Thao tác",
+      key: "action",
+      render: (_, record) => (
+        <Button
+          type="link"
+          onClick={() =>
+            navigate(`/history/${encodeURIComponent(record.borrowingCode || record.key)}`, {
+              state: { group: record },
+            })
+          }
+        >
+          Xem chi tiết
+        </Button>
+      ),
+    },
+  ];
+
+  // Cột cho bảng chi tiết (đơn nhỏ trong 1 đơn lớn)
+  const detailColumns = [
     {
       title: "Sách mượn",
       key: "book",
@@ -185,6 +345,18 @@ const History = ({ userId, refreshFlag }) => {
       key: "borrowDate",
       render: (date) => (date ? dayjs(date).format("DD/MM/YYYY") : "—"),
     },
+    {
+      title: "Mã đơn mượn",
+      dataIndex: "borrowingCode",
+      key: "borrowingCode",
+      render: (code) => (
+        <Tooltip title={code || "Chưa có mã đơn"}>
+          <Tag color={code ? "cyan" : "default"} icon="🔖">
+            {code ? code : "—"}
+          </Tag>
+        </Tooltip>
+      ),
+    },
       {
         title: "Lần gia hạn",
         dataIndex: "renewCount",
@@ -214,23 +386,17 @@ const History = ({ userId, refreshFlag }) => {
             ? "overdue"
             : record.status;
 
-        let total = 0;
-        if (["damaged", "lost"].includes(record.status)) {
-          total = record.compensationAmount || 0;
-        } else if (displayStatus === "overdue") {
-          total = calculateOverdueFee(record);
-        }
-
         return (
           <div>
             <Tag color={STATUS_COLOR[displayStatus] || "default"}>
               {STATUS_LABEL[displayStatus] || displayStatus}
             </Tag>
-            {total > 0 && (
-              <Tooltip title={`Tổng: ${total.toLocaleString("vi-VN")} VNĐ`}>
-                <div style={{ color: "red", fontWeight: 600 }}>{total.toLocaleString("vi-VN")} VNĐ</div>
-              </Tooltip>
-            )}
+            {["damaged", "lost"].includes(record.status) &&
+              record.paymentStatus === "pending" && (
+                <Tag color="gold" style={{ marginTop: 4 }}>
+                  Chờ xác nhận thanh toán
+                </Tag>
+              )}
           </div>
         );
       },
@@ -283,16 +449,44 @@ const History = ({ userId, refreshFlag }) => {
   ];
 
   return (
-    <div style={{ padding: 24 }}>
-      <h2>📖 Lịch sử mượn sách</h2>
-      <Table
-        rowKey={r => r._id}
-        columns={columns}
-        dataSource={history}
-        loading={loading}
-        pagination={{ pageSize: 5 }}
-        bordered
-      />
+    <div style={{ padding: "0 40px 24px" }}>
+      <div style={{ marginBottom: 16 }}>
+        <h2
+          style={{
+            fontSize: 24,
+            fontWeight: 700,
+            margin: 0,
+            color: "#1677ff",
+            display: "flex",
+            alignItems: "center",
+            gap: 8,
+          }}
+        >
+          <span role="img" aria-label="history">
+            📖
+          </span>
+          <span>Lịch sử mượn sách</span>
+        </h2>
+      </div>
+
+      <div
+        style={{
+          background: "#fff",
+          borderRadius: 8,
+          padding: 16,
+          boxShadow: "0 2px 8px rgba(0,0,0,0.04)",
+          border: "1px solid #f0f0f0",
+        }}
+      >
+        <Table
+          rowKey={(r) => r.key}
+          columns={groupedColumns}
+          dataSource={groupedHistory}
+          loading={loading}
+          pagination={{ pageSize: 5 }}
+          bordered
+        />
+      </div>
     </div>
   );
 };

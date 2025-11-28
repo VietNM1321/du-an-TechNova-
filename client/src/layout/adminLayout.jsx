@@ -27,6 +27,7 @@ const sidebarLinks = [
   { to: "/admin/bookcode", label: "Quản lý mã sách", icon: <FileText size={18} /> },
   { to: "/admin/importlist", label: "Quản lý nhập kho", icon: <FileText size={18} /> },
   { to: "/admin/notifications", label: "Quản lý thông báo", icon: <FileText size={18} /> },
+  { to: "/admin/fund", label: "Quản lý quỹ thư viện", icon: <FileText size={18} /> },
  
 
 ];

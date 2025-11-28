@@ -17,6 +17,7 @@ import News from "./pages/News";
 import Contact from "./pages/Contact";
 import Policies from "./pages/Policies";
 import History from "./pages/History";
+import HistoryDetail from "./pages/HistoryDetail";
 import Payment from "./pages/Payment";
 import ChangePassword from "./pages/ChangePassword";
 import ForgotPassword from "./pages/ForgotPassword";
@@ -49,6 +50,7 @@ import NotificationList from "./pages/admin/NotificationList";
 import AddNotification from "./pages/admin/AddNotification";
 import EditNotification from "./pages/admin/EditNotification";
 import NotificationDetail from "./components/NotificationDetail";
+import LibraryFund from "./pages/admin/LibraryFund";
 
 // -------- ROUTE GUARDS --------
 const AdminRoute = ({ children }) => {
@@ -91,12 +93,11 @@ function App() {
           <Route path="policies" element={<Policies />} />
           <Route path="search" element={<SearchResults />} />
           <Route path="profile/:id" element={<Profile />} />
-          <Route path="history" element={<History />} />
-          <Route path="payment/:id" element={<Payment />} />
-          <Route path="changepassword" element={<ChangePassword />} />
-          <Route path="forgot-password" element={<ForgotPassword />} />
-
-          {/* 💬 Thêm route Chat AI */}
+          <Route path="/history" element={<History />} />
+          <Route path="/history/:code" element={<HistoryDetail />} />
+          <Route path="/payment/:id" element={<Payment />} />
+          <Route path="/changepassword" element={<ChangePassword />} />
+          <Route path="/forgot-password" element={<ForgotPassword />} />
           <Route path="chat" element={<Chat />} />
         </Route>
 
@@ -129,6 +130,7 @@ function App() {
           <Route path="author/add" element={<AuthorAdd />} />
           <Route path="authoredit/:id" element={<AuthorEdit />} />
           <Route path="borrowings" element={<BorrowManager />} />
+          <Route path="fund" element={<LibraryFund />} />
           <Route path="category" element={<CategoryManager />} />
           <Route path="category/add" element={<AddCategory />} />
           <Route path="category/edit/:id" element={<EditCategory />} />
