@@ -13,7 +13,7 @@ const ImportAdd = () => {
   useEffect(() => {
     const fetchCategories = async () => {
       try {
-        const res = await axios.get("http://localhost:5000/api/category?limit=1000");
+        const res = await axios.get("http://localhost:5001/api/category?limit=1000");
         setCategories(res.data.categories || []);
       } catch (err) {
         toast.error("Lỗi khi tải danh mục");
@@ -29,7 +29,7 @@ const ImportAdd = () => {
     if (!categoryId) return
     try {
       const res = await axios.get(
-        `http://localhost:5000/api/books?limit=1000&category=${categoryId}`
+        `http://localhost:5001/api/books?limit=1000&category=${categoryId}`
       );
       setBooks(res.data.books);
     } catch (err) {
@@ -43,7 +43,7 @@ const ImportAdd = () => {
       return;
     }
     try {
-      await axios.post("http://localhost:5000/api/imports", {
+      await axios.post("http://localhost:5001/api/imports", {
         bookId: selectedBook,
         quantity: Number(quantity),
         userRole: selectedRole,

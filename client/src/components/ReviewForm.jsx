@@ -29,7 +29,7 @@ function ReviewForm({ bookId, onReviewAdded }) {
       setCheckingEligibility(true);
       setEligibilityError("");
       try {
-        const res = await axios.get(`http://localhost:5000/api/borrowings/can-review/${bookId}`,{
+        const res = await axios.get(`http://localhost:5001/api/borrowings/can-review/${bookId}`,{
             headers: { Authorization: `Bearer ${token}` },
           }
         );
@@ -70,7 +70,7 @@ function ReviewForm({ bookId, onReviewAdded }) {
         setLoading(false);
         return;
       }
-      await axios.post("http://localhost:5000/api/reviews",{
+      await axios.post("http://localhost:5001/api/reviews",{
           bookId,rating,comment: comment.trim() || undefined,
         },
         {

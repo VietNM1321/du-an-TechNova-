@@ -19,14 +19,14 @@ const ReportDamageModal = ({ visible, onClose, borrowingId, onSuccess }) => {
       setLoading(true);
 
       if (damageType === "lost") {
-        await axios.put(`http://localhost:5000/api/borrowings/${borrowingId}/report-lost`);
+        await axios.put(`http://localhost:5001/api/borrowings/${borrowingId}/report-lost`);
       } else {
         const formData = new FormData();
         formData.append("reason", reason);
         if (file) formData.append("image", file);
 
         await axios.put(
-          `http://localhost:5000/api/borrowings/${borrowingId}/report-broken`,
+          `http://localhost:5001/api/borrowings/${borrowingId}/report-broken`,
           formData,
           { headers: { "Content-Type": "multipart/form-data" } }
         );

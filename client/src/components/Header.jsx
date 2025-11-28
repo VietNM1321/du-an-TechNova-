@@ -72,7 +72,7 @@ const Header = () => {
   useEffect(() => {
     const fetchNotifications = async () => {
       try {
-        const res = await axios.get("http://localhost:5000/api/notifications");
+        const res = await axios.get("http://localhost:5001/api/notifications");
         setNotifications(res.data || []);
       } catch (err) {
         console.error("Lỗi load notifications:", err);
@@ -233,6 +233,7 @@ const Header = () => {
           <Link to="/news" className="hover:text-red-600 transition">Tin tức</Link>
           <Link to="/policies" className="hover:text-red-600 transition">Chính sách</Link>
           <Link to="/contact" className="hover:text-red-600 transition">Liên hệ</Link>
+          <Link to="/chat" className="hover:text-red-600 transition">Chat Bot</Link>
         </div>
       </nav>
     </header>

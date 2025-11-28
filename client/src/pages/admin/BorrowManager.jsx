@@ -69,7 +69,7 @@ const BorrowManager = () => {
       ].filter(Boolean);
 
       const res = await axios.get(
-        `http://localhost:5000/api/borrowings?${parts.join("&")}`,
+        `http://localhost:5001/api/borrowings?${parts.join("&")}`,
         { headers: { Authorization: `Bearer ${token}` } }
       );
 
@@ -109,6 +109,30 @@ const BorrowManager = () => {
     setTypingTimer(timer);
   };
 
+  const handleConfirmPickup = (record) => {
+    confirm({
+      title: "Xác nhận đã lấy sách?",
+      icon: <ExclamationCircleOutlined />,
+      onOk: async () => {
+        try {
+          const res = await axios.put(
+            `http://localhost:5001/api/borrowings/${record._id}/pickup`,
+            {},
+            { headers: { Authorization: `Bearer ${token}` } }
+          );
+          message.success(res.data.message || "✅ Đã xác nhận lấy sách!");
+          setBorrowings((prev) =>
+            prev.map((b) =>
+              b._id === record._id
+                ? { ...b, isPickedUp: true, status: STATUS_ENUM.BORROWED }
+                : b
+            )
+          );
+        } catch (error) {
+          console.error(error);
+          message.error(
+            error.response?.data?.message || "Lỗi khi xác nhận lấy sách!"
+          );
   // ===== Modal xác nhận lấy sách =====
   const openPickupModal = (record) => {
     setSelectedRecord(record);
@@ -173,6 +197,9 @@ const BorrowManager = () => {
       icon: <ExclamationCircleOutlined />,
       onOk: async () => {
         try {
+          const res = await axios.put(
+            `http://localhost:5000/api/borrowings/${record._id}/return`,
+            {},
           const url =
             newStatus === STATUS_ENUM.RETURNED
               ? `http://localhost:5000/api/borrowings/${record._id}/return`
@@ -212,7 +239,7 @@ const BorrowManager = () => {
       onOk: async () => {
         try {
           const res = await axios.put(
-            `http://localhost:5000/api/borrowings/${record._id}/confirm-payment`,
+            `http://localhost:5001/api/borrowings/${record._id}/confirm-payment`,
             {},
             { headers: { Authorization: `Bearer ${token}` } }
           );
@@ -269,7 +296,7 @@ const BorrowManager = () => {
         const author = (book.author && book.author.name) || book.author || "N/A";
         let thumb = book.image || (book.images && book.images[0]) || null;
         if (thumb && !thumb.startsWith("http"))
-          thumb = `http://localhost:5000/${thumb}`;
+          thumb = `http://localhost:5001/${thumb}`;
         const placeholder = "https://via.placeholder.com/40x60?text=?";
         return (
           <div className="flex items-center gap-2">

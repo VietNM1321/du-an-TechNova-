@@ -29,7 +29,7 @@ const AuthorManager = () => {
         bf ? `bornFrom=${encodeURIComponent(bf)}` : "",
         bt ? `bornTo=${encodeURIComponent(bt)}` : "",
       ].filter(Boolean);
-      const res = await axios.get(`http://localhost:5000/api/authors?${parts.join("&")}`);
+      const res = await axios.get(`http://localhost:5001/api/authors?${parts.join("&")}`);
       setAuthors(res.data.authors || []);
       setTotalPages(res.data.totalPages || 1);
       setPage(res.data.currentPage || 1);
@@ -64,7 +64,7 @@ const AuthorManager = () => {
   const handleDelete = async (id) => {
     if (window.confirm("Bạn có chắc muốn xóa tác giả này?")) {
       try {
-        const res = await axios.delete(`http://localhost:5000/api/authors/${id}`);
+        const res = await axios.delete(`http://localhost:5001/api/authors/${id}`);
         alert(res.data.message || "✅ Xóa thành công!");
         fetchAuthors(page);
       } catch (err) {
@@ -194,7 +194,7 @@ const AuthorManager = () => {
                     <td className="p-4 text-center">
                       {a.image ? (
                         <img
-                          src={`http://localhost:5000/${a.image}`}
+                          src={`http://localhost:5001/${a.image}`}
                           alt={a.name}
                           className="w-14 h-14 object-cover rounded-full mx-auto ring-2 ring-slate-100"
                         />

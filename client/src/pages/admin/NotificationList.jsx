@@ -17,7 +17,7 @@ const NotificationList = () => {
   const fetchNotifications = async () => {
     try {
       setLoading(true);
-      const res = await axios.get("http://localhost:5000/api/notifications");
+      const res = await axios.get("http://localhost:5001/api/notifications");
       setNotifications(res.data);
       setFilteredNotifications(res.data);
     } catch (err) {
@@ -31,7 +31,7 @@ const NotificationList = () => {
   const handleDelete = async (id) => {
     if (!window.confirm("Bạn có chắc muốn xóa thông báo này?")) return;
     try {
-      await axios.delete(`http://localhost:5000/api/notifications/${id}`);
+      await axios.delete(`http://localhost:5001/api/notifications/${id}`);
       message.success("Xóa thông báo thành công!");
       fetchNotifications();
     } catch (err) {
@@ -137,19 +137,19 @@ const NotificationList = () => {
       title: "Ảnh minh họa",
       dataIndex: ["data","image"],
       key: "image",
-      render: img => img ? <Image src={`http://localhost:5000/${img}`} width={80} /> : "-"
+      render: img => img ? <Image src={`http://localhost:5001/${img}`} width={80} /> : "-"
     },
     {
       title: "File Word",
       dataIndex: ["data","wordFile"],
       key: "wordFile",
-      render: file => file ? <a href={`http://localhost:5000/${file}`} target="_blank" rel="noreferrer">Tải Word</a> : "-"
+      render: file => file ? <a href={`http://localhost:5001/${file}`} target="_blank" rel="noreferrer">Tải Word</a> : "-"
     },
     {
       title: "File Excel",
       dataIndex: ["data","excelFile"],
       key: "excelFile",
-      render: file => file ? <a href={`http://localhost:5000/${file}`} target="_blank" rel="noreferrer">Tải Excel</a> : "-"
+      render: file => file ? <a href={`http://localhost:5001/${file}`} target="_blank" rel="noreferrer">Tải Excel</a> : "-"
     },
     {
       title: "Hành động",

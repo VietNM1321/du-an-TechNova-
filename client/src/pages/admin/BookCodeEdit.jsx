@@ -8,7 +8,7 @@ const BookCodeEdit = () => {
   const navigate = useNavigate();
   const fetchCategories = async () => {
     try {
-      const res = await axios.get("http://localhost:5000/api/category?limit=1000");
+      const res = await axios.get("http://localhost:5001/api/category?limit=1000");
       setCategories(res.data.categories || res.data);
     } catch (err) {
       console.error("Lỗi lấy danh mục:", err);
@@ -16,7 +16,7 @@ const BookCodeEdit = () => {
   };
   const fetchBookCode = async () => {
     try {
-      const res = await axios.get(`http://localhost:5000/api/bookcodes/${id}`);
+      const res = await axios.get(`http://localhost:5001/api/bookcodes/${id}`);
       const data = res.data;
       setForm({ category: data.category._id, prefix: data.prefix });
     } catch (err) {
@@ -32,7 +32,7 @@ const BookCodeEdit = () => {
   const handleSubmit = async (e) => {
     e.preventDefault();
     try {
-      const res = await axios.put(`http://localhost:5000/api/bookcodes/${id}`, { prefix: form.prefix });
+      const res = await axios.put(`http://localhost:5001/api/bookcodes/${id}`, { prefix: form.prefix });
       alert(res.data.message);
       navigate("/admin/bookcode");
     } catch (err) {

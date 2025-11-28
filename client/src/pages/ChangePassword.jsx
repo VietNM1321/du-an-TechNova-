@@ -31,7 +31,7 @@ const ChangePassword = () => {
       if (!token) throw new Error("UNAUTHENTICATED");
 
       const res = await axios.put(
-        "http://localhost:5000/api/auth/changepassword",
+        "http://localhost:5001/api/auth/changepassword",
         { 
           email, 
           currentPassword, 

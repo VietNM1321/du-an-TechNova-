@@ -10,7 +10,7 @@ const BookDetail = () => {
   useEffect(() => {
     const fetchData = async () => {
       try {
-        const bookRes = await axios.get(`http://localhost:5000/api/books/${id}`);
+        const bookRes = await axios.get(`http://localhost:5001/api/books/${id}`);
         setBook(bookRes.data);
         setImports(bookRes.data.imports || []); 
         setBorrowCount(bookRes.data.borrowCount || 0);
