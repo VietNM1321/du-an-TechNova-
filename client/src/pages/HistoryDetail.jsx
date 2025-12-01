@@ -101,79 +101,92 @@ const HistoryDetail = () => {
     });
   };
   
-  const handleReportLost = (id) => {
-    Modal.confirm({
-      title: "Xác nhận báo mất",
-      icon: <ExclamationCircleOutlined />,
-      content: "Bạn có chắc chắn muốn báo sách này mất không?",
-      okText: "Xác nhận",
-      cancelText: "Hủy",
-      async onOk() {
-        try {
-          if (!token) throw new Error("UNAUTHENTICATED");
-          const res = await axios.put(
-            `http://localhost:5001/api/borrowings/${id}/report-lost`,
-            {},
-            { headers: { Authorization: `Bearer ${token}` } }
-          );
-          const updated = res.data?.borrowing;
-          message.success("✅ Đã báo mất!");
-
-          // Cập nhật lại state để hiển thị ngay
-          setGroup((prev) => {
-            if (!prev) return prev;
-            const items = prev.items.map((it) =>
-              it._id === id
-                ? {
-                    ...it,
-                    status: updated?.status || "lost",
-                    compensationAmount:
-                      updated?.compensationAmount ?? it.compensationAmount,
-                    paymentStatus: updated?.paymentStatus || "pending",
-                  }
-                : it
-            );
-            return { ...prev, items };
-          });
-        } catch (error) {
-          console.error(error);
-          message.error("Không thể báo mất!");
-        }
-      },
-    });
-  };
-
-  const handleReportBroken = (record) => {
+  const handleReportDamage = (record) => {
+    let reportType = "lost"; // Mặc định là báo mất
     let reason = "";
     let file = null;
 
     Modal.confirm({
-      title: "Báo hỏng sách",
+      title: "Báo cáo sách mất/hỏng",
       content: (
-        <div>
-          <input
-            placeholder="Nhập lý do hỏng"
-            onChange={(e) => (reason = e.target.value)}
-            style={{ width: "100%", marginBottom: 10, padding: 4 }}
-          />
-          <input type="file" onChange={(e) => (file = e.target.files[0])} />
+        <div style={{ padding: "10px 0" }}>
+          <div style={{ marginBottom: 16 }}>
+            <label style={{ display: "block", marginBottom: 8, fontWeight: 500 }}>
+              Loại báo cáo:
+            </label>
+            <select
+              defaultValue="lost"
+              onChange={(e) => (reportType = e.target.value)}
+              style={{
+                width: "100%",
+                padding: "8px",
+                border: "1px solid #d9d9d9",
+                borderRadius: 4,
+                fontSize: "14px"
+              }}
+            >
+              <option value="lost">📕 Báo mất sách</option>
+              <option value="damaged">🔧 Báo hỏng sách</option>
+            </select>
+          </div>
+          
+          <div style={{ marginBottom: 16 }}>
+            <label style={{ display: "block", marginBottom: 8, fontWeight: 500 }}>
+              Lý do <span style={{ color: "red" }}>*</span>:
+            </label>
+            <textarea
+              placeholder="Nhập lý do chi tiết..."
+              onChange={(e) => (reason = e.target.value)}
+              style={{
+                width: "100%",
+                padding: "8px",
+                border: "1px solid #d9d9d9",
+                borderRadius: 4,
+                fontSize: "14px",
+                minHeight: "60px",
+                resize: "vertical"
+              }}
+            />
+          </div>
+          
+          <div>
+            <label style={{ display: "block", marginBottom: 8, fontWeight: 500 }}>
+              Ảnh minh họa (không bắt buộc):
+            </label>
+            <input
+              type="file"
+              accept="image/*"
+              onChange={(e) => (file = e.target.files[0])}
+              style={{ width: "100%" }}
+            />
+          </div>
+
+          <div style={{ marginTop: 12, padding: "8px", backgroundColor: "#fff7e6", borderRadius: 4 }}>
+            <strong>Lưu ý:</strong> Khi báo cáo, toàn bộ {record.quantity || 1} cuốn sách sẽ được đánh dấu là {reportType === "lost" ? "mất" : "hỏng"} và cần thanh toán bồi thường.
+          </div>
         </div>
       ),
-      okText: "Báo hỏng",
+      okText: "Xác nhận báo cáo",
       cancelText: "Hủy",
+      width: 500,
       async onOk() {
-        if (!reason) {
-          message.warning("Bạn phải nhập lý do!");
+        if (!reason || reason.trim() === "") {
+          message.warning("Bạn phải nhập lý do báo cáo!");
           return Promise.reject();
         }
+
         try {
           if (!token) throw new Error("UNAUTHENTICATED");
+
           const formData = new FormData();
+          formData.append("status", reportType);
           formData.append("reason", reason);
+          formData.append("quantityAffected", record.quantity || 1); // Báo hết tất cả quantity
+          
           if (file) formData.append("image", file);
 
           const res = await axios.put(
-            `http://localhost:5001/api/borrowings/${record._id}/report-broken`,
+            `http://localhost:5001/api/borrowings/${record._id}/user-report`,
             formData,
             {
               headers: {
@@ -182,18 +195,20 @@ const HistoryDetail = () => {
               },
             }
           );
-          const updated = res.data?.borrowing;
-          message.success("✅ Đã báo hỏng!");
 
+          const updated = res.data?.borrowing;
+          const statusText = reportType === "lost" ? "mất" : "hỏng";
+          message.success(`✅ Đã báo ${statusText} sách thành công!`);
+
+          // Cập nhật lại state để hiển thị ngay
           setGroup((prev) => {
             if (!prev) return prev;
             const items = prev.items.map((it) =>
               it._id === record._id
                 ? {
                     ...it,
-                    status: updated?.status || "damaged",
-                    compensationAmount:
-                      updated?.compensationAmount ?? it.compensationAmount,
+                    status: updated?.status || reportType,
+                    compensationAmount: updated?.compensationAmount ?? it.compensationAmount,
                     paymentStatus: updated?.paymentStatus || "pending",
                   }
                 : it
@@ -202,7 +217,7 @@ const HistoryDetail = () => {
           });
         } catch (error) {
           console.error(error);
-          message.error("Không thể báo hỏng!");
+          message.error(error?.response?.data?.message || "Không thể báo cáo!");
         }
       },
     });
@@ -319,25 +334,16 @@ const HistoryDetail = () => {
             record.status === "pendingPickup" ||
             record.status === "overdue") && (
             <>
-              {record.isPickedUp && ["borrowed", "overdue"].includes(record.status) && (
-                <>
-                  <Button
-                    type="link"
-                    danger
-                    size="small"
-                    onClick={() => handleReportLost(record._id)}
-                  >
-                    Báo mất
-                  </Button>
-                  <Button
-                    type="link"
-                    danger
-                    size="small"
-                    onClick={() => handleReportBroken(record)}
-                  >
-                    Báo hỏng
-                  </Button>
-                </>
+               {record.isPickedUp && ["borrowed", "overdue"].includes(record.status) && (
+                <Button
+                  type="link"
+                  danger
+                  size="small"
+                  onClick={() => handleReportDamage(record)}
+                  style={{ border: "1px solid #ff4d4f", borderRadius: 4, padding: "2px 8px" }}
+                >
+                  🚨 Báo mất/hỏng
+                </Button>
               )}
             {record.status === "borrowed" && 
                isWithinOneDayOfDueDate(record.dueDate) && 
