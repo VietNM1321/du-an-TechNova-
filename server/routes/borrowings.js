@@ -371,24 +371,51 @@ router.get("/history/:userId", verifyToken, isSelfOrAdmin("userId"), async (req,
 // ──────────────── DANH SÁCH MƯỢN ────────────────
 router.get("/", verifyToken, requireRole("admin","librarian"), async (req,res)=>{
   try{
-    const { page=1, limit=20, search } = req.query;
+    const { page=1, limit=10, q, status, borrowFrom, borrowTo } = req.query;
     const query = {};
-    if(search){
+    
+    // Xử lý tìm kiếm theo tên người dùng, email, tên sách
+    if(q){
       query.$or = [
-        { borrowingCode: new RegExp(search,"i") },
-        { status: new RegExp(search,"i") }
+        { "userSnapshot.fullName": new RegExp(q, "i") },
+        { "userSnapshot.email": new RegExp(q, "i") },
+        { "bookSnapshot.title": new RegExp(q, "i") },
+        { borrowingCode: new RegExp(q, "i") }
       ];
     }
+    
+    // Lọc theo trạng thái
+    if(status){
+      query.status = status;
+    }
+    
+    // Lọc theo khoảng ngày mượn
+    if(borrowFrom || borrowTo){
+      query.borrowDate = {};
+      if(borrowFrom) query.borrowDate.$gte = new Date(borrowFrom);
+      if(borrowTo) query.borrowDate.$lte = new Date(borrowTo);
+    }
+    
     const borrowings = await Borrowing.find(query)
       .sort({ borrowDate:-1 })
       .skip((page-1)*limit)
       .limit(parseInt(limit))
       .populate({ path:"book", populate:{ path:"author", select:"name" } })
       .populate("user");
+    
     const total = await Borrowing.countDocuments(query);
-    res.json({ borrowings, total, page: parseInt(page), limit: parseInt(limit) });
+    const currentPage = parseInt(page);
+    const totalItems = total;
+    
+    res.json({ 
+      borrowings, 
+      totalItems, 
+      currentPage, 
+      totalPages: Math.ceil(total / limit),
+      limit: parseInt(limit)
+    });
   }catch(err){
-    console.error(err);
+    console.error("❌ Lỗi lấy danh sách mượn:", err);
     res.status(500).json({message:"Lỗi server khi lấy danh sách mượn"});
   }
 });
