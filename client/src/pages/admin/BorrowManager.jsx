@@ -69,7 +69,7 @@ const BorrowManager = () => {
       ].filter(Boolean);
 
       const res = await axios.get(
-        `http://localhost:5000/api/borrowings?${parts.join("&")}`,
+        `http://localhost:5001/api/borrowings?${parts.join("&")}`,
         { headers: { Authorization: `Bearer ${token}` } }
       );
 
@@ -116,7 +116,7 @@ const handleConfirmPickup = (record) => {
     onOk: async () => {
       try {
         const res = await axios.put(
-          `http://localhost:5000/api/borrowings/${record._id}/pickup`,
+          `http://localhost:5001/api/borrowings/${record._id}/pickup`,
           {},
           { headers: { Authorization: `Bearer ${token}` } }
         );
@@ -158,7 +158,7 @@ const handleConfirmPickup = (record) => {
       formData.append("imgCard", imgCard);
 
       const res = await axios.put(
-        `http://localhost:5000/api/borrowings/${selectedRecord._id}/pickup`,
+        `http://localhost:5001/api/borrowings/${selectedRecord._id}/pickup`,
         formData,
         {
           headers: {
@@ -195,43 +195,47 @@ const handleConfirmPickup = (record) => {
   };
 
   // ===== Xử lý trả sách hoặc đổi trạng thái =====
-  const handleReturnOrStatusChange = (record, newStatus) => {
-    confirm({
-      title: "Xác nhận?",
-      icon: <ExclamationCircleOutlined />,
-      onOk: async () => {
-        try {
-          const res = await axios.put(
-            `http://localhost:5000/api/borrowings/${record._id}/return`,
-            {},
-          const url =
-            newStatus === STATUS_ENUM.RETURNED
-              ? `http://localhost:5000/api/borrowings/${record._id}/return`
-              : `http://localhost:5000/api/borrowings/${record._id}/status`;
-          await axios.put(
-            url,
-            { status: newStatus },
-            { headers: { Authorization: `Bearer ${token}` } }
-          );
-          message.success("✅ Cập nhật trạng thái thành công!");
-          setBorrowings((prev) =>
-            prev.map((b) =>
-              b._id === record._id
-                ? {
-                    ...b,
-                    status: newStatus,
-                    hasReturned: newStatus === STATUS_ENUM.RETURNED,
-                  }
-                : b
-            )
-          );
-        } catch (error) {
-          console.error(error);
-          message.error("Lỗi khi cập nhật trạng thái!");
-        }
-      },
-    });
-  };
+const handleReturnOrStatusChange = (record, newStatus) => {
+  confirm({
+    title: "Xác nhận?",
+    icon: <ExclamationCircleOutlined />,
+    onOk: async () => {
+      try {
+        // Tạo URL theo trạng thái mới
+        const url =
+          newStatus === STATUS_ENUM.RETURNED
+            ? `http://localhost:5001/api/borrowings/${record._id}/return`
+            : `http://localhost:5001/api/borrowings/${record._id}/status`;
+
+        // Gửi request cập nhật
+        await axios.put(
+          url,
+          { status: newStatus },
+          { headers: { Authorization: `Bearer ${token}` } }
+        );
+
+        message.success("✅ Cập nhật trạng thái thành công!");
+
+        // Cập nhật UI
+        setBorrowings((prev) =>
+          prev.map((b) =>
+            b._id === record._id
+              ? {
+                  ...b,
+                  status: newStatus,
+                  hasReturned: newStatus === STATUS_ENUM.RETURNED,
+                }
+              : b
+          )
+        );
+      } catch (error) {
+        console.error(error);
+        message.error("Lỗi khi cập nhật trạng thái!");
+      }
+    },
+  });
+};
+
 
   const handleConfirmPayment = (record) => {
     confirm({
