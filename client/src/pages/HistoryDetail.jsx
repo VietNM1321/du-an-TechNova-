@@ -49,21 +49,58 @@ const HistoryDetail = () => {
     return 0;
   };
 
-  const renewBorrowing = async (id) => {
-    try {
-      if (!token) throw new Error("UNAUTHENTICATED");
-      const res = await axios.put(
-        `http://localhost:5000/api/borrowings/${id}/renew`,
-        {},
-        { headers: { Authorization: `Bearer ${token}` } }
-      );
-      message.success(res.data.message || "Gia hạn thành công");
-      window.location.reload();
-    } catch (error) {
-      message.error(error?.response?.data?.message || "Không thể gia hạn!");
-    }
+  const isWithinOneDayOfDueDate = (dueDate) => {
+    if (!dueDate) return false;
+    const now = new Date();
+    const due = new Date(dueDate);
+    const diffTime = due.getTime() - now.getTime();
+    const diffDays = diffTime / (1000 * 3600 * 24);
+    return diffDays <= 1 && diffDays >= 0; // Còn 1 ngày hoặc ít hơn, và chưa quá hạn
   };
 
+
+  const handleRenewWithConfirm = (record) => {
+    Modal.confirm({
+      title: "Xác nhận gia hạn sách?",
+      content: `Gia hạn sách "${record.book?.title || record.bookSnapshot?.title || "N/A"}" thêm 7 ngày?`,
+      icon: <ExclamationCircleOutlined />,
+      okText: "Xác nhận gia hạn",
+      cancelText: "Hủy",
+      async onOk() {
+        try {
+          if (!token) throw new Error("UNAUTHENTICATED");
+          
+          const res = await axios.put(
+            `http://localhost:5001/api/borrowings/${record._id}/renew`,
+            {},
+            { headers: { Authorization: `Bearer ${token}` } }
+          );
+          
+          message.success(res.data.message || "✅ Gia hạn thành công!");
+          
+          // Cập nhật state ngay lập tức thay vì reload
+          setGroup((prev) => {
+            if (!prev) return prev;
+            const items = prev.items.map((it) =>
+              it._id === record._id
+                ? {
+                    ...it,
+                    status: "renewed",
+                    renewCount: (it.renewCount || 0) + 1,
+                    dueDate: new Date(new Date(it.dueDate).getTime() + 7 * 24 * 60 * 60 * 1000)
+                  }
+                : it
+            );
+            return { ...prev, items };
+          });
+        } catch (error) {
+          console.error(error);
+          message.error(error?.response?.data?.message || "Không thể gia hạn!");
+        }
+      },
+    });
+  };
+  
   const handleReportLost = (id) => {
     Modal.confirm({
       title: "Xác nhận báo mất",
@@ -75,7 +112,7 @@ const HistoryDetail = () => {
         try {
           if (!token) throw new Error("UNAUTHENTICATED");
           const res = await axios.put(
-            `http://localhost:5000/api/borrowings/${id}/report-lost`,
+            `http://localhost:5001/api/borrowings/${id}/report-lost`,
             {},
             { headers: { Authorization: `Bearer ${token}` } }
           );
@@ -136,7 +173,7 @@ const HistoryDetail = () => {
           if (file) formData.append("image", file);
 
           const res = await axios.put(
-            `http://localhost:5000/api/borrowings/${record._id}/report-broken`,
+            `http://localhost:5001/api/borrowings/${record._id}/report-broken`,
             formData,
             {
               headers: {
@@ -178,7 +215,7 @@ const HistoryDetail = () => {
       render: (_, record) => {
         const book = record.book || record.bookSnapshot || {};
         let thumb = book.images?.[0];
-        if (thumb && !thumb.startsWith("http")) thumb = `http://localhost:5000/${thumb}`;
+        if (thumb && !thumb.startsWith("http")) thumb = `http://localhost:5001/${thumb}`;
         const placeholder = "https://via.placeholder.com/40x60?text=?";
         return (
           <Space>
@@ -302,16 +339,26 @@ const HistoryDetail = () => {
                   </Button>
                 </>
               )}
-              {record.status === "borrowed" && (record.renewCount || 0) < 3 ? (
+            {record.status === "borrowed" && 
+               isWithinOneDayOfDueDate(record.dueDate) && 
+               (record.renewCount || 0) < 3 ? (
                 <Button
                   type="link"
                   size="small"
-                  onClick={() => renewBorrowing(record._id)}
+                  style={{ color: "#faad14" }}
+                  onClick={() => handleRenewWithConfirm(record)}
                 >
-                  Gia hạn
+                  🔄 Gia hạn ({3 - (record.renewCount || 0)} lượt)
                 </Button>
-              ) : record.status === "borrowed" && (record.renewCount || 0) >= 3 ? (
+              ) : record.status === "borrowed" && 
+                  isWithinOneDayOfDueDate(record.dueDate) && 
+                  (record.renewCount || 0) >= 3 ? (
                 <span className="text-sm text-gray-500">Đã hết lượt gia hạn</span>
+              ) : record.status === "borrowed" && 
+                  !isWithinOneDayOfDueDate(record.dueDate) ? (
+                <span className="text-sm text-gray-400">
+                  Gia hạn khi còn 1 ngày
+                </span>
               ) : null}
             </>
           )}
