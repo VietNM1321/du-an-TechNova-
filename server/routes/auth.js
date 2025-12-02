@@ -78,14 +78,14 @@ export const createDefaultLibrarians = async () => {
 };
 
 // ====================== Đăng ký sinh viên ======================
+
+  
 router.post("/register", async (req, res) => {
   try {
     const { studentCode, fullName, email, courseId } = req.body;
 
     if (!studentCode || !fullName || !email || !courseId)
-      return res
-        .status(400)
-        .json({ message: "Vui lòng nhập đầy đủ thông tin!" });
+      return res.status(400).json({ message: "Vui lòng nhập đầy đủ thông tin!" });
 
     const existingUser = await User.findOne({ email });
     if (existingUser)
@@ -104,16 +104,13 @@ router.post("/register", async (req, res) => {
       return res.status(400).json({
         message:
           `Mã sinh viên không phù hợp với khóa học ${selectedCourse.courseName}. ` +
-          `Phải từ PH${selectedCourse.minStudentCode
-            .toString()
-            .padStart(4, "0")} ` +
-          `đến PH${selectedCourse.maxStudentCode
-            .toString()
-            .padStart(4, "0")}`,
+          `Phải từ PH${selectedCourse.minStudentCode.toString().padStart(4, "0")} ` +
+          `đến PH${selectedCourse.maxStudentCode.toString().padStart(4, "0")}`,
       });
     }
 
-    const passwordPlain = Math.floor(100000 + Math.random() * 900000).toString();
+    // 👉 MẬT KHẨU MẶC ĐỊNH = sv + mã sinh viên
+    const passwordPlain = `sv${studentCode}`;
 
     const newUser = new User({
       studentCode,
@@ -124,16 +121,15 @@ router.post("/register", async (req, res) => {
       active: true,
       password: passwordPlain,
     });
+
     await newUser.save();
 
     selectedCourse.students.push({ studentCode, fullName });
     await selectedCourse.save();
 
-    console.log(`Mật khẩu sinh viên: ${passwordPlain}`);
-
     res.status(201).json({
-      message: "Đăng ký thành công! Mật khẩu sinh viên đã được sinh tự động.",
-      password: passwordPlain,
+      message: "Đăng ký thành công!",
+      password: passwordPlain, // Trả về mật khẩu sv + msv
     });
   } catch (err) {
     console.error("❌ Lỗi đăng ký:", err);
@@ -163,16 +159,21 @@ router.put("/setpassword/:id", verifyToken, requireRole("admin"), async (req, re
 // ====================== Reset mật khẩu sinh viên (admin) ======================
 router.put("/resetpassword/:id", verifyToken, requireRole("admin"), async (req, res) => {
   const { id } = req.params;
+  const { newPassword } = req.body;
+
+  if (!newPassword)
+    return res.status(400).json({ message: "Vui lòng nhập mật khẩu mới!" });
+
   try {
     const user = await User.findById(id);
     if (!user) return res.status(404).json({ message: "Không tìm thấy người dùng!" });
-    if (!user.active) return res.status(403).json({ message: "Sinh viên đã bị khóa, không thể reset mật khẩu!" });
+    if (!user.active)
+      return res.status(403).json({ message: "Sinh viên đã bị khóa, không thể reset mật khẩu!" });
 
-    const newPassword = Math.floor(100000 + Math.random() * 900000).toString();
     user.password = newPassword;
     await user.save();
 
-    res.json({ message: "✅ Mật khẩu đã được reset thành công!", password: newPassword });
+    res.json({ message: "✅ Reset mật khẩu thành công!", password: newPassword });
   } catch (err) {
     console.error("❌ Lỗi khi reset mật khẩu:", err);
     res.status(500).json({ message: "Lỗi server!" });

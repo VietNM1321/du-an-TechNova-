@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from "react";
 import axios from "axios";
-import { Select, Space, Button, Row, Col, Form, message } from "antd";
+import { Select, Space, Button, Row, Col, Form, message, Modal, Input } from "antd";
 import { KeyRound } from "lucide-react";
 
 const SetPassword = () => {
@@ -8,8 +8,11 @@ const SetPassword = () => {
   const [filteredUsers, setFilteredUsers] = useState([]);
   const [loading, setLoading] = useState(true);
   const [loadingIds, setLoadingIds] = useState([]);
-  const [showPasswordIds, setShowPasswordIds] = useState([]);
   const [searchForm] = Form.useForm();
+
+  const [modalVisible, setModalVisible] = useState(false);
+  const [selectedUserId, setSelectedUserId] = useState(null);
+  const [newPassword, setNewPassword] = useState("");
 
   // Lấy danh sách sinh viên
   const fetchUsers = async () => {
@@ -33,45 +36,48 @@ const SetPassword = () => {
     fetchUsers();
   }, []);
 
-  // Reset mật khẩu và lấy mật khẩu mới từ backend
-  const handleResetPassword = async (id) => {
-    setLoadingIds((prev) => [...prev, id]);
+  // Mở modal nhập mật khẩu
+  const openResetModal = (id) => {
+    setSelectedUserId(id);
+    setNewPassword("");
+    setModalVisible(true);
+  };
+
+  // Reset mật khẩu với mật khẩu thủ công
+  const handleConfirmReset = async () => {
+    if (!newPassword) {
+      message.error("Vui lòng nhập mật khẩu mới!");
+      return;
+    }
+    setLoadingIds((prev) => [...prev, selectedUserId]);
     try {
       const token = localStorage.getItem("adminToken");
-      const res = await axios.put(
-        `http://localhost:5000/api/auth/resetpassword/${id}`,
-        {},
+      await axios.put(
+        `http://localhost:5000/api/auth/resetpassword/${selectedUserId}`,
+        { newPassword },
         { headers: { Authorization: `Bearer ${token}` } }
       );
-      const newPassword = res.data.password || "Không có mật khẩu";
-      message.success(`Mật khẩu mới: ${newPassword}`);
 
-      // Cập nhật password trong bảng
+      message.success("✅ Đăng ký mật khẩu thành công!");
+
+      // Cập nhật trạng thái password trong bảng
       setUsers((prev) =>
         prev.map((u) =>
-          u._id === id ? { ...u, password: newPassword } : u
+          u._id === selectedUserId ? { ...u, passwordRegistered: true } : u
         )
       );
       setFilteredUsers((prev) =>
         prev.map((u) =>
-          u._id === id ? { ...u, password: newPassword } : u
+          u._id === selectedUserId ? { ...u, passwordRegistered: true } : u
         )
       );
+      setModalVisible(false);
     } catch (err) {
       console.error(err);
-      message.error(err.response?.data?.message || "❌ Lỗi khi reset mật khẩu!");
+      message.error(err.response?.data?.message || "❌ Lỗi khi đăng ký mật khẩu!");
     } finally {
-      setLoadingIds((prev) => prev.filter((uid) => uid !== id));
+      setLoadingIds((prev) => prev.filter((uid) => uid !== selectedUserId));
     }
-  };
-
-  // Toggle hiện/ẩn mật khẩu
-  const toggleShowPassword = (id) => {
-    setShowPasswordIds((prev) =>
-      prev.includes(id)
-        ? prev.filter((uid) => uid !== id)
-        : [...prev, id]
-    );
   };
 
   // Tìm kiếm & lọc
@@ -88,7 +94,7 @@ const SetPassword = () => {
     }
     if (values.passwordStatus) {
       filtered = filtered.filter((u) =>
-        values.passwordStatus === "withPassword" ? u.password : !u.password
+        values.passwordStatus === "withPassword" ? u.passwordRegistered : !u.passwordRegistered
       );
     }
     if (values.courseFilter) {
@@ -122,7 +128,7 @@ const SetPassword = () => {
             </div>
             <div>
               <h2 className="text-2xl md:text-3xl font-bold text-slate-900">Quản lý mật khẩu</h2>
-              <p className="text-sm text-slate-500">Xem mật khẩu sinh viên trực tiếp</p>
+              <p className="text-sm text-slate-500">Đăng ký mật khẩu cho sinh viên</p>
             </div>
           </div>
           <div className="text-right">
@@ -146,8 +152,8 @@ const SetPassword = () => {
               <Col xs={24} md={12} lg={6}>
                 <Form.Item name="passwordStatus" className="mb-0">
                   <Select placeholder="Trạng thái mật khẩu" allowClear size="large" className="rounded-2xl">
-                    <Select.Option value="withPassword">Đã có mật khẩu</Select.Option>
-                    <Select.Option value="withoutPassword">Chưa có mật khẩu</Select.Option>
+                    <Select.Option value="withPassword">Đã đăng ký</Select.Option>
+                    <Select.Option value="withoutPassword">Chưa đăng ký</Select.Option>
                   </Select>
                 </Form.Item>
               </Col>
@@ -190,7 +196,7 @@ const SetPassword = () => {
                   <th className="p-4 text-left">Họ tên</th>
                   <th className="p-4 text-left">Email</th>
                   <th className="p-4 text-left">Khóa học</th>
-                  <th className="p-4 text-center">Mật khẩu</th>
+                  <th className="p-4 text-center">Trạng thái mật khẩu</th>
                   <th className="p-4 text-center">Thao tác</th>
                 </tr>
               </thead>
@@ -204,34 +210,23 @@ const SetPassword = () => {
                     <td className="p-4 text-center">
                       {!u.active ? (
                         <span className="text-rose-600 font-semibold">Đã khóa</span>
-                      ) : u.password ? (
-                        <span className="text-emerald-600 font-semibold">
-                          {showPasswordIds.includes(u._id) ? u.password : "••••••"}
-                          <Button
-                            size="small"
-                            type="link"
-                            className="ml-2 p-0"
-                            onClick={() => toggleShowPassword(u._id)}
-                          >
-                            {showPasswordIds.includes(u._id) ? "Ẩn" : "Xem"}
-                          </Button>
-                        </span>
+                      ) : u.passwordRegistered ? (
+                        <span className="text-emerald-600 font-semibold">Đã khôi phục mật khẩu vui lòng sinh viên đổi lại mật khẩu khi gửi yêu cầu khôi phục</span>
                       ) : (
-                        <span className="text-slate-500">Chưa có mật khẩu</span>
+                        <span className="text-slate-500">Gửi mật khẩu thành công </span>
                       )}
                     </td>
                     <td className="p-4 text-center">
                       <div className="flex flex-wrap items-center justify-center gap-2">
-                        {u.active && (
+                        {u.active && !u.passwordRegistered && (
                           <Button
                             type="default"
                             size="small"
                             danger
-                            onClick={() => handleResetPassword(u._id)}
-                            loading={loadingIds.includes(u._id)}
+                            onClick={() => openResetModal(u._id)}
                             className="!rounded-2xl"
                           >
-                            Reset mật khẩu
+                            reset mật khẩu
                           </Button>
                         )}
                       </div>
@@ -249,10 +244,25 @@ const SetPassword = () => {
             </table>
           </div>
         </div>
+
+        {/* Modal nhập mật khẩu mới */}
+        <Modal
+          title="Nhập mật khẩu mới"
+          visible={modalVisible}
+          onOk={handleConfirmReset}
+          onCancel={() => setModalVisible(false)}
+          okText="Xác nhận"
+          cancelText="Hủy"
+        >
+          <Input.Password
+            placeholder="Nhập mật khẩu mới"
+            value={newPassword}
+            onChange={(e) => setNewPassword(e.target.value)}
+          />
+        </Modal>
       </div>
     </div>
   );
 };
 
 export default SetPassword;
-
