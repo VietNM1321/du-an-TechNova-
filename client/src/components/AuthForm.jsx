@@ -13,7 +13,7 @@ function AuthForm({ mode }) {
   const handleSubmit = async (e) => {
     e.preventDefault();
 
-    const url = `http://localhost:5001/api/auth/${isLogin ? "login" : "register"}`;
+    const url = `http://localhost:5000/api/auth/${isLogin ? "login" : "register"}`;
     const body = isLogin ? { email, password } : { name, email, password };
 
     try {
@@ -102,3 +102,4 @@ function AuthForm({ mode }) {
 }
 
 export default AuthForm;
+

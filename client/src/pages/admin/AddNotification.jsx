@@ -26,9 +26,9 @@ const AddNotification = ({ mode = "add", notificationData = {}, onSuccess }) => 
   }, [mode, notificationData]);
 
   const existingFiles = {
-    image: notificationData.data?.image ? `http://localhost:5001/${notificationData.data.image}` : null,
-    word: notificationData.data?.wordFile ? `http://localhost:5001/${notificationData.data.wordFile}` : null,
-    excel: notificationData.data?.excelFile ? `http://localhost:5001/${notificationData.data.excelFile}` : null,
+    image: notificationData.data?.image ? `http://localhost:5000/${notificationData.data.image}` : null,
+    word: notificationData.data?.wordFile ? `http://localhost:5000/${notificationData.data.wordFile}` : null,
+    excel: notificationData.data?.excelFile ? `http://localhost:5000/${notificationData.data.excelFile}` : null,
   };
 
   const handleSubmit = async () => {
@@ -50,8 +50,8 @@ const AddNotification = ({ mode = "add", notificationData = {}, onSuccess }) => 
 
       const res =
         mode === "edit"
-          ? await axios.put(`http://localhost:5001/api/notifications/${notificationData._id}`, formData)
-          : await axios.post("http://localhost:5001/api/notifications", formData);
+          ? await axios.put(`http://localhost:5000/api/notifications/${notificationData._id}`, formData)
+          : await axios.post("http://localhost:5000/api/notifications", formData);
 
       message.success(mode === "edit" ? "Cập nhật thành công!" : "Tạo thông báo thành công!");
       onSuccess?.(res.data);
@@ -105,3 +105,4 @@ const AddNotification = ({ mode = "add", notificationData = {}, onSuccess }) => 
 };
 
 export default AddNotification;
+

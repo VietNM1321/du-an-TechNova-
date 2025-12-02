@@ -14,7 +14,7 @@ const BookCodeManager = () => {
   const navigate = useNavigate();
   const fetchCategories = async () => {
     try {
-      const res = await axios.get('http://localhost:5001/api/categories');
+      const res = await axios.get('http://localhost:5000/api/categories');
       setCategories(res.data || []);
     } catch (err) {
       console.error("Lỗi khi tải danh sách danh mục:", err);
@@ -22,7 +22,7 @@ const BookCodeManager = () => {
   };
   const fetchBookCodes = async (pageNum = 1) => {
     try {
-      const res = await axios.get(`http://localhost:5001/api/bookcodes?page=${pageNum}&limit=5`);
+      const res = await axios.get(`http://localhost:5000/api/bookcodes?page=${pageNum}&limit=5`);
       const bookCodesData = res.data.bookcodes || [];
       setBookCodes(bookCodesData);
       setFilteredBookCodes(bookCodesData);
@@ -70,7 +70,7 @@ const BookCodeManager = () => {
   const handleDelete = async (id) => {
     if (window.confirm("Bạn có chắc muốn xóa BookCode này?")) {
       try {
-        const res = await axios.delete(`http://localhost:5001/api/bookcodes/${id}`);
+        const res = await axios.delete(`http://localhost:5000/api/bookcodes/${id}`);
         alert(res.data.message || "✅ Xóa thành công!");
         fetchBookCodes(page);
       } catch (err) {
@@ -241,3 +241,4 @@ const BookCodeManager = () => {
 };
 
 export default BookCodeManager;
+

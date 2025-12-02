@@ -19,7 +19,7 @@ const CategoryManager = () => {
       const o = params.order ?? order;
       const l = params.limit ?? limit;
       const res = await axios.get(
-        `http://localhost:5001/api/category?page=${pageNum}&limit=${l}${q ? `&q=${encodeURIComponent(q)}` : ""}${s ? `&sort=${encodeURIComponent(s)}` : ""}${o ? `&order=${encodeURIComponent(o)}` : ""}`
+        `http://localhost:5000/api/category?page=${pageNum}&limit=${l}${q ? `&q=${encodeURIComponent(q)}` : ""}${s ? `&sort=${encodeURIComponent(s)}` : ""}${o ? `&order=${encodeURIComponent(o)}` : ""}`
       );
       setCategories(res.data.categories || []);
       setTotalPages(res.data.totalPages || 1);
@@ -74,7 +74,7 @@ const CategoryManager = () => {
   const handleDelete = async (id) => {
     if (window.confirm("Bạn có chắc muốn xóa danh mục này?")) {
       try {
-        const res = await axios.delete(`http://localhost:5001/api/category/${id}`);
+        const res = await axios.delete(`http://localhost:5000/api/category/${id}`);
         alert(res.data.message || "✅ Xóa thành công!");
         fetchCategories(page);
       } catch (err) {
@@ -246,3 +246,4 @@ const CategoryManager = () => {
 };
 
 export default CategoryManager;
+

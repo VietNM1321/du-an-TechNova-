@@ -9,7 +9,7 @@ const BookCodeAdd = () => {
   const navigate = useNavigate();
   const fetchCategories = async () => {
     try {
-      const res = await axios.get("http://localhost:5001/api/category?limit=1000&sort=createdAt&order=asc");
+      const res = await axios.get("http://localhost:5000/api/category?limit=1000&sort=createdAt&order=asc");
       setCategories(res.data.categories || res.data);
     } catch (err) {
       console.error("Lỗi lấy danh mục:", err);
@@ -25,7 +25,7 @@ const BookCodeAdd = () => {
       return;
     }
     try {
-      await axios.post("http://localhost:5001/api/bookcodes", form);
+      await axios.post("http://localhost:5000/api/bookcodes", form);
       alert("✅ Thêm BookCode thành công!");
       navigate("/admin/bookcode");
     } catch (err) {
@@ -70,3 +70,4 @@ const BookCodeAdd = () => {
 };
 
 export default BookCodeAdd;
+

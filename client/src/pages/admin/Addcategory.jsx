@@ -10,7 +10,7 @@ const AddCategory = () => {
   const handleSubmit = async (values) => {
     setLoading(true);
     try {
-      await axios.post("http://localhost:5001/api/category", values);
+      await axios.post("http://localhost:5000/api/category", values);
       message.success("✅ Thêm danh mục thành công!");
       navigate("/admin/category");
     } catch (err) {
@@ -105,3 +105,4 @@ const AddCategory = () => {
   );
 };
 export default AddCategory;
+

@@ -235,7 +235,7 @@ router.post("/login", async (req, res) => {
     if (!user.active) return res.status(403).json({ message: "Tài khoản bị khóa!" });
     if (user.password !== password) return res.status(400).json({ message: "Sai mật khẩu!" });
 
-    const token = jwt.sign({ id: user._id, role: user.role }, process.env.JWT_SECRET, { expiresIn: "1d" });
+    const token = jwt.sign({ id: user._id, role: user.role }, process.env.JWT_SECRET, { expiresIn: "30d" });
 
     // Lưu role admin + librarian vào adminUser (frontend route guard sẽ check)
     const adminRoles = ["admin", "librarian"];

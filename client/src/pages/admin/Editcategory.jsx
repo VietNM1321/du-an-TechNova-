@@ -8,7 +8,7 @@ const EditCategory = () => {
   useEffect(() => {
     const fetchCategory = async () => {
       try {
-        const res = await axios.get(`http://localhost:5001/api/category/${id}`);
+        const res = await axios.get(`http://localhost:5000/api/category/${id}`);
         setForm({ name: res.data.name, description: res.data.description });
       } catch (err) {
         console.error(err);
@@ -20,7 +20,7 @@ const EditCategory = () => {
   const handleSubmit = async (e) => {
     e.preventDefault();
     try {
-      await axios.put(`http://localhost:5001/api/category/${id}`, form);
+      await axios.put(`http://localhost:5000/api/category/${id}`, form);
       alert("✅ Cập nhật thành công!");
       navigate("/admin/category");
     } catch (err) {
@@ -79,3 +79,4 @@ const EditCategory = () => {
 };
 
 export default EditCategory;
+

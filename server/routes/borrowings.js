@@ -186,20 +186,14 @@ router.post("/", verifyToken, async (req, res) => {
     const normalizedDate = new Date(firstBorrowDate);
     normalizedDate.setHours(0, 0, 0, 0);
 
-    // Kiểm tra giới hạn 5 sách/ngày
-    const existingBorrowingsSameDay = await Borrowing.find({
-      user: req.user.id,
-      borrowDate: { $gte: normalizedDate, $lte: new Date(normalizedDate.getTime() + 86399999) },
-      status: { $in: [STATUS_ENUM.PENDING_PICKUP, STATUS_ENUM.BORROWED, STATUS_ENUM.RENEWED, STATUS_ENUM.OVERDUE] }
-    });
-    const totalExistingQuantity = existingBorrowingsSameDay.reduce((sum, b) => sum + (b.quantity || 1), 0);
+    // Kiểm tra giới hạn 5 sách/đơn hàng (chỉ trong đơn hiện tại)
     const totalNewQuantity = bookChecks.reduce((sum, { borrowQty }) => sum + borrowQty, 0);
     const MAX_BOOKS_PER_ORDER = 5;
 
-    if (totalExistingQuantity + totalNewQuantity > MAX_BOOKS_PER_ORDER) {
+    if (totalNewQuantity > MAX_BOOKS_PER_ORDER) {
       return res.status(400).json({ 
-        message: `Bạn đã mượn ${totalExistingQuantity} cuốn sách trong ngày. Mỗi đơn mượn chỉ tối đa ${MAX_BOOKS_PER_ORDER} cuốn sách.`, 
-        errors: []
+        message: `Vượt quá số lượng cho phép mượn! Đơn hàng này có ${totalNewQuantity} cuốn sách. Mỗi đơn mượn chỉ tối đa ${MAX_BOOKS_PER_ORDER} cuốn sách.`,
+        errors: [`Vượt quá số lượng cho phép mượn! Tối đa ${MAX_BOOKS_PER_ORDER} cuốn sách/đơn hàng`]
       });
     }
 
@@ -400,13 +394,20 @@ router.put("/:id/compensate", verifyToken, async (req,res)=>{
 // ──────────────── LỊCH SỬ MƯỢN ────────────────
 router.get("/history/:userId", verifyToken, isSelfOrAdmin("userId"), async (req,res)=>{
   try{
+    console.log("📍 GET /history/:userId - req.user:", req.user);
+    console.log("📍 Params userId:", req.params.userId);
+    
     const { userId } = req.params;
     const filter = /^[0-9a-fA-F]{24}$/.test(userId) ? { user: userId } : {};
+    console.log("📍 Query filter:", filter);
+    
     let borrowings = await Borrowing.find(filter)
       .sort({ borrowDate:-1 })
       .populate({ path:"book", populate:{ path:"author", select:"name" } })
       .populate("user");
 
+    console.log("✅ Found borrowings:", borrowings.length);
+    
     const now = new Date();
     borrowings = borrowings.map(b=>{
       let status = b.status;

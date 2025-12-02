@@ -25,7 +25,7 @@ const CourseManager = () => {
   const [form] = Form.useForm();
   const [filteredCourses, setFilteredCourses] = useState([]);
 
-  const API_URL = "http://localhost:5001/api/courses";
+  const API_URL = "http://localhost:5000/api/courses";
   
   const handleSearch = (values) => {
     let filtered = [...courses];
@@ -271,3 +271,4 @@ const CourseManager = () => {
 };
 
 export default CourseManager;
+

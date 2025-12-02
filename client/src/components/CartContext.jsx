@@ -7,7 +7,7 @@ export const useCart = () => useContext(CartContext);
 export function CartProvider({ children }) {
   const [cart, setCart] = useState({ userId: null, items: [] });
 
-  const API = "http://localhost:5001/api/cart";
+  const API = "http://localhost:5000/api/cart";
   const user = JSON.parse(localStorage.getItem("clientUser"));
   const userId = user?._id || user?.id || null;
   const isAdmin = user?.role === "admin";
@@ -94,3 +94,4 @@ export function CartProvider({ children }) {
     </CartContext.Provider>
   );
 }
+

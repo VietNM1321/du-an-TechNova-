@@ -20,7 +20,10 @@ import notificationRoutes from "./routes/notification.js";
 // Route AI (sẽ tạo file riêng: routes/aiRoutes.js)
 import aiRoutes from "./routes/aiRoutes.js";
 
-dotenv.config();
+// Load .env and override any existing environment vars so project defaults win
+dotenv.config({ override: true });
+// Debug: print selected env values without revealing secrets
+console.log('DEBUG server env -> PORT:', process.env.PORT || '(not set)', 'NODE_ENV:', process.env.NODE_ENV || '(not set)');
 const app = express();
 
 // Middlewares
@@ -64,7 +67,8 @@ const startServer = async () => {
     await mongoose.connect(process.env.MONGO_URI);
     console.log("✅ Kết nối Database thành công!");
 
-    const port = process.env.PORT || 5001;
+    const port = process.env.PORT || 5000;
+    console.log('cwd:', process.cwd(), 'NODE_ENV:', process.env.NODE_ENV, 'PORT:', process.env.PORT);
     app.listen(port, () => {
       console.log(`🚀 Server đang chạy trên cổng ${port}`);
     });

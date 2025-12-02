@@ -18,7 +18,7 @@ const ImportList = () => {
   const navigate = useNavigate();
   const fetchImports = async () => {
     try {
-      const res = await axios.get(`http://localhost:5001/api/imports?page=${page}&limit=${limit}`);
+      const res = await axios.get(`http://localhost:5000/api/imports?page=${page}&limit=${limit}`);
       const data = res.data;
       const importData = data.imports || data;
       setImports(importData);
@@ -84,7 +84,7 @@ const ImportList = () => {
   const handleDelete = async (id) => {
     if (!window.confirm("Bạn có chắc muốn xóa phiếu nhập này không?")) return;
     try {
-      await axios.delete(`http://localhost:5001/api/imports/${id}`);
+      await axios.delete(`http://localhost:5000/api/imports/${id}`);
       alert("🗑️ Xóa phiếu nhập thành công!");
       fetchImports();
     } catch (err) {
@@ -280,3 +280,4 @@ const ImportList = () => {
 };
 
 export default ImportList;
+

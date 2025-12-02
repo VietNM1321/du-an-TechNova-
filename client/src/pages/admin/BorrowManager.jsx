@@ -69,7 +69,7 @@ const BorrowManager = () => {
       ].filter(Boolean);
 
       const res = await axios.get(
-        `http://localhost:5001/api/borrowings?${parts.join("&")}`,
+        `http://localhost:5000/api/borrowings?${parts.join("&")}`,
         { headers: { Authorization: `Bearer ${token}` } }
       );
 
@@ -116,7 +116,7 @@ const handleConfirmPickup = (record) => {
     onOk: async () => {
       try {
         const res = await axios.put(
-          `http://localhost:5001/api/borrowings/${record._id}/pickup`,
+          `http://localhost:5000/api/borrowings/${record._id}/pickup`,
           {},
           { headers: { Authorization: `Bearer ${token}` } }
         );
@@ -158,7 +158,7 @@ const handleConfirmPickup = (record) => {
       formData.append("imgCard", imgCard);
 
       const res = await axios.put(
-        `http://localhost:5001/api/borrowings/${selectedRecord._id}/pickup`,
+        `http://localhost:5000/api/borrowings/${selectedRecord._id}/pickup`,
         formData,
         {
           headers: {
@@ -204,8 +204,8 @@ const handleReturnOrStatusChange = (record, newStatus) => {
         // Tạo URL theo trạng thái mới
         const url =
           newStatus === STATUS_ENUM.RETURNED
-            ? `http://localhost:5001/api/borrowings/${record._id}/return`
-            : `http://localhost:5001/api/borrowings/${record._id}/status`;
+            ? `http://localhost:5000/api/borrowings/${record._id}/return`
+            : `http://localhost:5000/api/borrowings/${record._id}/status`;
 
         // Gửi request cập nhật
         await axios.put(
@@ -247,7 +247,7 @@ const handleReturnOrStatusChange = (record, newStatus) => {
       onOk: async () => {
         try {
           const res = await axios.put(
-            `http://localhost:5001/api/borrowings/${record._id}/confirm-payment`,
+            `http://localhost:5000/api/borrowings/${record._id}/confirm-payment`,
             {},
             { headers: { Authorization: `Bearer ${token}` } }
           );
@@ -623,3 +623,4 @@ const handleReturnOrStatusChange = (record, newStatus) => {
 };
 
 export default BorrowManager;
+

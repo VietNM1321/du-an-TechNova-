@@ -8,7 +8,7 @@ const NotificationDetail = ({ show, onClose }) => {
   useEffect(() => {
     const fetchNotifications = async () => {
       try {
-        const res = await axios.get("http://localhost:5001/api/notifications");
+        const res = await axios.get("http://localhost:5000/api/notifications");
         setNotifications(res.data);
       } catch (err) {
         console.error(err);
@@ -65,14 +65,14 @@ const NotificationDetail = ({ show, onClose }) => {
             <p className="mb-4">{selectedNotif.message}</p>
             {selectedNotif.data?.image && (
               <img
-                src={`http://localhost:5001/${selectedNotif.data.image}`}
+                src={`http://localhost:5000/${selectedNotif.data.image}`}
                 alt="minh họa"
                 className="mb-4 max-w-full rounded shadow"
               />
             )}
             {selectedNotif.data?.wordFile && (
               <a
-                href={`http://localhost:5001/${selectedNotif.data.wordFile}`}
+                href={`http://localhost:5000/${selectedNotif.data.wordFile}`}
                 download
                 className="text-blue-600 hover:underline block mb-2">
                 Tải file Word
@@ -80,7 +80,7 @@ const NotificationDetail = ({ show, onClose }) => {
             )}
             {selectedNotif.data?.excelFile && (
               <a
-                href={`http://localhost:5001/${selectedNotif.data.excelFile}`}
+                href={`http://localhost:5000/${selectedNotif.data.excelFile}`}
                 download
                 className="text-blue-600 hover:underline block mb-2">
                 Tải file Excel
@@ -95,3 +95,4 @@ const NotificationDetail = ({ show, onClose }) => {
   );
 };
 export default NotificationDetail;
+

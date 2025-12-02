@@ -12,7 +12,7 @@ const ReviewManager = () => {
   const fetchReviews = async (pageNum = 1) => {
     try {
       setLoading(true);
-      const res = await axios.get(`http://localhost:5001/api/reviews?page=${pageNum}&limit=10`);
+      const res = await axios.get(`http://localhost:5000/api/reviews?page=${pageNum}&limit=10`);
       if (res.data.reviews) {
         setReviews(res.data.reviews || []);
         setTotalPages(res.data.totalPages || 1);
@@ -37,7 +37,7 @@ const ReviewManager = () => {
   const handleDelete = async (id) => {
     if (window.confirm("Bạn có chắc muốn xóa đánh giá này?")) {
       try {
-        await axios.delete(`http://localhost:5001/api/reviews/${id}`);
+        await axios.delete(`http://localhost:5000/api/reviews/${id}`);
         alert("✅ Xóa đánh giá thành công!");
         fetchReviews(page);
       } catch (err) {
@@ -343,4 +343,5 @@ const ReviewManager = () => {
 
 
 export default ReviewManager;
+
 

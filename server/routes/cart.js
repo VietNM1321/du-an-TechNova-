@@ -7,8 +7,14 @@ import { verifyToken } from "../middleware/auth.js";
 const router = express.Router();
 router.get("/", verifyToken, async (req, res) => {
   try {
+    console.log("📍 GET /api/cart - req.user:", req.user);
     const userId = req.user?.id;
-    if (!userId) return res.status(401).json({ message: "Chưa xác thực" });
+    if (!userId) {
+      console.error("❌ userId is empty. req.user:", req.user);
+      return res.status(401).json({ message: "Chưa xác thực" });
+    }
+    console.log("✅ Fetching cart for userId:", userId);
+    
     let cart = await Cart.findOne({ userId }).populate({
       path: "items.bookId",
       select: "title images author",
@@ -16,6 +22,7 @@ router.get("/", verifyToken, async (req, res) => {
     });
 
     if (!cart) {
+      console.log("📍 Cart not found, creating new cart for userId:", userId);
       cart = await Cart.create({ userId, items: [] });
       cart = await Cart.findById(cart._id).populate({
         path: "items.bookId",

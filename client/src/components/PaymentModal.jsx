@@ -17,7 +17,7 @@ const PaymentModal = ({ visible, onClose, borrowing, onSuccess }) => {
       formData.append("paymentMethod", paymentMethod);
       formData.append("paymentNote", paymentNote);
 
-      const res = await axios.put(`http://localhost:5001/api/borrowings/${borrowing._id}/pay`,formData,
+      const res = await axios.put(`http://localhost:5000/api/borrowings/${borrowing._id}/pay`,formData,
         {
           headers: {
             "Content-Type": "multipart/form-data",
@@ -246,4 +246,5 @@ const PaymentModal = ({ visible, onClose, borrowing, onSuccess }) => {
 };
 
 export default PaymentModal;
+
 

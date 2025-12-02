@@ -16,7 +16,7 @@ const Register = () => {
   useEffect(() => {
     const fetchCourses = async () => {
       try {
-        const res = await axios.get("http://localhost:5001/api/courses");
+        const res = await axios.get("http://localhost:5000/api/courses");
         if (Array.isArray(res.data)) setCourses(res.data);
       } catch (err) {
         console.error("❌ Lỗi khi tải khóa học:", err);
@@ -77,7 +77,7 @@ const Register = () => {
       };
       console.log("Register payload:", payload);
 
-      const res = await axios.post("http://localhost:5001/api/auth/register", payload);
+      const res = await axios.post("http://localhost:5000/api/auth/register", payload);
 
       setMessage("✅ " + (res.data.message || "Đăng ký thành công!"));
       setStudentCode("");

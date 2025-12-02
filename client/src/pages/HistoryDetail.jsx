@@ -71,7 +71,7 @@ const HistoryDetail = () => {
           if (!token) throw new Error("UNAUTHENTICATED");
           
           const res = await axios.put(
-            `http://localhost:5001/api/borrowings/${record._id}/renew`,
+            `http://localhost:5000/api/borrowings/${record._id}/renew`,
             {},
             { headers: { Authorization: `Bearer ${token}` } }
           );
@@ -186,7 +186,7 @@ const HistoryDetail = () => {
           if (file) formData.append("image", file);
 
           const res = await axios.put(
-            `http://localhost:5001/api/borrowings/${record._id}/user-report`,
+            `http://localhost:5000/api/borrowings/${record._id}/user-report`,
             formData,
             {
               headers: {
@@ -230,7 +230,7 @@ const HistoryDetail = () => {
       render: (_, record) => {
         const book = record.book || record.bookSnapshot || {};
         let thumb = book.images?.[0];
-        if (thumb && !thumb.startsWith("http")) thumb = `http://localhost:5001/${thumb}`;
+        if (thumb && !thumb.startsWith("http")) thumb = `http://localhost:5000/${thumb}`;
         const placeholder = "https://via.placeholder.com/40x60?text=?";
         return (
           <Space>
@@ -470,5 +470,6 @@ const HistoryDetail = () => {
 };
 
 export default HistoryDetail;
+
 
 

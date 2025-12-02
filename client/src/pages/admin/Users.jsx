@@ -11,7 +11,7 @@ const Users = () => {
   const fetchUsers = async () => {
     try {
       setLoading(true);
-      const res = await axios.get("http://localhost:5001/api/users", {
+      const res = await axios.get("http://localhost:5000/api/users", {
         headers: { Authorization: `Bearer ${adminToken}` },
       });
       setUsers(res.data.users || []);
@@ -29,7 +29,7 @@ const Users = () => {
   // Toggle active
   const toggleActive = async (id) => {
     try {
-      await axios.put(`http://localhost:5001/api/users/${id}/toggle-active`, {}, {
+      await axios.put(`http://localhost:5000/api/users/${id}/toggle-active`, {}, {
         headers: { Authorization: `Bearer ${adminToken}` },
       });
       setUsers(prev => prev.map(u => u._id === id ? { ...u, active: !u.active } : u));
@@ -119,3 +119,4 @@ const Users = () => {
 };
 
 export default Users;
+

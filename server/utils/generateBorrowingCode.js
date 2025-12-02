@@ -37,30 +37,9 @@ export async function generateBorrowingCode(borrowDate = new Date()) {
 
 /**
  * Lấy mã đơn mượn cho một user trong một ngày cụ thể
- * Nếu đã có mã, trả về mã cũ (để gộp đơn cùng ngày)
- * Nếu chưa có, tạo mã mới
+ * MỖI LẦN MƯỢN = MỘT MÃ RIÊNG (KHÔNG GỘP)
  */
 export async function getOrCreateBorrowingCodeForDay(userId, borrowDate = new Date()) {
-  // Chuẩn hóa ngày
-  const date = new Date(borrowDate);
-  date.setHours(0, 0, 0, 0);
-  const endOfDay = new Date(date);
-  endOfDay.setHours(23, 59, 59, 999);
-
-  // Tìm xem user có mã đơn nào trong ngày này chưa
-  const existingBorrowing = await Borrowing.findOne({
-    user: userId,
-    borrowDate: {
-      $gte: date,
-      $lte: endOfDay
-    },
-    borrowingCode: { $exists: true, $ne: null }
-  }).select("borrowingCode");
-
-  if (existingBorrowing?.borrowingCode) {
-    return existingBorrowing.borrowingCode;
-  }
-
-  // Nếu chưa có, tạo mã mới
+  // Luôn tạo mã mới cho mỗi lần mượn (không gộp)
   return await generateBorrowingCode(borrowDate);
 }

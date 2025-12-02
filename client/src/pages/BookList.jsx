@@ -10,11 +10,11 @@ const BookList = () => {
   const navigate = useNavigate();
 
   useEffect(() => {
-    axios.get("http://localhost:5001/api/authors")
+    axios.get("http://localhost:5000/api/authors")
       .then((res) => setAuthors(Array.isArray(res.data) ? res.data : []))
       .catch((err) => console.error("Lỗi lấy tác giả:", err));
 
-    axios.get("http://localhost:5001/api/category?sort=createdAt&order=asc")
+    axios.get("http://localhost:5000/api/category?sort=createdAt&order=asc")
       .then((res) => {
         const cats = res.data.categories || res.data;
         setCategories(Array.isArray(cats) ? cats : []);
@@ -26,7 +26,7 @@ const BookList = () => {
     setSelectedType({ type: "category", id: catId });
     try {
       const res = await axios.get(
-        `http://localhost:5001/api/books?category=${catId}`
+        `http://localhost:5000/api/books?category=${catId}`
       );
       setBooks(res.data);
     } catch (err) {
@@ -36,7 +36,7 @@ const BookList = () => {
   useEffect(() => {
     const fetchAllBooks = async () => {
       try {
-        const res = await axios.get("http://localhost:5001/api/books");
+        const res = await axios.get("http://localhost:5000/api/books");
         setBooks(res.data);
       } catch (err) {
         console.error("Lỗi lấy sách:", err);
@@ -48,7 +48,7 @@ const BookList = () => {
   const handleAuthorClick = async (authorId) => {
     setSelectedType({ type: "author", id: authorId });
     try {
-      const res = await axios.get(`http://localhost:5001/api/books?authors=${authorId}`);
+      const res = await axios.get(`http://localhost:5000/api/books?authors=${authorId}`);
       setBooks(res.data);
     } catch (err) {
       console.error("Lỗi lấy sách theo tác giả:", err);
@@ -111,7 +111,7 @@ const BookList = () => {
                     <img
                       src={
                         Array.isArray(book.images) && book.images.length > 0
-                          ? `http://localhost:5001${book.images[0]}`
+                          ? `http://localhost:5000${book.images[0]}`
                           : "/default-book.jpg"
                       }
                       alt={book.title}
@@ -152,3 +152,4 @@ const BookList = () => {
 };
 
 export default BookList;
+

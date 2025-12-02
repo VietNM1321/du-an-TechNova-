@@ -16,7 +16,7 @@ const SetPassword = () => {
     try {
       const token = localStorage.getItem("adminToken");
       if (!token) throw new Error("UNAUTHENTICATED");
-      const res = await axios.get("http://localhost:5001/api/auth/users", {
+      const res = await axios.get("http://localhost:5000/api/auth/users", {
         headers: { Authorization: `Bearer ${token}` },
       });
       setUsers(res.data);
@@ -39,7 +39,7 @@ const SetPassword = () => {
     try {
       const token = localStorage.getItem("adminToken");
       const res = await axios.put(
-        `http://localhost:5001/api/auth/resetpassword/${id}`,
+        `http://localhost:5000/api/auth/resetpassword/${id}`,
         {},
         { headers: { Authorization: `Bearer ${token}` } }
       );
@@ -255,3 +255,4 @@ const SetPassword = () => {
 };
 
 export default SetPassword;
+

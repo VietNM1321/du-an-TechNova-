@@ -4,12 +4,12 @@ import { useNavigate, useParams } from "react-router-dom";
 const EditAuthor = () => {
   const { id } = useParams();
   const navigate = useNavigate();
-  const API = "http://localhost:5001/api/authors";
+  const API = "http://localhost:5000/api/authors";
   const [form, setForm] = useState({ name: "", bio: "", dateOfBirth: "", dateOfDeath: "", image: null, currentImage: "", }); // khai báo form lưu dữ liệu
   useEffect(() => {
     const fetchAuthor = async () => {
       try {
-        const res = await axios.get(`http://localhost:5001/api/authors/${id}`);
+        const res = await axios.get(`http://localhost:5000/api/authors/${id}`);
         const data = res.data;
         setForm({ name: data.name, bio: data.bio || "",
           dateOfBirth: data.dateOfBirth ? data.dateOfBirth.split("T")[0] : "",
@@ -38,7 +38,7 @@ const EditAuthor = () => {
     formData.append("dateOfDeath", form.dateOfDeath);
     if (form.image) formData.append("image", form.image);
     try {
-      await axios.put(`http://localhost:5001/api/authors/${id}`, formData, {
+      await axios.put(`http://localhost:5000/api/authors/${id}`, formData, {
         headers: { "Content-Type": "multipart/form-data" },
       });
       alert("✅ Cập nhật tác giả thành công!");
@@ -78,7 +78,7 @@ const EditAuthor = () => {
             className="w-full border border-gray-300 rounded-lg p-2"/>
           {form.currentImage && (
             <img
-              src={`http://localhost:5001/${form.currentImage}`}
+              src={`http://localhost:5000/${form.currentImage}`}
               alt="Ảnh hiện tại"
               className="mt-2 w-24 h-24 object-cover rounded-full border mx-auto"/>
           )}
@@ -137,3 +137,4 @@ const EditAuthor = () => {
 };
 
 export default EditAuthor;
+

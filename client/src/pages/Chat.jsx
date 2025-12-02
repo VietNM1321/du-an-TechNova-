@@ -13,7 +13,7 @@ export default function Chat() {
       setLoading(true);
       setResponse("");
 
-      const res = await axios.post("http://localhost:5001/api/ai/chat", {
+      const res = await axios.post("http://localhost:5000/api/ai/chat", {
         message,
       });
 
@@ -51,7 +51,10 @@ export default function Chat() {
       setResponse(aiText);
     } catch (err) {
       console.error(err);
-      setResponse("❌ Lỗi khi gọi API AI");
+      const errorMsg = err.response?.data?.message || 
+                       err.response?.data?.detail || 
+                       "❌ Lỗi khi gọi API AI";
+      setResponse(errorMsg);
     } finally {
       setLoading(false);
     }
@@ -95,3 +98,4 @@ export default function Chat() {
     </div>
   );
 }
+
