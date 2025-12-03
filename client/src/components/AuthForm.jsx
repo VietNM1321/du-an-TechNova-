@@ -1,28 +1,22 @@
 import { useState } from "react";
 import { useNavigate, Link } from "react-router-dom";
 import "./AuthForm.css";
-
 function AuthForm({ mode }) {
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const navigate = useNavigate();
-
   const isLogin = mode === "login";
-
   const handleSubmit = async (e) => {
     e.preventDefault();
-
     const url = `http://localhost:5000/api/auth/${isLogin ? "login" : "register"}`;
     const body = isLogin ? { email, password } : { name, email, password };
-
     try {
       const res = await fetch(url, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(body),
       });
-
       const data = await res.json();
       if (res.ok) {
         if (isLogin) {
@@ -56,7 +50,6 @@ function AuthForm({ mode }) {
       alert("Lỗi server");
     }
   };
-
   return (
     <div className="auth-container">
       <div className="auth-box">
@@ -100,6 +93,4 @@ function AuthForm({ mode }) {
     </div>
   );
 }
-
 export default AuthForm;
-

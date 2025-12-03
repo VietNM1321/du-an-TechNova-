@@ -141,7 +141,6 @@ router.post("/", verifyToken, async (req, res) => {
         return { book, borrowQty, item };
       })
     );
-
     const errors = bookChecks.filter(c => c.error);
     if (errors.length) {
       const errorMessages = errors.map(e => e.error);
@@ -451,6 +450,58 @@ router.put("/:id/return", verifyToken, requireRole("admin"), async (req,res)=>{
   } catch(error){
     console.error("❌ Lỗi xác nhận trả:", error);
     res.status(500).json({ message:"Lỗi server khi xác nhận trả sách!" });
+  }
+});
+router.put("/:id/pay", verifyToken, async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { paymentMethod, paymentNote } = req.body;
+    const userId = req.user.id;
+    if (!id?.match(/^[0-9a-fA-F]{24}$/)) {
+      return res.status(400).json({ message: "ID đơn mượn không hợp lệ!" });
+    }
+    const borrowing = await Borrowing.findById(id);
+    if (!borrowing) {
+      return res.status(404).json({ message: "Không tìm thấy đơn mượn!" });
+    }
+    if (borrowing.user.toString() !== userId) {
+      return res.status(403).json({ message: "Bạn không có quyền thanh toán đơn mượn này!" });
+    }
+    if (![STATUS_ENUM.DAMAGED, STATUS_ENUM.LOST].includes(borrowing.status)) {
+      return res.status(400).json({ 
+        message: "Chỉ có thể thanh toán cho đơn mượn sách bị mất hoặc hỏng!" 
+      });
+    }
+    if (borrowing.paymentStatus === "completed") {
+      return res.status(400).json({ message: "Đơn mượn này đã được thanh toán!" });
+    }
+    borrowing.paymentMethod = paymentMethod || "cash";
+    borrowing.paymentNote = paymentNote || "";
+    borrowing.paymentDate = new Date();
+    if (paymentMethod === "cash") {
+      borrowing.paymentStatus = "completed";
+      borrowing.status = STATUS_ENUM.COMPENSATED;
+    } else {
+      borrowing.paymentStatus = "pending";
+    }
+    await borrowing.save();
+    const message = paymentMethod === "cash" 
+      ? "✅ Thanh toán tiền mặt thành công! Đơn đã được hoàn tất."
+      : "✅ Đã gửi yêu cầu thanh toán chuyển khoản. Admin sẽ xác nhận trong vòng 24h.";
+
+    return res.json({ 
+      message,
+      borrowing: {
+        _id: borrowing._id,
+        paymentMethod: borrowing.paymentMethod,
+        paymentStatus: borrowing.paymentStatus,
+        paymentDate: borrowing.paymentDate,
+        status: borrowing.status
+      }
+    });
+  } catch (error) {
+    console.error("❌ Lỗi thanh toán:", error);
+    return res.status(500).json({ message: "Lỗi server khi xử lý thanh toán!" });
   }
 });
 router.get("/fund/summary", verifyToken, requireRole("admin", "librarian"), async (req, res) => {

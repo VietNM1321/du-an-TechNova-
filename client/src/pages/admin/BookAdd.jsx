@@ -82,28 +82,24 @@ const BookAdd = () => {
             <div className="bg-gradient-to-br from-blue-50 to-white rounded-lg p-6 w-full text-center">
               <Title level={4}>📚 Thêm Sách Mới</Title>
               <Text type="secondary">Thêm thông tin cơ bản cho sách và upload ảnh</Text>
-
               <div className="mt-6 w-full">
                 <Upload
                   multiple
                   beforeUpload={beforeUpload}
                   onRemove={removeFile}
                   listType="picture-card"
-                  fileList={fileList}
-                >
+                  fileList={fileList}>
                   <div>
                     <PlusCircle size={20} />
                     <div style={{ marginTop: 8 }}>Tải ảnh</div>
                   </div>
                 </Upload>
-
                 <div className="mt-4 text-sm text-gray-500">
                   Hỗ trợ nhiều ảnh. Kéo thả hoặc nhấp để chọn.
                 </div>
               </div>
             </div>
           </Col>
-
           <Col xs={24} md={16}>
             <Form layout="vertical" onFinish={handleSubmit} initialValues={{ quantity: 1, Pricebook: 50000 }}>
               <Row gutter={16}>
@@ -112,7 +108,6 @@ const BookAdd = () => {
                     <Input size="large" placeholder="Nhập tên sách..." />
                   </Form.Item>
                 </Col>
-
                 <Col xs={12} sm={12}>
                   <Form.Item name="category" label="Thể loại" rules={[{ required: true, message: "Chọn thể loại" }]}> 
                     <Select
@@ -136,15 +131,13 @@ const BookAdd = () => {
                         } else {
                           setPreviewBookCode("");
                         }
-                      }}
-                    >
+                      }}>
                       {categories.map((c) => (
                         <Select.Option key={c._id} value={c._id}>{c.name}</Select.Option>
                       ))}
                     </Select>
                   </Form.Item>
                 </Col>
-
                 <Col xs={12} sm={12}>
                   <Form.Item name="author" label="Tác giả">
                     <Select placeholder="Chọn tác giả" size="large" allowClear>
@@ -154,7 +147,6 @@ const BookAdd = () => {
                     </Select>
                   </Form.Item>
                 </Col>
-
                 <Col xs={12} sm={12}>
                   <Form.Item name="publishedYear" label="Năm xuất bản" rules={[{ required: true, message: "Nhập năm xuất bản" }]}> 
                     <InputNumber min={1000} max={3000} style={{ width: "100%" }} size="large" />
@@ -172,13 +164,11 @@ const BookAdd = () => {
                     <InputNumber min={1} style={{ width: "100%" }} size="large" />
                   </Form.Item>
                 </Col>
-
                 <Col xs={12} sm={12}>
                   <Form.Item
                     name="Pricebook"
                     label="Giá đền bù (VNĐ)"
-                    rules={[{ required: true, message: "Nhập giá đền bù" }]}
-                  >
+                    rules={[{ required: true, message: "Nhập giá đền bù" }]}>
                     <InputNumber
                       min={0}
                       formatter={(value) =>
