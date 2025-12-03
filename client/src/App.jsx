@@ -2,8 +2,6 @@ import React from "react";
 import { BrowserRouter as Router, Routes, Route, Navigate } from "react-router-dom";
 import ClientLayout from "./layout/clientlayout";
 import AdminLayout from "./layout/adminLayout";
-
-// Client pages
 import Home from "./pages/Home";
 import Login from "./pages/Login";
 import Register from "./pages/Register";
@@ -21,11 +19,7 @@ import HistoryDetail from "./pages/HistoryDetail";
 import Payment from "./pages/Payment";
 import ChangePassword from "./pages/ChangePassword";
 import ForgotPassword from "./pages/ForgotPassword";
-
-// AI Chat page
 import Chat from "./pages/Chat";
-
-// Admin pages
 import AdminHome from "./pages/admin/AdminHome";
 import Users from "./pages/admin/Users";
 import SetPassword from "./pages/admin/SetPassword";
@@ -42,6 +36,7 @@ import AuthorManager from "./pages/admin/AuthorManager";
 import AuthorAdd from "./pages/admin/AuthorAdd";
 import AuthorEdit from "./pages/admin/AuthorEdit";
 import BorrowManager from "./pages/admin/BorrowManager";
+import BorrowingDetail from "./pages/admin/BorrowingDetail";
 import CategoryManager from "./pages/admin/CategoryManager";
 import AddCategory from "./pages/admin/Addcategory";
 import EditCategory from "./pages/admin/Editcategory";
@@ -51,30 +46,22 @@ import AddNotification from "./pages/admin/AddNotification";
 import EditNotification from "./pages/admin/EditNotification";
 import NotificationDetail from "./components/NotificationDetail";
 import LibraryFund from "./pages/admin/LibraryFund";
-
-// -------- ROUTE GUARDS --------
 const AdminRoute = ({ children }) => {
   const stored = localStorage.getItem("adminUser");
   const adminUser = stored ? JSON.parse(stored) : null;
-
   if (!adminUser || !(adminUser.role === "admin" || adminUser.role === "librarian")) {
     return <Navigate to="/login" replace />;
   }
-
   return children;
 };
-
 const AdminOnly = ({ children }) => {
   const stored = localStorage.getItem("adminUser");
   const adminUser = stored ? JSON.parse(stored) : null;
-
   if (!adminUser || adminUser.role !== "admin") {
     return <Navigate to="/admin" replace />;
   }
-
   return children;
 };
-
 function App() {
   return (
     <Router>
@@ -100,24 +87,17 @@ function App() {
           <Route path="/forgot-password" element={<ForgotPassword />} />
           <Route path="chat" element={<Chat />} />
         </Route>
-
-        {/* Admin routes */}
         <Route
           path="/admin/*"
           element={
             <AdminRoute>
               <AdminLayout />
             </AdminRoute>
-          }
-        >
+          }>
           <Route index element={<AdminHome />} />
-
-          {/* Admin-only pages */}
           <Route path="users" element={<AdminOnly><Users /></AdminOnly>} />
           <Route path="setpassword" element={<AdminOnly><SetPassword /></AdminOnly>} />
           <Route path="course" element={<AdminOnly><CourseManager /></AdminOnly>} />
-
-          {/* Admin + Librarian pages */}
           <Route path="bookmanager" element={<BookManager />} />
           <Route path="bookadd" element={<BookAdd />} />
           <Route path="book/edit/:id" element={<BookEdit />} />
@@ -130,6 +110,7 @@ function App() {
           <Route path="author/add" element={<AuthorAdd />} />
           <Route path="authoredit/:id" element={<AuthorEdit />} />
           <Route path="borrowings" element={<BorrowManager />} />
+          <Route path="borrowing/:id" element={<BorrowingDetail />} />
           <Route path="fund" element={<LibraryFund />} />
           <Route path="category" element={<CategoryManager />} />
           <Route path="category/add" element={<AddCategory />} />
@@ -144,5 +125,4 @@ function App() {
     </Router>
   );
 }
-
 export default App;

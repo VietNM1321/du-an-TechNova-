@@ -1,36 +1,23 @@
 import { useState } from "react";
 import axios from "axios";
-
 export default function Chat() {
   const [message, setMessage] = useState("");
   const [response, setResponse] = useState("");
   const [loading, setLoading] = useState(false);
-
   const sendMessage = async () => {
     if (!message.trim()) return;
-
     try {
       setLoading(true);
       setResponse("");
-
       const res = await axios.post("http://localhost:5000/api/ai/chat", {
         message,
       });
-
-      // Giả sử backend trả về { reply: "..." }
       let aiText = res.data?.reply || "Không có phản hồi từ AI";
-
-      // Nếu AI trả về dạng toán học với LaTeX, chúng ta xử lý thành tiếng Việt
-      // Ví dụ: thay "5 - 2" bằng "Năm trừ hai bằng ba"
       aiText = aiText
         .replace(/\\\((.*?)\\\)/g, (_, exp) => {
           try {
-            // Tính toán biểu thức nếu đơn giản
-            // Chỉ hỗ trợ +, -, *, /
             const sanitized = exp.replace(/[^0-9+\-*/(). ]/g, "");
-            // eslint-disable-next-line no-eval
             const result = eval(sanitized);
-            // Chuyển sang tiếng Việt
             const operatorMap = {
               "+": "cộng",
               "-": "trừ",
@@ -47,27 +34,38 @@ export default function Chat() {
             return exp;
           }
         });
-
       setResponse(aiText);
     } catch (err) {
       console.error(err);
-      const errorMsg = err.response?.data?.message || 
-                       err.response?.data?.detail || 
-                       "❌ Lỗi khi gọi API AI";
+      let errorMsg = "❌ Lỗi khi gọi API AI";
+      
+      if (err.response?.data) {
+        const data = err.response.data;
+        if (typeof data === 'string') {
+          errorMsg = data;
+        } else if (data.message) {
+          errorMsg = String(data.message);
+        } else if (data.detail) {
+          errorMsg = String(data.detail);
+        } else if (data.error) {
+          errorMsg = String(data.error);
+        } else {
+          errorMsg = JSON.stringify(data);
+        }
+      } else if (err.message) {
+        errorMsg = String(err.message);
+      }
       setResponse(errorMsg);
     } finally {
       setLoading(false);
     }
   };
-
-  // Chuyển số thành chữ tiếng Việt đơn giản
   const numberToVietnamese = (num) => {
     const numbers = ["không","một","hai","ba","bốn","năm","sáu","bảy","tám","chín"];
     const n = parseInt(num);
     if (!isNaN(n) && n >= 0 && n <= 20) return numbers[n] || num;
     return num;
   };
-
   return (
     <div className="max-w-xl mx-auto p-4 mt-8 bg-white rounded-xl shadow-lg">
       <h1 className="text-2xl font-bold mb-4 text-center">AI Chat Bot</h1>

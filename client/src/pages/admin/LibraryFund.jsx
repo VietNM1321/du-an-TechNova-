@@ -2,13 +2,10 @@ import React, { useEffect, useState } from "react";
 import axios from "axios";
 import { Card, Statistic, Table, Tag, message } from "antd";
 import dayjs from "dayjs";
-
 const LibraryFund = () => {
   const [loading, setLoading] = useState(false);
   const [summary, setSummary] = useState({ totalFund: 0, totalRecords: 0, recent: [] });
-
   const token = localStorage.getItem("adminToken");
-
   const fetchSummary = async () => {
     if (!token) return;
     setLoading(true);
@@ -24,11 +21,9 @@ const LibraryFund = () => {
       setLoading(false);
     }
   };
-
   useEffect(() => {
     fetchSummary();
   }, []);
-
   const columns = [
     {
       title: "Sách",
@@ -85,7 +80,6 @@ const LibraryFund = () => {
       ),
     },
   ];
-
   return (
     <div className="min-h-screen bg-gradient-to-br from-blue-50 via-slate-50 to-purple-50 py-8 px-4 md:px-8">
       <div className="max-w-6xl mx-auto space-y-6">
@@ -128,7 +122,4 @@ const LibraryFund = () => {
     </div>
   );
 };
-
 export default LibraryFund;
-
-

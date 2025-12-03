@@ -1,22 +1,10 @@
 import React, { useEffect, useState } from "react";
+import { useNavigate } from "react-router-dom";
 import axios from "axios";
-import {
-  Table,
-  Tag,
-  Button,
-  Space,
-  Modal,
-  Input,
-  message,
-  Select,
-  DatePicker,
-  Upload,
-} from "antd";
+import {Table,Tag,Button,Space,Modal,Input,message,Select,DatePicker,Upload,} from "antd";
 import dayjs from "dayjs";
 import { ExclamationCircleOutlined, UploadOutlined } from "@ant-design/icons";
-
 const { confirm } = Modal;
-
 const STATUS_ENUM = {
   BORROWED: "borrowed",
   RETURNED: "returned",
@@ -27,8 +15,8 @@ const STATUS_ENUM = {
   RENEWED: "renewed",
   PENDING_PICKUP: "pendingPickup",
 };
-
 const BorrowManager = () => {
+  const navigate = useNavigate();
   const [borrowings, setBorrowings] = useState([]);
   const [loading, setLoading] = useState(false);
   const [page, setPage] = useState(1);
@@ -39,17 +27,13 @@ const BorrowManager = () => {
   const [borrowFrom, setBorrowFrom] = useState(null);
   const [borrowTo, setBorrowTo] = useState(null);
   const [typingTimer, setTypingTimer] = useState(null);
-
-  // Modal upload ảnh
   const [modalVisible, setModalVisible] = useState(false);
   const [selectedRecord, setSelectedRecord] = useState(null);
   const [imgStudent, setImgStudent] = useState(null);
   const [imgCard, setImgCard] = useState(null);
   const [previewStudent, setPreviewStudent] = useState(null);
   const [previewCard, setPreviewCard] = useState(null);
-
   const token = localStorage.getItem("adminToken");
-
   const fetchBorrowings = async (pageNum = 1, params = {}) => {
     setLoading(true);
     try {
@@ -58,7 +42,6 @@ const BorrowManager = () => {
       const st = params.status ?? status;
       const bf = params.borrowFrom ?? borrowFrom;
       const bt = params.borrowTo ?? borrowTo;
-
       const parts = [
         `page=${pageNum}`,
         `limit=${l}`,
@@ -67,12 +50,9 @@ const BorrowManager = () => {
         bf ? `borrowFrom=${encodeURIComponent(bf)}` : "",
         bt ? `borrowTo=${encodeURIComponent(bt)}` : "",
       ].filter(Boolean);
-
-      const res = await axios.get(
-        `http://localhost:5000/api/borrowings?${parts.join("&")}`,
+      const res = await axios.get(`http://localhost:5000/api/borrowings?${parts.join("&")}`,
         { headers: { Authorization: `Bearer ${token}` } }
       );
-
       const payload = res.data || {};
       const mappedBorrowings = (payload.borrowings || []).map((b) => ({
         ...b,
@@ -82,7 +62,6 @@ const BorrowManager = () => {
         imgStudent: b.imgStudent || null,
         imgCard: b.imgCard || null,
       }));
-
       setBorrowings(mappedBorrowings);
       setTotalItems(payload.totalItems || 0);
       setPage(payload.currentPage || pageNum);
@@ -93,11 +72,9 @@ const BorrowManager = () => {
       setLoading(false);
     }
   };
-
   useEffect(() => {
     fetchBorrowings(page);
   }, [page, limit, status, borrowFrom, borrowTo]);
-
   const onChangeQuery = (e) => {
     const value = e.target.value;
     setQuery(value);
@@ -108,16 +85,13 @@ const BorrowManager = () => {
     }, 400);
     setTypingTimer(timer);
   };
-
 const handleConfirmPickup = (record) => {
   confirm({
     title: "Xác nhận đã lấy sách?",
     icon: <ExclamationCircleOutlined />,
     onOk: async () => {
       try {
-        const res = await axios.put(
-          `http://localhost:5000/api/borrowings/${record._id}/pickup`,
-          {},
+        const res = await axios.put(`http://localhost:5000/api/borrowings/${record._id}/pickup`,{},
           { headers: { Authorization: `Bearer ${token}` } }
         );
         message.success(res.data.message || "✅ Đã xác nhận lấy sách!");
@@ -137,7 +111,6 @@ const handleConfirmPickup = (record) => {
     },
   });
 };
-  // ===== Modal xác nhận lấy sách =====
   const openPickupModal = (record) => {
     setSelectedRecord(record);
     setImgStudent(null);
@@ -146,7 +119,6 @@ const handleConfirmPickup = (record) => {
     setPreviewCard(null);
     setModalVisible(true);
   };
-
   const handlePickupConfirm = async () => {
     if (!imgStudent || !imgCard) {
       message.error("Vui lòng upload đủ 2 ảnh!");
@@ -156,10 +128,7 @@ const handleConfirmPickup = (record) => {
       const formData = new FormData();
       formData.append("imgStudent", imgStudent);
       formData.append("imgCard", imgCard);
-
-      const res = await axios.put(
-        `http://localhost:5000/api/borrowings/${selectedRecord._id}/pickup`,
-        formData,
+      const res = await axios.put(`http://localhost:5000/api/borrowings/${selectedRecord._id}/pickup`,formData,
         {
           headers: {
             Authorization: `Bearer ${token}`,
@@ -167,11 +136,8 @@ const handleConfirmPickup = (record) => {
           },
         }
       );
-
       const { imgStudent: sUrl, imgCard: cUrl } = res.data;
-
       message.success(res.data.message || "✅ Đã xác nhận lấy sách!");
-
       setBorrowings((prev) =>
         prev.map((b) =>
           b._id === selectedRecord._id
@@ -193,30 +159,21 @@ const handleConfirmPickup = (record) => {
       );
     }
   };
-
-  // ===== Xử lý trả sách hoặc đổi trạng thái =====
 const handleReturnOrStatusChange = (record, newStatus) => {
   confirm({
     title: "Xác nhận?",
     icon: <ExclamationCircleOutlined />,
     onOk: async () => {
       try {
-        // Tạo URL theo trạng thái mới
         const url =
           newStatus === STATUS_ENUM.RETURNED
-            ? `http://localhost:5000/api/borrowings/${record._id}/return`
-            : `http://localhost:5000/api/borrowings/${record._id}/status`;
-
-        // Gửi request cập nhật
+            ? `http://localhost:5000/api/borrowings/${record._id}/return` : `http://localhost:5000/api/borrowings/${record._id}/status`;
         await axios.put(
           url,
           { status: newStatus },
           { headers: { Authorization: `Bearer ${token}` } }
         );
-
         message.success("✅ Cập nhật trạng thái thành công!");
-
-        // Cập nhật UI
         setBorrowings((prev) =>
           prev.map((b) =>
             b._id === record._id
@@ -235,8 +192,6 @@ const handleReturnOrStatusChange = (record, newStatus) => {
     },
   });
 };
-
-
   const handleConfirmPayment = (record) => {
     confirm({
       title: "Xác nhận thanh toán?",
@@ -246,9 +201,7 @@ const handleReturnOrStatusChange = (record, newStatus) => {
       icon: <ExclamationCircleOutlined />,
       onOk: async () => {
         try {
-          const res = await axios.put(
-            `http://localhost:5000/api/borrowings/${record._id}/confirm-payment`,
-            {},
+          const res = await axios.put(`http://localhost:5000/api/borrowings/${record._id}/confirm-payment`,{},
             { headers: { Authorization: `Bearer ${token}` } }
           );
           message.success(res.data?.message || "✅ Đã thanh toán!");
@@ -270,29 +223,12 @@ const handleReturnOrStatusChange = (record, newStatus) => {
       },
     });
   };
-
   const columns = [
     {
       title: "Mã đơn",
-      dataIndex: "_id",
-      key: "_id",
-      render: (id) => id.slice(-10),
-    },
-    {
-      title: "Người mượn",
-      key: "user",
-      width: "18%",
-      render: (record) => {
-        const user = record.user || record.userSnapshot || {};
-        const name = user.fullName || "Khách vãng lai";
-        const email = user.email || "";
-        return (
-          <div>
-            <div>{name}</div>
-            <div className="text-gray-500 text-sm">{email}</div>
-          </div>
-        );
-      },
+      key: "code",
+      width: 150,
+      render: (record) => record.borrowingCode || record._id?.slice(-10),
     },
     {
       title: "Sách",
@@ -327,64 +263,32 @@ const handleReturnOrStatusChange = (record, newStatus) => {
       },
     },
     {
-      title: "Ảnh xác nhận",
-      key: "images",
-      render: (record) => (
-        <div className="flex gap-2">
-          {record.imgStudent && (
-            <img
-              src={`http://localhost:5000/${record.imgStudent}`}
-              alt="Student"
-              width={60}
-            />
-          )}
-          {record.imgCard && (
-            <img
-              src={`http://localhost:5000/${record.imgCard}`}
-              alt="Card"
-              width={60}
-            />
-          )}
-        </div>
-      ),
-    },
-    {
       title: "Số lượng",
       dataIndex: "quantity",
       key: "quantity",
-      width: "10%",
+      width: 100,
       render: (quantity) => (
         <span className="font-semibold text-blue-600">{quantity || 1} quyển</span>
-      ),
-    },
-    {
-      title: "Lần gia hạn",
-      dataIndex: "renewCount",
-      key: "renewCount",
-      render: (renewCount) => (
-        <span>
-          {renewCount || 0}
-          {renewCount >= 3 && (
-            <span className="ml-2 text-xs text-red-500">(Đã hết lượt gia hạn)</span>
-          )}
-        </span>
       ),
     },
     {
       title: "Ngày mượn",
       dataIndex: "borrowDate",
       key: "borrowDate",
+      width: 120,
       render: (date) => (date ? new Date(date).toLocaleDateString("vi-VN") : "—"),
     },
     {
-      title: "Ngày hẹn trả",
-      dataIndex: "dueDate",
-      key: "dueDate",
+      title: "Ngày trả",
+      dataIndex: "returnDate",
+      key: "returnDate",
+      width: 120,
       render: (date) => (date ? new Date(date).toLocaleDateString("vi-VN") : "—"),
     },
     {
       title: "Trạng thái",
       key: "status",
+      width: 130,
       render: (record) => {
         let text = "Chưa lấy sách";
         let color = "blue";
@@ -425,31 +329,22 @@ const handleReturnOrStatusChange = (record, newStatus) => {
       },
     },
     {
-      title: "Tiền đền / Phạt",
-      key: "compensation",
-      render: (record) => {
-        const compensation = record.compensationAmount || 0;
-        return compensation > 0 ? (
-          <div className="text-right font-semibold text-red-600">
-            {compensation.toLocaleString("vi-VN")} VNĐ
-          </div>
-        ) : (
-          "—"
-        );
-      },
-    },
-    {
       title: "Thao tác",
       key: "action",
+      width: 200,
       render: (record) => (
         <Space size="small">
+          <Button
+            size="small"
+            onClick={() => navigate(`/admin/borrowing/${record._id}`)}>
+            📄 Chi tiết
+          </Button>
           {!record.isPickedUp &&
             record.status === STATUS_ENUM.PENDING_PICKUP && (
               <Button
                 size="small"
                 type="primary"
-                onClick={() => openPickupModal(record)}
-              >
+                onClick={() => openPickupModal(record)}>
                 ✅ Xác nhận lấy sách
               </Button>
             )}
@@ -462,8 +357,7 @@ const handleReturnOrStatusChange = (record, newStatus) => {
                 type="primary"
                 onClick={() =>
                   handleReturnOrStatusChange(record, STATUS_ENUM.RETURNED)
-                }
-              >
+                }>
                 ✅ Trả sách
               </Button>
             )}
@@ -483,7 +377,6 @@ const handleReturnOrStatusChange = (record, newStatus) => {
       ),
     },
   ];
-
   return (
     <div className="min-h-screen bg-gradient-to-br from-blue-50 via-slate-50 to-purple-50 py-8 px-4 md:px-8">
       <div className="max-w-7xl mx-auto space-y-6">
@@ -493,19 +386,16 @@ const handleReturnOrStatusChange = (record, newStatus) => {
           </h2>
           <Button
             onClick={() => fetchBorrowings(1)}
-            className="!rounded-2xl !bg-blue-600 !text-white hover:!bg-blue-700"
-          >
+            className="!rounded-2xl !bg-blue-600 !text-white hover:!bg-blue-700">
             Làm mới
           </Button>
         </div>
-
         <div className="bg-white rounded-3xl shadow-lg border border-slate-100 p-6 grid grid-cols-1 lg:grid-cols-4 gap-5">
           <Input
             value={query}
             onChange={onChangeQuery}
             placeholder="Tìm kiếm người mượn, sách..."
-            className="rounded-2xl"
-          />
+            className="rounded-2xl"/>
           <Select
             value={status}
             onChange={(v) => {
@@ -542,7 +432,6 @@ const handleReturnOrStatusChange = (record, newStatus) => {
             placeholder="Mượn đến"
           />
         </div>
-
         <div className="bg-white rounded-3xl shadow-lg border border-slate-100 p-4 overflow-x-auto">
           <Table
             columns={columns}
@@ -561,16 +450,13 @@ const handleReturnOrStatusChange = (record, newStatus) => {
             }}
           />
         </div>
-
-        {/* Modal upload xác nhận lấy sách */}
         <Modal
           title="Xác nhận đã lấy sách?"
           open={modalVisible}
           onOk={handlePickupConfirm}
           onCancel={() => setModalVisible(false)}
           okText="Xác nhận"
-          cancelText="Hủy"
-        >
+          cancelText="Hủy">
           <div className="flex flex-col gap-4">
             <div>
               <Upload
@@ -581,8 +467,7 @@ const handleReturnOrStatusChange = (record, newStatus) => {
                   reader.readAsDataURL(file);
                   return false;
                 }}
-                showUploadList={false}
-              >
+                showUploadList={false}>
                 <Button icon={<UploadOutlined />}>Upload ảnh học sinh</Button>
               </Upload>
               {previewStudent && (
@@ -593,7 +478,6 @@ const handleReturnOrStatusChange = (record, newStatus) => {
                 />
               )}
             </div>
-
             <div>
               <Upload
                 beforeUpload={(file) => {
@@ -603,8 +487,7 @@ const handleReturnOrStatusChange = (record, newStatus) => {
                   reader.readAsDataURL(file);
                   return false;
                 }}
-                showUploadList={false}
-              >
+                showUploadList={false}>
                 <Button icon={<UploadOutlined />}>Upload ảnh CMND/CCCD</Button>
               </Upload>
               {previewCard && (
@@ -621,6 +504,4 @@ const handleReturnOrStatusChange = (record, newStatus) => {
     </div>
   );
 };
-
 export default BorrowManager;
-

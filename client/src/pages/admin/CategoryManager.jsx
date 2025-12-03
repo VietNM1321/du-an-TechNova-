@@ -18,9 +18,8 @@ const CategoryManager = () => {
       const s = params.sort ?? sort;
       const o = params.order ?? order;
       const l = params.limit ?? limit;
-      const res = await axios.get(
-        `http://localhost:5000/api/category?page=${pageNum}&limit=${l}${q ? `&q=${encodeURIComponent(q)}` : ""}${s ? `&sort=${encodeURIComponent(s)}` : ""}${o ? `&order=${encodeURIComponent(o)}` : ""}`
-      );
+      const res = await axios.get(`http://localhost:5000/api/category?page=${pageNum}&limit=${l}${q 
+        ? `&q=${encodeURIComponent(q)}` : ""}${s ? `&sort=${encodeURIComponent(s)}` : ""}${o ? `&order=${encodeURIComponent(o)}` : ""}`);
       setCategories(res.data.categories || []);
       setTotalPages(res.data.totalPages || 1);
       setPage(res.data.currentPage || 1);
@@ -106,12 +105,10 @@ const CategoryManager = () => {
           </div>
           <button
             onClick={() => navigate("/admin/category/add")}
-            className="inline-flex items-center gap-2 rounded-2xl bg-blue-600 text-white px-4 py-2.5 text-sm font-semibold shadow hover:bg-blue-700 transition"
-          >
+            className="inline-flex items-center gap-2 rounded-2xl bg-blue-600 text-white px-4 py-2.5 text-sm font-semibold shadow hover:bg-blue-700 transition">
             ➕ Thêm danh mục
           </button>
         </div>
-
         <div className="bg-white rounded-3xl shadow-lg border border-slate-100 p-6 grid grid-cols-1 lg:grid-cols-4 gap-5">
           <div className="lg:col-span-2">
             <label className="text-xs font-semibold text-slate-500 uppercase tracking-wide">Tìm kiếm</label>
@@ -128,8 +125,7 @@ const CategoryManager = () => {
             <select
               value={sort}
               onChange={(e) => { setSort(e.target.value); setPage(1); }}
-              className="mt-2 w-full rounded-2xl border border-slate-200 px-4 py-2.5 text-sm bg-white focus:ring-2 focus:ring-blue-500 outline-none"
-            >
+              className="mt-2 w-full rounded-2xl border border-slate-200 px-4 py-2.5 text-sm bg-white focus:ring-2 focus:ring-blue-500 outline-none">
               <option value="createdAt">Ngày tạo</option>
               <option value="name">Tên</option>
             </select>
@@ -139,8 +135,7 @@ const CategoryManager = () => {
             <select
               value={order}
               onChange={(e) => { setOrder(e.target.value); setPage(1); }}
-              className="mt-2 w-full rounded-2xl border border-slate-200 px-4 py-2.5 text-sm bg-white focus:ring-2 focus:ring-blue-500 outline-none"
-            >
+              className="mt-2 w-full rounded-2xl border border-slate-200 px-4 py-2.5 text-sm bg-white focus:ring-2 focus:ring-blue-500 outline-none">
               <option value="asc">Tăng dần</option>
               <option value="desc">Giảm dần</option>
             </select>
@@ -150,8 +145,7 @@ const CategoryManager = () => {
             <select
               value={limit}
               onChange={(e) => { setLimit(parseInt(e.target.value)); setPage(1); }}
-              className="mt-2 w-full rounded-2xl border border-slate-200 px-4 py-2.5 text-sm bg-white focus:ring-2 focus:ring-blue-500 outline-none"
-            >
+              className="mt-2 w-full rounded-2xl border border-slate-200 px-4 py-2.5 text-sm bg-white focus:ring-2 focus:ring-blue-500 outline-none">
               <option value={5}>5</option>
               <option value={10}>10</option>
               <option value={20}>20</option>

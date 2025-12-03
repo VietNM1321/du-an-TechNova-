@@ -1,19 +1,6 @@
 import { useEffect, useState } from "react";
 import axios from "axios";
-import {
-  Table,
-  Button,
-  Modal,
-  Form,
-  Input,
-  InputNumber,
-  Space,
-  message,
-  Popconfirm,
-  Row,
-  Col,
-  Select,
-} from "antd";
+import {Table,Button,Modal,Form,Input,InputNumber,Space,message,Popconfirm,Row,Col,Select,} from "antd";
 import { SearchOutlined } from "@ant-design/icons";
 import { GraduationCap } from "lucide-react";
 const CourseManager = () => {
@@ -24,12 +11,8 @@ const CourseManager = () => {
   const [searchForm] = Form.useForm();
   const [form] = Form.useForm();
   const [filteredCourses, setFilteredCourses] = useState([]);
-
-  const API_URL = "http://localhost:5000/api/courses";
-  
   const handleSearch = (values) => {
     let filtered = [...courses];
-    
     if (values.searchText) {
       const searchLower = values.searchText.toLowerCase();
       filtered = filtered.filter(
@@ -38,7 +21,6 @@ const CourseManager = () => {
           course.courseCode.toLowerCase().includes(searchLower)
       );
     }
-    
     if (values.studentCodeRange) {
       if (values.studentCodeRange === 'below2000') {
         filtered = filtered.filter(course => course.maxStudentCode < 2000);
@@ -48,14 +30,12 @@ const CourseManager = () => {
         filtered = filtered.filter(course => course.minStudentCode > 4000);
       }
     }
-    
     setFilteredCourses(filtered);
   };
-
   const fetchCourses = async () => {
     setLoading(true);
     try {
-      const res = await axios.get(API_URL);
+      const res = await axios.get("http://localhost:5000/api/courses");
       setCourses(res.data);
       setFilteredCourses(res.data);
     } catch (err) {
@@ -76,10 +56,10 @@ const CourseManager = () => {
   const handleSubmit = async (values) => {
     try {
       if (editingCourse) {
-        await axios.put(`${API_URL}/${editingCourse._id}`, values);
+        await axios.put(`${"http://localhost:5000/api/courses"}/${editingCourse._id}`, values);
         message.success("✅ Cập nhật khóa học thành công!");
       } else {
-        await axios.post(API_URL, values);
+        await axios.post("http://localhost:5000/api/courses", values);
         message.success("✅ Thêm khóa học thành công!");
       }
       setIsModalOpen(false);
@@ -90,7 +70,7 @@ const CourseManager = () => {
   };
   const handleDelete = async (id) => {
     try {
-      await axios.delete(`${API_URL}/${id}`);
+      await axios.delete(`${"http://localhost:5000/api/courses"}/${id}`);
       message.success("🗑️ Đã xóa khóa học!");
       fetchCourses();
     } catch {
@@ -155,12 +135,10 @@ const CourseManager = () => {
           <Button
             type="primary"
             onClick={() => openModal()}
-            className="!rounded-2xl !bg-blue-600 hover:!bg-blue-700 !border-none !px-5 !py-2.5 !text-sm"
-          >
+            className="!rounded-2xl !bg-blue-600 hover:!bg-blue-700 !border-none !px-5 !py-2.5 !text-sm">
             ➕ Thêm khóa học
           </Button>
         </div>
-
         <div className="bg-white rounded-3xl shadow-lg border border-slate-100 p-6">
           <Form form={searchForm} onFinish={handleSearch}>
             <Row gutter={[16, 16]}>
@@ -194,8 +172,7 @@ const CourseManager = () => {
                     onClick={() => {
                       searchForm.resetFields();
                       setFilteredCourses(courses);
-                    }}
-                  >
+                    }}>
                     ↺ Đặt lại
                   </Button>
                 </Space>
@@ -203,7 +180,6 @@ const CourseManager = () => {
             </Row>
           </Form>
         </div>
-
         <div className="bg-white rounded-3xl shadow-lg border border-slate-100">
           <Table
             rowKey="_id"
@@ -220,30 +196,24 @@ const CourseManager = () => {
         onCancel={() => setIsModalOpen(false)}
         onOk={() => form.submit()}
         okText="Lưu"
-        cancelText="Hủy"
-      >
+        cancelText="Hủy">
         <Form form={form} layout="vertical" onFinish={handleSubmit}>
           <Form.Item
             label="Tên khóa học"
             name="courseName"
-            rules={[{ required: true, message: "Vui lòng nhập tên khóa học!" }]}
-          >
+            rules={[{ required: true, message: "Vui lòng nhập tên khóa học!" }]}>
             <Input placeholder="VD: Khóa 18 - Lập trình Web" />
           </Form.Item>
-
           <Form.Item
             label="Mã khóa học"
             name="courseCode"
-            rules={[{ required: true, message: "Vui lòng nhập mã khóa học!" }]}
-          >
+            rules={[{ required: true, message: "Vui lòng nhập mã khóa học!" }]}>
             <Input placeholder="VD: K18WEB" />
           </Form.Item>
-
           <Form.Item
             label="Mã sinh viên nhỏ nhất"
             name="minStudentCode"
-            rules={[{ required: true, message: "Nhập mã sinh viên nhỏ nhất!" }]}
-          >
+            rules={[{ required: true, message: "Nhập mã sinh viên nhỏ nhất!" }]}>
             <InputNumber
               min={1}
               max={9999}
@@ -251,12 +221,10 @@ const CourseManager = () => {
               placeholder="VD: 1 (tương ứng PH0001)"
             />
           </Form.Item>
-
           <Form.Item
             label="Mã sinh viên lớn nhất"
             name="maxStudentCode"
-            rules={[{ required: true, message: "Nhập mã sinh viên lớn nhất!" }]}
-          >
+            rules={[{ required: true, message: "Nhập mã sinh viên lớn nhất!" }]}>
             <InputNumber
               min={1}
               max={9999}
@@ -269,6 +237,4 @@ const CourseManager = () => {
     </div>
   );
 };
-
 export default CourseManager;
-
