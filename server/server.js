@@ -16,6 +16,7 @@ import courseRoutes from "./routes/courseRoutes.js";
 import notificationRoutes from "./routes/notification.js";
 import orderRoutes from "./routes/order.js";
 import aiRoutes from "./routes/aiRoutes.js";
+import statisticsRoutes from "./routes/statistics.js";
 dotenv.config({ override: true });
 const app = express();
 app.use(express.json());
@@ -40,6 +41,7 @@ app.use("/api/category", categoryRoutes);
 app.use("/api/courses", courseRoutes);
 app.use("/api/notifications", notificationRoutes);
 app.use("/api/ai", aiRoutes);
+app.use("/api/statistics", statisticsRoutes);
 
 app.use((req, res) => {
   res.status(404).json({
