@@ -1,41 +1,33 @@
 import React, { useState, useEffect } from "react";
 import axios from "axios";
 import { useParams, useNavigate } from "react-router-dom";
-import { CreditCard, Wallet, ArrowLeft, CheckCircle, Shield, Clock } from "lucide-react";
-
+import { CreditCard, ArrowLeft, Clock } from "lucide-react";
+import { CheckCircle } from "lucide-react";
 const Payment = () => {
   const { id } = useParams();
   const navigate = useNavigate();
   const [borrowing, setBorrowing] = useState(null);
   const [loading, setLoading] = useState(true);
-  const [paymentMethod, setPaymentMethod] = useState("cash");
+  const [paymentMethod, setPaymentMethod] = useState("bank");
   const [paymentNote, setPaymentNote] = useState("");
   const [submitting, setSubmitting] = useState(false);
-  
-  // QR Code cố định
   const fixedQRCode = "https://api.qrserver.com/v1/create-qr-code/?size=300x300&data=VCB%3A1234567890%3ATHU%20VIEN%20SACH";
-
   useEffect(() => {
     const fetchBorrowing = async () => {
       try {
         const token = localStorage.getItem("clientToken") || localStorage.getItem("adminToken");
         const storedUser = JSON.parse(localStorage.getItem("clientUser") || "null");
         const userId = storedUser?._id || storedUser?.id;
-        
         if (!token || !userId) {
           alert("Vui lòng đăng nhập để thanh toán!");
           navigate("/login");
           return;
         }
-
-        // Lấy danh sách borrowings của user và tìm borrowing có ID phù hợp
-        const res = await axios.get(
-          `http://localhost:5000/api/borrowings/history/${userId}`,
+        const res = await axios.get(`http://localhost:5000/api/borrowings/history/${userId}`,
           {
             headers: { Authorization: `Bearer ${token}` }
           }
         );
-        
         const found = res.data.find(b => b._id === id);
         if (found) {
           setBorrowing(found);
@@ -51,7 +43,6 @@ const Payment = () => {
         setLoading(false);
       }
     };
-
     if (id) {
       fetchBorrowing();
     }
@@ -61,32 +52,26 @@ const Payment = () => {
     try {
       setSubmitting(true);
       const token = localStorage.getItem("clientToken") || localStorage.getItem("adminToken");
-
-      const formData = new FormData();
-      formData.append("paymentMethod", paymentMethod);
-      formData.append("paymentNote", paymentNote);
-
-      const res = await axios.put(
-        `http://localhost:5000/api/borrowings/${borrowing._id}/pay`,
-        formData,
-        {
-          headers: {
-            "Content-Type": "multipart/form-data",
-            Authorization: `Bearer ${token}`,
-          },
-        }
+      console.log("💳 Creating payment for borrowing:", borrowing._id, "amount:", compensationAmount);
+      const resp = await axios.post(
+        "http://localhost:5000/vnpay/create_payment_for_borrowing",
+        { borrowingId: borrowing._id, amount: compensationAmount },
+        { headers: { Authorization: `Bearer ${token}` } }
       );
-
-      alert(res.data.message || "✅ Thanh toán thành công!");
-      navigate("/history");
+      console.log("✅ Payment URL created:", resp.data?.url ? "Yes" : "No");
+      const url = resp.data?.url;
+      if (url) {
+        window.location.href = url;
+        return;
+      }
+      alert(resp.data?.message || "Không tạo được đường dẫn thanh toán trực tuyến.");
     } catch (error) {
-      console.error("❌ Lỗi thanh toán:", error.response?.data || error.message);
-      alert(error.response?.data?.message || "❌ Thanh toán thất bại!");
+      console.error("❌ Payment error:", error.response?.data || error.message);
+      alert(error.response?.data?.error || "❌ Thanh toán thất bại!");
     } finally {
       setSubmitting(false);
     }
   };
-
   if (loading) {
     return (
       <div className="min-h-[calc(100vh-160px)] flex items-center justify-center bg-gradient-to-br from-blue-50 to-indigo-50">
@@ -97,7 +82,6 @@ const Payment = () => {
       </div>
     );
   }
-
   if (!borrowing) {
     return (
       <div className="min-h-[calc(100vh-160px)] flex items-center justify-center bg-gradient-to-br from-blue-50 to-indigo-50">
@@ -113,13 +97,10 @@ const Payment = () => {
       </div>
     );
   }
-
   const compensationAmount = borrowing.compensationAmount || 50000;
-
   return (
     <div className="min-h-[calc(100vh-160px)] bg-gradient-to-br from-blue-50 via-indigo-50 to-purple-50 py-4 px-4">
       <div className="max-w-4xl mx-auto">
-        {/* Header Section - Compact */}
         <div className="mb-4">
           <button
             onClick={() => navigate("/history")}
@@ -139,8 +120,6 @@ const Payment = () => {
             </div>
           </div>
         </div>
-
-        {/* Card chính */}
         <div className="bg-white rounded-xl shadow-xl overflow-hidden border border-white/20">
           {/* Thông tin đơn mượn - Compact */}
           <div className="bg-gradient-to-br from-blue-600 via-indigo-600 to-purple-600 text-white p-4">
@@ -189,53 +168,17 @@ const Payment = () => {
                 <span>💰</span>
                 <span>Phương thức thanh toán</span>
               </label>
-              <div className="grid grid-cols-2 gap-3">
-                {/* Tiền mặt */}
+              <div className="grid grid-cols-1 gap-3">
+                {/* VNPay Online Payment */}
                 <button
-                  onClick={() => setPaymentMethod("cash")}
-                  className={`p-4 rounded-xl border-2 transition-all ${
-                    paymentMethod === "cash"
-                      ? "border-blue-500 bg-gradient-to-br from-blue-50 to-blue-100 shadow-md"
-                      : "border-gray-200 hover:border-blue-300 bg-white"
-                  }`}
-                >
-                  <Wallet
-                    size={32}
-                    className={`mx-auto mb-2 ${
-                      paymentMethod === "cash" ? "text-blue-600" : "text-gray-400"
-                    }`}
-                  />
-                  <p
-                    className={`text-sm font-bold ${
-                      paymentMethod === "cash" ? "text-blue-700" : "text-gray-600"
-                    }`}
-                  >
-                    Tiền mặt
-                  </p>
-                </button>
-
-                {/* Ngân hàng */}
-                <button
-                  onClick={() => setPaymentMethod("bank")}
-                  className={`p-4 rounded-xl border-2 transition-all ${
-                    paymentMethod === "bank"
-                      ? "border-blue-500 bg-gradient-to-br from-blue-50 to-blue-100 shadow-md"
-                      : "border-gray-200 hover:border-blue-300 bg-white"
-                  }`}
+                  disabled
+                  className="p-4 rounded-xl border-2 border-blue-500 bg-gradient-to-br from-blue-50 to-blue-100 shadow-md cursor-default"
                 >
                   <CreditCard
                     size={32}
-                    className={`mx-auto mb-2 ${
-                      paymentMethod === "bank" ? "text-blue-600" : "text-gray-400"
-                    }`}
+                    className="mx-auto mb-2 text-blue-600"
                   />
-                  <p
-                    className={`text-sm font-bold ${
-                      paymentMethod === "bank" ? "text-blue-700" : "text-gray-600"
-                    }`}
-                  >
-                    Ngân hàng
-                  </p>
+                  <p className="text-sm font-bold text-blue-700">💳 Thanh toán trực tuyến (VNPay)</p>
                 </button>
               </div>
             </div>
@@ -303,27 +246,14 @@ const Payment = () => {
             </div>
 
             {/* Lưu ý - Compact */}
-            {paymentMethod === "cash" && (
-              <div className="bg-gradient-to-r from-blue-50 to-cyan-50 p-3 rounded-lg border-2 border-blue-200">
-                <p className="text-xs text-blue-800 flex items-start gap-2">
-                  <CheckCircle size={16} className="mt-0.5 flex-shrink-0 text-blue-600" />
-                  <span>
-                    <strong>Lưu ý:</strong> Thanh toán trực tiếp tại thư viện. Đơn sẽ được cập nhật ngay.
-                  </span>
-                </p>
-              </div>
-            )}
-
-            {paymentMethod === "bank" && (
-              <div className="bg-gradient-to-r from-amber-50 to-yellow-50 p-3 rounded-lg border-2 border-amber-200">
-                <p className="text-xs text-amber-800 flex items-start gap-2">
-                  <Clock size={16} className="mt-0.5 flex-shrink-0 text-amber-600" />
-                  <span>
-                    <strong>Lưu ý:</strong> Sau khi chuyển khoản, xác nhận thanh toán. Admin sẽ xác nhận trong 24h.
-                  </span>
-                </p>
-              </div>
-            )}
+            <div className="bg-gradient-to-r from-amber-50 to-yellow-50 p-3 rounded-lg border-2 border-amber-200">
+              <p className="text-xs text-amber-800 flex items-start gap-2">
+                <Clock size={16} className="mt-0.5 flex-shrink-0 text-amber-600" />
+                <span>
+                  <strong>Lưu ý:</strong> Vui lòng thanh toán qua cổng VNPay. Đơn sẽ được cập nhật ngay lập tức sau khi thanh toán thành công.
+                </span>
+              </p>
+            </div>
 
             {/* Footer với nút hành động - Compact */}
             <div className="bg-gradient-to-r from-gray-50 to-white px-4 py-3 border-t border-gray-200 flex justify-between gap-3">

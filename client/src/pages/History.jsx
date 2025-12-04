@@ -30,8 +30,8 @@ const STATUS_COLOR = {
 const OVERDUE_FEE_PER_DAY = 5000;
 
 const History = ({ userId, refreshFlag }) => {
-  const [history, setHistory] = useState([]);           // dữ liệu thô từ API (từng sách)
-  const [groupedHistory, setGroupedHistory] = useState([]); // danh sách đơn lớn đã gộp
+  const [history, setHistory] = useState([]);
+  const [groupedHistory, setGroupedHistory] = useState([]);
   const [loading, setLoading] = useState(false);
   const token = localStorage.getItem("clientToken");
   const storedUser = JSON.parse(localStorage.getItem("clientUser") || "null");

@@ -37,6 +37,7 @@ import AuthorAdd from "./pages/admin/AuthorAdd";
 import AuthorEdit from "./pages/admin/AuthorEdit";
 import BorrowManager from "./pages/admin/BorrowManager";
 import BorrowingDetail from "./pages/admin/BorrowingDetail";
+import PaymentResult from "./pages/PaymentResult";
 import CategoryManager from "./pages/admin/CategoryManager";
 import AddCategory from "./pages/admin/Addcategory";
 import EditCategory from "./pages/admin/Editcategory";
@@ -83,6 +84,7 @@ function App() {
           <Route path="/history" element={<History />} />
           <Route path="/history/:code" element={<HistoryDetail />} />
           <Route path="/payment/:id" element={<Payment />} />
+            <Route path="/payment-result" element={<PaymentResult />} />
           <Route path="/changepassword" element={<ChangePassword />} />
           <Route path="/forgot-password" element={<ForgotPassword />} />
           <Route path="chat" element={<Chat />} />

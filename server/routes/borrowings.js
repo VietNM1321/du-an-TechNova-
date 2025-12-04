@@ -455,42 +455,49 @@ router.put("/:id/return", verifyToken, requireRole("admin"), async (req,res)=>{
 router.put("/:id/pay", verifyToken, async (req, res) => {
   try {
     const { id } = req.params;
-    const { paymentMethod, paymentNote } = req.body;
-    const userId = req.user.id;
+    // This endpoint is deprecated - all payments now go through VNPay gateway
+    return res.status(410).json({ 
+      message: "❌ Endpoint này đã không sử dụng. Vui lòng sử dụng VNPay để thanh toán.",
+      info: "Hãy sử dụng POST /vnpay/create_payment_for_borrowing thay thế."
+    });
+  } catch (error) {
+    console.error("❌ Lỗi thanh toán:", error);
+    return res.status(500).json({ message: "Lỗi server khi xử lý thanh toán!" });
+  }
+});
+
+// Confirm payment endpoint - used by admin to mark compensation as paid
+router.put("/:id/confirm-payment", verifyToken, requireRole("admin", "librarian"), async (req, res) => {
+  try {
+    const { id } = req.params;
     if (!id?.match(/^[0-9a-fA-F]{24}$/)) {
       return res.status(400).json({ message: "ID đơn mượn không hợp lệ!" });
     }
+    
     const borrowing = await Borrowing.findById(id);
     if (!borrowing) {
       return res.status(404).json({ message: "Không tìm thấy đơn mượn!" });
     }
-    if (borrowing.user.toString() !== userId) {
-      return res.status(403).json({ message: "Bạn không có quyền thanh toán đơn mượn này!" });
-    }
+    
     if (![STATUS_ENUM.DAMAGED, STATUS_ENUM.LOST].includes(borrowing.status)) {
       return res.status(400).json({ 
-        message: "Chỉ có thể thanh toán cho đơn mượn sách bị mất hoặc hỏng!" 
+        message: "Chỉ có thể xác nhận thanh toán cho đơn mươn sách bị mất hoặc hỏng!" 
       });
     }
+    
     if (borrowing.paymentStatus === "completed") {
-      return res.status(400).json({ message: "Đơn mượn này đã được thanh toán!" });
+      return res.status(400).json({ message: "Đơn mượn này đã được thanh toán rồi!" });
     }
-    borrowing.paymentMethod = paymentMethod || "cash";
-    borrowing.paymentNote = paymentNote || "";
+    
+    // Mark as paid by admin
+    borrowing.paymentMethod = "bank";
+    borrowing.paymentStatus = "completed";
     borrowing.paymentDate = new Date();
-    if (paymentMethod === "cash") {
-      borrowing.paymentStatus = "completed";
-      borrowing.status = STATUS_ENUM.COMPENSATED;
-    } else {
-      borrowing.paymentStatus = "pending";
-    }
+    borrowing.status = STATUS_ENUM.COMPENSATED;
     await borrowing.save();
-    const message = paymentMethod === "cash" 
-      ? "✅ Thanh toán tiền mặt thành công! Đơn đã được hoàn tất."
-      : "✅ Đã gửi yêu cầu thanh toán chuyển khoản. Admin sẽ xác nhận trong vòng 24h.";
-
+    
     return res.json({ 
-      message,
+      message: "✅ Xác nhận thanh toán thành công!",
       borrowing: {
         _id: borrowing._id,
         paymentMethod: borrowing.paymentMethod,
@@ -500,10 +507,11 @@ router.put("/:id/pay", verifyToken, async (req, res) => {
       }
     });
   } catch (error) {
-    console.error("❌ Lỗi thanh toán:", error);
-    return res.status(500).json({ message: "Lỗi server khi xử lý thanh toán!" });
+    console.error("❌ Lỗi xác nhận thanh toán:", error);
+    return res.status(500).json({ message: "Lỗi server khi xác nhận thanh toán!" });
   }
 });
+
 router.get("/fund/summary", verifyToken, requireRole("admin", "librarian"), async (req, res) => {
   try {
     const [stats] = await Borrowing.aggregate([
