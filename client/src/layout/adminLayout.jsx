@@ -8,14 +8,17 @@ import {
   FileText,
   PenTool,
   KeyRound,
-  LogOut,
   MessageSquare,
 } from "lucide-react";
+
 import AdminHeader from "../components/AdminHeader";
 import AdminFooter from "../components/AdminFooter";
 
 const sidebarLinks = [
+  // NEW: Thống kê thư viện
   { to: "/admin", label: "Bảng điều khiển", icon: <LayoutDashboard size={18} /> },
+  { to: "/admin/library", label: "Thống kê thư viện", icon: <LayoutDashboard size={18} /> },
+
   { to: "/admin/category", label: "Quản lý danh mục", icon: <BookOpen size={18} /> },
   { to: "/admin/bookManager", label: "Quản lý sách", icon: <Package size={18} /> },
   { to: "/admin/author", label: "Quản lý tác giả", icon: <PenTool size={18} /> },
@@ -28,8 +31,6 @@ const sidebarLinks = [
   { to: "/admin/importlist", label: "Quản lý nhập kho", icon: <FileText size={18} /> },
   { to: "/admin/notifications", label: "Quản lý thông báo", icon: <FileText size={18} /> },
   { to: "/admin/fund", label: "Quản lý quỹ thư viện", icon: <FileText size={18} /> },
- 
-
 ];
 
 const AdminLayout = () => {

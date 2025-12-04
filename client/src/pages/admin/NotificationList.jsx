@@ -101,8 +101,8 @@ const NotificationList = () => {
       key: "type",
       render: (type) => {
         const typeMap = {
-          general: { label: "Chung", color: "#1890ff" },
-          reminder: { label: "Nhắc nhở", color: "#fa8c16" },
+          general: { label: "Tạm thời", color: "#1890ff" },
+          reminder: { label: "Mới nhất", color: "#fa8c16" },
           review: { label: "Đánh giá", color: "#52c41a" },
           borrow: { label: "Mượn", color: "#1890ff" },
           return: { label: "Trả", color: "#722ed1" },

@@ -16,6 +16,9 @@ import cartRoutes from "./routes/cart.js";
 import bookcodeRoutes from "./routes/bookcode.js";
 import courseRoutes from "./routes/courseRoutes.js";
 import notificationRoutes from "./routes/notification.js";
+import statisticsRoutes from "./routes/statistics.js";
+
+
 
 // Route AI (sẽ tạo file riêng: routes/aiRoutes.js)
 import aiRoutes from "./routes/aiRoutes.js";
@@ -50,6 +53,7 @@ app.use("/api/users", userRoutes);
 app.use("/api/category", categoryRoutes);
 app.use("/api/courses", courseRoutes);
 app.use("/api/notifications", notificationRoutes);
+app.use("/api/statistics", statisticsRoutes);
 
 // Route gọi OpenRouter AI
 app.use("/api/ai", aiRoutes);

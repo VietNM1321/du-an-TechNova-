@@ -1,5 +1,6 @@
 import React from "react";
 import { BrowserRouter as Router, Routes, Route, Navigate } from "react-router-dom";
+
 import ClientLayout from "./layout/clientlayout";
 import AdminLayout from "./layout/adminLayout";
 import Home from "./pages/Home";
@@ -20,6 +21,7 @@ import Payment from "./pages/Payment";
 import ChangePassword from "./pages/ChangePassword";
 import ForgotPassword from "./pages/ForgotPassword";
 import Chat from "./pages/Chat";
+
 import AdminHome from "./pages/admin/AdminHome";
 import Users from "./pages/admin/Users";
 import SetPassword from "./pages/admin/SetPassword";
@@ -46,6 +48,12 @@ import AddNotification from "./pages/admin/AddNotification";
 import EditNotification from "./pages/admin/EditNotification";
 import NotificationDetail from "./components/NotificationDetail";
 import LibraryFund from "./pages/admin/LibraryFund";
+
+// ⭐ NEW: thống kê thư viện
+import LibraryDashboard from "./pages/admin/LibraryDashboard";
+
+// ---------------------------- ROUTE GUARDS ---------------------------------
+
 const AdminRoute = ({ children }) => {
   const stored = localStorage.getItem("adminUser");
   const adminUser = stored ? JSON.parse(stored) : null;
@@ -54,6 +62,7 @@ const AdminRoute = ({ children }) => {
   }
   return children;
 };
+
 const AdminOnly = ({ children }) => {
   const stored = localStorage.getItem("adminUser");
   const adminUser = stored ? JSON.parse(stored) : null;
@@ -62,11 +71,15 @@ const AdminOnly = ({ children }) => {
   }
   return children;
 };
+
+// ---------------------------- APP ROUTE ---------------------------------
+
 function App() {
   return (
     <Router>
       <Routes>
-        {/* Client routes */}
+
+        {/* CLIENT */}
         <Route path="/" element={<ClientLayout />}>
           <Route index element={<Home />} />
           <Route path="login" element={<Login />} />
@@ -80,49 +93,71 @@ function App() {
           <Route path="policies" element={<Policies />} />
           <Route path="search" element={<SearchResults />} />
           <Route path="profile/:id" element={<Profile />} />
-          <Route path="/history" element={<History />} />
-          <Route path="/history/:code" element={<HistoryDetail />} />
-          <Route path="/payment/:id" element={<Payment />} />
-          <Route path="/changepassword" element={<ChangePassword />} />
-          <Route path="/forgot-password" element={<ForgotPassword />} />
+          <Route path="history" element={<History />} />
+          <Route path="history/:code" element={<HistoryDetail />} />
+          <Route path="payment/:id" element={<Payment />} />
+          <Route path="changepassword" element={<ChangePassword />} />
+          <Route path="forgot-password" element={<ForgotPassword />} />
           <Route path="chat" element={<Chat />} />
         </Route>
+
+        {/* ADMIN */}
         <Route
           path="/admin/*"
           element={
             <AdminRoute>
               <AdminLayout />
             </AdminRoute>
-          }>
+          }
+        >
+
           <Route index element={<AdminHome />} />
+
+          {/* Admin-only */}
           <Route path="users" element={<AdminOnly><Users /></AdminOnly>} />
           <Route path="setpassword" element={<AdminOnly><SetPassword /></AdminOnly>} />
           <Route path="course" element={<AdminOnly><CourseManager /></AdminOnly>} />
+
+          {/* Admin + Librarian */}
           <Route path="bookmanager" element={<BookManager />} />
           <Route path="bookadd" element={<BookAdd />} />
           <Route path="book/edit/:id" element={<BookEdit />} />
+
           <Route path="bookcode" element={<BookCode />} />
           <Route path="bookcode/add" element={<BookCodeAdd />} />
           <Route path="bookcode/edit/:id" element={<BookCodeEdit />} />
+
           <Route path="importlist" element={<ImportList />} />
           <Route path="importlist/add" element={<ImportAdd />} />
+
           <Route path="author" element={<AuthorManager />} />
           <Route path="author/add" element={<AuthorAdd />} />
           <Route path="authoredit/:id" element={<AuthorEdit />} />
+
           <Route path="borrowings" element={<BorrowManager />} />
           <Route path="borrowing/:id" element={<BorrowingDetail />} />
+
           <Route path="fund" element={<LibraryFund />} />
+
           <Route path="category" element={<CategoryManager />} />
           <Route path="category/add" element={<AddCategory />} />
           <Route path="category/edit/:id" element={<EditCategory />} />
+
           <Route path="reviews" element={<ReviewManager />} />
+
           <Route path="notifications" element={<NotificationList />} />
           <Route path="notifications/add" element={<AddNotification />} />
           <Route path="notifications/edit/:id" element={<EditNotification />} />
           <Route path="notification/:id" element={<NotificationDetail />} />
+
+          {/* NEW: Dashboard thống kê */}
+          <Route path="library" element={<LibraryDashboard />} />
+
         </Route>
+
       </Routes>
     </Router>
   );
 }
+
 export default App;
