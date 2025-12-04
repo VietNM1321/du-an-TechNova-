@@ -174,17 +174,13 @@ const HistoryDetail = () => {
           message.warning("Bạn phải nhập lý do báo cáo!");
           return Promise.reject();
         }
-
         try {
           if (!token) throw new Error("UNAUTHENTICATED");
-
           const formData = new FormData();
           formData.append("status", reportType);
           formData.append("reason", reason);
           formData.append("quantityAffected", record.quantity || 1); // Báo hết tất cả quantity
-          
           if (file) formData.append("image", file);
-
           const res = await axios.put(
             `http://localhost:5000/api/borrowings/${record._id}/user-report`,
             formData,
@@ -195,12 +191,9 @@ const HistoryDetail = () => {
               },
             }
           );
-
           const updated = res.data?.borrowing;
           const statusText = reportType === "lost" ? "mất" : "hỏng";
           message.success(`✅ Đã báo ${statusText} sách thành công!`);
-
-          // Cập nhật lại state để hiển thị ngay
           setGroup((prev) => {
             if (!prev) return prev;
             const items = prev.items.map((it) =>
@@ -222,7 +215,35 @@ const HistoryDetail = () => {
       },
     });
   };
+  const handlePay = async (record) => {
+  try {
+    const token = localStorage.getItem("clientToken") || localStorage.getItem("adminToken");
+    if (!token) {
+      message.error("Bạn cần đăng nhập!");
+      navigate("/login");
+      return;
+    }
+    console.log("💳 Paying for borrowing:", record._id, "amount:", record.compensationAmount);
+    const res = await axios.post(
+      "http://localhost:5000/vnpay/create_payment_for_borrowing",
+      {
+        borrowingId: record._id,
+        amount: record.compensationAmount,
+      },
+      { headers: { Authorization: `Bearer ${token}` } }
+    );
 
+    console.log("✅ Payment response:", res.data);
+    if (res.data?.url) {
+      window.location.href = res.data.url;
+    } else {
+      message.error("Không tạo được giao dịch VNPay.");
+    }
+  } catch (error) {
+    console.error("❌ Payment error:", error.response?.data || error.message);
+    message.error(error.response?.data?.error || "Lỗi thanh toán!");
+  }
+};
   const detailColumns = [
     {
       title: "Sách mượn",
@@ -375,8 +396,7 @@ const HistoryDetail = () => {
               <Button
                 type="primary"
                 icon={<DollarOutlined />}
-                onClick={() => navigate(`/payment/${record._id}`)}
-              >
+                onClick={() => handlePay(record)}>
                 Thanh toán
               </Button>
             )}
@@ -470,6 +490,3 @@ const HistoryDetail = () => {
 };
 
 export default HistoryDetail;
-
-
-

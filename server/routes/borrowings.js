@@ -337,6 +337,39 @@ router.put("/:id/compensate", verifyToken, async (req,res)=>{
     res.status(500).json({message:"Lỗi server khi thanh toán bồi thường"});
   }
 });
+router.put("/:id/confirm-payment", verifyToken, requireRole("admin", "librarian"), async (req, res) => {
+  try {
+    const { id } = req.params;
+    if (!id?.match(/^[0-9a-fA-F]{24}$/)) {
+      return res.status(400).json({ message: "ID đơn mượn không hợp lệ!" });
+    }
+    const borrowing = await Borrowing.findById(id);
+    if (!borrowing) {
+      return res.status(404).json({ message: "Không tìm thấy đơn mượn!" });
+    }
+    if (![STATUS_ENUM.DAMAGED, STATUS_ENUM.LOST].includes(borrowing.status)) {
+      return res.status(400).json({ 
+        message: "Chỉ có thể xác nhận thanh toán cho đơn mượn sách bị mất hoặc hỏng!" 
+      });
+    }
+    borrowing.paymentStatus = "completed";
+    borrowing.status = STATUS_ENUM.COMPENSATED;
+    borrowing.paymentDate = new Date();
+    await borrowing.save();
+    return res.json({ 
+      message: "✅ Đã thanh toán!",
+      borrowing: {
+        _id: borrowing._id,
+        paymentStatus: borrowing.paymentStatus,
+        status: borrowing.status,
+        paymentDate: borrowing.paymentDate
+      }
+    });
+  } catch (error) {
+    console.error("❌ Lỗi xác nhận thanh toán:", error);
+    return res.status(500).json({ message: "Lỗi server khi xác nhận thanh toán!" });
+  }
+});
 router.get("/history/:userId", verifyToken, isSelfOrAdmin("userId"), async (req,res)=>{
   try{
     console.log("📍 GET /history/:userId - req.user:", req.user);

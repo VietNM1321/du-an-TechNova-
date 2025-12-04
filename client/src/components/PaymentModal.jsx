@@ -1,9 +1,8 @@
 import React, { useState } from "react";
 import axios from "axios";
-import { X, CreditCard, Wallet } from "lucide-react";
-
+import { X, CreditCard } from "lucide-react";
 const PaymentModal = ({ visible, onClose, borrowing, onSuccess }) => {
-  const [paymentMethod, setPaymentMethod] = useState("cash");
+  const [paymentMethod, setPaymentMethod] = useState("bank");
   const [paymentNote, setPaymentNote] = useState("");
   const [loading, setLoading] = useState(false);
   if (!visible || !borrowing) return null;
@@ -13,22 +12,20 @@ const PaymentModal = ({ visible, onClose, borrowing, onSuccess }) => {
     try {
       setLoading(true);
       const token = localStorage.getItem("clientToken") || localStorage.getItem("adminToken");
-      const formData = new FormData();
-      formData.append("paymentMethod", paymentMethod);
-      formData.append("paymentNote", paymentNote);
-
-      const res = await axios.put(`http://localhost:5000/api/borrowings/${borrowing._id}/pay`,formData,
-        {
-          headers: {
-            "Content-Type": "multipart/form-data",
-            Authorization: `Bearer ${token}`,
-          },
+        const resp = await axios.post(
+          "http://localhost:5000/vnpay/create_payment_for_borrowing",
+          { borrowingId: borrowing._id, amount: compensationAmount },
+          { headers: { Authorization: `Bearer ${token}` } }
+        );
+        const url = resp.data?.url;
+        if (url) {
+          window.location.href = url;
+          return;
         }
-      );
-      alert(res.data.message || "✅ Thanh toán thành công!");
+        alert(resp.data?.message || "Không tạo được đường dẫn thanh toán trực tuyến.");
       onSuccess?.();
       onClose();
-      setPaymentMethod("cash");
+      setPaymentMethod("bank");
       setPaymentNote("");
     } catch (error) {
       console.error("❌ Lỗi thanh toán:", error.response?.data || error.message);
@@ -37,11 +34,9 @@ const PaymentModal = ({ visible, onClose, borrowing, onSuccess }) => {
       setLoading(false);
     }
   };
-
   return (
     <div className="fixed inset-0 bg-black/30 backdrop-blur-sm flex items-center justify-center z-50 p-4">
       <div className="bg-gradient-to-br from-white to-blue-50/30 rounded-2xl shadow-2xl max-w-lg w-full max-h-[90vh] overflow-y-auto border border-white/20">
-        {/* Header */}
         <div className="flex justify-between items-center p-6 border-b border-gray-200 bg-gradient-to-r from-blue-600 to-blue-700 text-white rounded-t-2xl">
           <h2 className="text-2xl font-bold flex items-center gap-2">
             <span>💳</span>
@@ -85,53 +80,12 @@ const PaymentModal = ({ visible, onClose, borrowing, onSuccess }) => {
               💰 Chọn phương thức thanh toán:
             </label>
             <div className="grid grid-cols-2 gap-4">
-              {/* Tiền mặt */}
-              <button
-                onClick={() => setPaymentMethod("cash")}
-                className={`p-5 rounded-xl border-2 transition-all transform hover:scale-105 ${
-                  paymentMethod === "cash"
-                    ? "border-blue-500 bg-gradient-to-br from-blue-50 to-blue-100 shadow-lg shadow-blue-200/50"
-                    : "border-gray-200 bg-white hover:border-blue-300 hover:bg-blue-50/50"
-                }`}
-              >
-                <Wallet
-                  size={36}
-                  className={`mx-auto mb-3 ${
-                    paymentMethod === "cash" ? "text-blue-600" : "text-gray-400"
-                  }`}
-                />
-                <p
-                  className={`font-bold text-sm ${
-                    paymentMethod === "cash" ? "text-blue-700" : "text-gray-600"
-                  }`}
-                >
-                  Tiền mặt
-                </p>
-              </button>
-
-              {/* Ngân hàng */}
-              <button
-                onClick={() => setPaymentMethod("bank")}
-                className={`p-5 rounded-xl border-2 transition-all transform hover:scale-105 ${
-                  paymentMethod === "bank"
-                    ? "border-blue-500 bg-gradient-to-br from-blue-50 to-blue-100 shadow-lg shadow-blue-200/50"
-                    : "border-gray-200 bg-white hover:border-blue-300 hover:bg-blue-50/50"
-                }`}
-              >
-                <CreditCard
-                  size={36}
-                  className={`mx-auto mb-3 ${
-                    paymentMethod === "bank" ? "text-blue-600" : "text-gray-400"
-                  }`}
-                />
-                <p
-                  className={`font-bold text-sm ${
-                    paymentMethod === "bank" ? "text-blue-700" : "text-gray-600"
-                  }`}
-                >
-                  Ngân hàng
-                </p>
-              </button>
+              {/* Only online bank payment is supported now */}
+              <div className="p-5 rounded-xl border-2 bg-gradient-to-br from-blue-50 to-blue-100 shadow-lg shadow-blue-200/50 text-center col-span-2">
+                <CreditCard size={36} className="mx-auto mb-3 text-blue-600" />
+                <p className="font-bold text-sm text-blue-700">💳 Thanh toán trực tuyến (VNPay)</p>
+                <p className="text-xs text-blue-600 mt-1">Thanh toán an toàn qua cổng VNPay</p>
+              </div>
             </div>
           </div>
 
@@ -198,29 +152,15 @@ const PaymentModal = ({ visible, onClose, borrowing, onSuccess }) => {
           </div>
 
           {/* Lưu ý */}
-          {paymentMethod === "cash" && (
-            <div className="bg-gradient-to-r from-blue-50 to-cyan-50 p-4 rounded-xl border-2 border-blue-200 shadow-sm">
-              <p className="text-sm text-blue-800 flex items-start gap-2">
-                <span className="text-lg">💡</span>
-                <span>
-                  <strong>Lưu ý:</strong> Vui lòng thanh toán trực tiếp tại thư viện. Sau khi
-                  thanh toán, đơn sẽ được cập nhật ngay lập tức.
-                </span>
-              </p>
-            </div>
-          )}
-
-          {paymentMethod === "bank" && (
-            <div className="bg-gradient-to-r from-amber-50 to-yellow-50 p-4 rounded-xl border-2 border-amber-200 shadow-sm">
-              <p className="text-sm text-amber-800 flex items-start gap-2">
-                <span className="text-lg">💡</span>
-                <span>
-                  <strong>Lưu ý:</strong> Sau khi chuyển khoản thành công, vui lòng xác nhận thanh toán. 
-                  Thanh toán sẽ được xác nhận bởi quản trị viên trong vòng 24 giờ.
-                </span>
-              </p>
-            </div>
-          )}
+          <div className="bg-gradient-to-r from-amber-50 to-yellow-50 p-4 rounded-xl border-2 border-amber-200 shadow-sm">
+            <p className="text-sm text-amber-800 flex items-start gap-2">
+              <span className="text-lg">💡</span>
+              <span>
+                <strong>Lưu ý:</strong> Vui lòng thanh toán qua cổng VNPay. Sau khi thanh toán thành công, 
+                đơn sẽ được cập nhật ngay lập tức.
+              </span>
+            </p>
+          </div>
         </div>
 
         {/* Footer */}
@@ -246,5 +186,3 @@ const PaymentModal = ({ visible, onClose, borrowing, onSuccess }) => {
 };
 
 export default PaymentModal;
-
-
