@@ -52,7 +52,7 @@ function Home() {
       if (document.visibilityState === "visible") {
         fetchData(true);
       }
-    }, 5001);
+    }, 5000);
     return () => clearInterval(intervalId);
   }, []);
 

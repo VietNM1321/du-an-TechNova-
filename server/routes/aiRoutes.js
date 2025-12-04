@@ -30,9 +30,9 @@ router.post("/chat", async (req, res) => {
     console.log("📍 Sending request to OpenRouter with model: gpt-3.5-turbo");
     
     const response = await axios.post(
-      "https://openrouter.ai/api/v1/chat/completions",
+      "https://openrouter.ai/api/v1/chat/completions", // dd dẫn
       {
-        model: "openai/gpt-3.5-turbo", // Model phổ biến hơn và ổn định
+        model: "deepseek/deepseek-r1", // Model phổ biến hơn và ổn định
         messages: [
           {
             role: "user",
