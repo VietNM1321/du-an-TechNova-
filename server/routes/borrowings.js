@@ -347,9 +347,10 @@ router.put("/:id/confirm-payment", verifyToken, requireRole("admin", "librarian"
     if (!borrowing) {
       return res.status(404).json({ message: "Không tìm thấy đơn mượn!" });
     }
-    if (![STATUS_ENUM.DAMAGED, STATUS_ENUM.LOST].includes(borrowing.status)) {
+    // Cho phép thanh toán cho đơn: mất, hỏng, hoặc quá hạn
+    if (![STATUS_ENUM.DAMAGED, STATUS_ENUM.LOST, STATUS_ENUM.OVERDUE].includes(borrowing.status)) {
       return res.status(400).json({ 
-        message: "Chỉ có thể xác nhận thanh toán cho đơn mượn sách bị mất hoặc hỏng!" 
+        message: "Chỉ có thể xác nhận thanh toán cho đơn mượn sách bị mất, hỏng hoặc quá hạn!" 
       });
     }
     borrowing.paymentStatus = "completed";

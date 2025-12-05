@@ -33,6 +33,8 @@ const BorrowManager = () => {
   const [imgCard, setImgCard] = useState(null);
   const [previewStudent, setPreviewStudent] = useState(null);
   const [previewCard, setPreviewCard] = useState(null);
+  const [viewImageModal, setViewImageModal] = useState(false);
+  const [viewImageData, setViewImageData] = useState(null);
   const token = localStorage.getItem("adminToken");
   const fetchBorrowings = async (pageNum = 1, params = {}) => {
     setLoading(true);
@@ -222,6 +224,15 @@ const handleReturnOrStatusChange = (record, newStatus) => {
         }
       },
     });
+  };
+
+  const handleViewImages = (record) => {
+    if (!record.imgStudent && !record.imgCard) {
+      message.warning("Không có ảnh xác nhận nào!");
+      return;
+    }
+    setViewImageData(record);
+    setViewImageModal(true);
   };
   const columns = [
     {

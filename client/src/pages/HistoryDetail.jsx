@@ -42,7 +42,7 @@ const HistoryDetail = () => {
     if (!record.dueDate) return 0;
     const due = new Date(record.dueDate);
     const now = new Date();
-    if (record.status === "borrowed" && now > due) {
+    if (["borrowed", "overdue"].includes(record.status) && now > due) {
       const diffDays = Math.ceil((now - due) / (1000 * 60 * 60 * 24));
       return diffDays * OVERDUE_FEE_PER_DAY;
     }
@@ -305,6 +305,12 @@ const HistoryDetail = () => {
                   Chờ xác nhận thanh toán
                 </Tag>
               )}
+            {record.status === "overdue" && 
+              record.paymentStatus !== "completed" && (
+                <Tag color="gold" style={{ marginTop: 4 }}>
+                  Cần thanh toán phí quá hạn
+                </Tag>
+              )}
           </div>
         );
       },
@@ -398,6 +404,23 @@ const HistoryDetail = () => {
                 icon={<DollarOutlined />}
                 onClick={() => handlePay(record)}>
                 Thanh toán
+              </Button>
+            )}
+          {record.status === "overdue" && 
+            calculateOverdueFee(record) > 0 &&
+            record.paymentStatus !== "completed" && (
+              <Button
+                type="primary"
+                icon={<DollarOutlined />}
+                onClick={() => {
+                  // Tạo object tạm để thanh toán phí overdue
+                  const overdueRecord = {
+                    ...record,
+                    compensationAmount: calculateOverdueFee(record),
+                  };
+                  handlePay(overdueRecord);
+                }}>
+                Thanh toán ({calculateOverdueFee(record).toLocaleString("vi-VN")} VNĐ)
               </Button>
             )}
         </Space>

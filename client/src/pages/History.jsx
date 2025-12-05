@@ -117,8 +117,20 @@ const History = ({ userId, refreshFlag }) => {
           return sum + fee;
         }, 0);
 
+        // Cập nhật compensationAmount cho từng item nếu là overdue
+        const processedItems = g.items.map((it) => {
+          if (it.status === "overdue" && !it.compensationAmount) {
+            return {
+              ...it,
+              compensationAmount: calculateOverdueFee(it),
+            };
+          }
+          return it;
+        });
+
         return {
           ...g,
+          items: processedItems,
           totalQuantity,
           summaryStatus,
           totalCompensation,
@@ -215,7 +227,7 @@ const History = ({ userId, refreshFlag }) => {
     if (!record.dueDate) return 0;
     const due = new Date(record.dueDate);
     const now = new Date();
-    if (record.status === "borrowed" && now > due) {
+    if (["borrowed", "overdue"].includes(record.status) && now > due) {
       const diffDays = Math.ceil((now - due) / (1000 * 60 * 60 * 24));
       return diffDays * OVERDUE_FEE_PER_DAY;
     }
@@ -438,11 +450,18 @@ const History = ({ userId, refreshFlag }) => {
             </>
           )}
 
-          {["damaged", "lost"].includes(record.status) && record.compensationAmount > 0 && record.paymentStatus !== "completed" && (
+          {["damaged", "lost", "overdue"].includes(record.status) && record.compensationAmount > 0 && record.paymentStatus !== "completed" && (
             <Button type="primary" icon={<DollarOutlined />} onClick={() => navigate(`/payment/${record._id}`)}>
               Thanh toán
             </Button>
           )}
+          {record.status === "overdue" && 
+            calculateOverdueFee(record) > 0 && 
+            record.paymentStatus !== "completed" && (
+              <Button type="primary" style={{ backgroundColor: "#52c41a", borderColor: "#52c41a" }} icon={<DollarOutlined />} onClick={() => navigate(`/payment/${record._id}`)}>
+                Thanh toán phí quá hạn ({calculateOverdueFee(record).toLocaleString("vi-VN")} VNĐ)
+              </Button>
+            )}
         </Space>
       ),
     },
