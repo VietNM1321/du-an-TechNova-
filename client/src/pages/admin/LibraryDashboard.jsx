@@ -64,15 +64,15 @@ export default function LibraryDashboard() {
     const wb = XLSX.utils.book_new();
 
     const usersSummary = [
-      ["Metric", "Value"],
-      ["Total Users", data.users?.totalUsers || 0],
-      ["Students", data.users?.totalStudents || 0],
-      ["Admins", data.users?.totalAdmins || 0],
-      ["Librarians", data.users?.totalLibrarians || 0],
-      ["Active Users", data.users?.activeUsers || 0],
-      ["Inactive Users", data.users?.inactiveUsers || 0],
-      ["Users who borrowed", data.users?.countUsersBorrowed || 0],
-      ["Users never borrowed", data.users?.countUsersNeverBorrowed || 0],
+      ["Chỉ số", "Giá trị"],
+      ["Tổng người dùng", data.users?.totalUsers || 0],
+      ["Sinh viên", data.users?.totalStudents || 0],
+      ["Quản trị viên", data.users?.totalAdmins || 0],
+      ["Thủ thư", data.users?.totalLibrarians || 0],
+      ["Người dùng hoạt động", data.users?.activeUsers || 0],
+      ["Người dùng không hoạt động", data.users?.inactiveUsers || 0],
+      ["Người đã mượn sách", data.users?.countUsersBorrowed || 0],
+      ["Người chưa mượn sách", data.users?.countUsersNeverBorrowed || 0],
     ];
     XLSX.utils.book_append_sheet(
       wb,
@@ -81,14 +81,14 @@ export default function LibraryDashboard() {
     );
 
     const borrowSummary = [
-      ["Metric", "Value"],
-      ["Total Borrowings", data.borrowings?.totalBorrowings || 0],
-      ["Active Borrowings", data.borrowings?.activeBorrowings || 0],
-      ["Returned", data.borrowings?.returnedCount || 0],
-      ["Overdue", data.borrowings?.overdueCount || 0],
-      ["Damaged", data.borrowings?.damagedCount || 0],
-      ["Lost", data.borrowings?.lostCount || 0],
-      ["Total Compensation", data.borrowings?.totalCompensation || 0],
+      ["Chỉ số", "Giá trị"],
+      ["Tổng lượt mượn", data.borrowings?.totalBorrowings || 0],
+      ["Lượt mượn đang hoạt động", data.borrowings?.activeBorrowings || 0],
+      ["Đã trả", data.borrowings?.returnedCount || 0],
+      ["Quá hạn", data.borrowings?.overdueCount || 0],
+      ["Hư hỏng", data.borrowings?.damagedCount || 0],
+      ["Mất", data.borrowings?.lostCount || 0],
+      ["Tổng bồi thường", data.borrowings?.totalCompensation || 0],
     ];
     XLSX.utils.book_append_sheet(
       wb,
@@ -96,7 +96,7 @@ export default function LibraryDashboard() {
       "BorrowSummary"
     );
 
-    const monthly = [["Month", "BorrowCount", "Returned", "Overdue"]];
+    const monthly = [["Tháng", "Lượt mượn", "Đã trả", "Quá hạn"]];
     (data.borrowings?.monthlyStats || []).forEach((m) =>
       monthly.push([
         m._id?.month || m._id || "-",
@@ -112,7 +112,7 @@ export default function LibraryDashboard() {
     );
 
     const topBorrowersSheet = [
-      ["FullName", "StudentCode", "Email", "Course", "BorrowCount"],
+      ["Họ tên", "Mã sinh viên", "Email", "Khóa học", "Lượt mượn"],
     ];
     (data.topBorrowers || []).forEach((t) =>
       topBorrowersSheet.push([
@@ -129,7 +129,7 @@ export default function LibraryDashboard() {
       "TopBorrowers"
     );
 
-    const topBooksSheet = [["Title", "BorrowCount"]];
+    const topBooksSheet = [["Tiêu đề", "Lượt mượn"]];
     (data.topBooks || []).forEach((t) =>
       topBooksSheet.push([t.book?.title || "-", t.count || 0])
     );
@@ -139,7 +139,7 @@ export default function LibraryDashboard() {
       "TopBooks"
     );
 
-    XLSX.writeFile(wb, "Library_Statistics.xlsx");
+    XLSX.writeFile(wb, "Thống kê thư viện.xlsx");
   };
 
   // Export PDF
@@ -147,35 +147,35 @@ export default function LibraryDashboard() {
     if (!data) return;
     const doc = new jsPDF();
     doc.setFontSize(12);
-    doc.text("Library Statistics", 14, 16);
+    doc.text("Thống kê thư viện", 14, 16);
 
     doc.autoTable({
       startY: 22,
-      head: [["Metric", "Value"]],
+      head: [["Chỉ số", "Giá trị"]],
       body: [
-        ["Total Users", data.users?.totalUsers || 0],
-        ["Students", data.users?.totalStudents || 0],
-        ["Admins", data.users?.totalAdmins || 0],
-        ["Librarians", data.users?.totalLibrarians || 0],
-        ["Active Users", data.users?.activeUsers || 0],
+        ["Tổng người dùng", data.users?.totalUsers || 0],
+        ["Sinh viên", data.users?.totalStudents || 0],
+        ["Quản trị viên", data.users?.totalAdmins || 0],
+        ["Thủ thư", data.users?.totalLibrarians || 0],
+        ["Người dùng hoạt động", data.users?.activeUsers || 0],
       ],
     });
 
     doc.autoTable({
       startY: doc.lastAutoTable.finalY + 6,
-      head: [["Metric", "Value"]],
+      head: [["Chỉ số", "Giá trị"]],
       body: [
-        ["Total Borrowings", data.borrowings?.totalBorrowings || 0],
-        ["Active Borrowings", data.borrowings?.activeBorrowings || 0],
-        ["Returned", data.borrowings?.returnedCount || 0],
-        ["Overdue", data.borrowings?.overdueCount || 0],
-        ["Total Compensation", data.borrowings?.totalCompensation || 0],
+        ["Tổng lượt mượn", data.borrowings?.totalBorrowings || 0],
+        ["Lượt mượn đang hoạt động", data.borrowings?.activeBorrowings || 0],
+        ["Đã trả", data.borrowings?.returnedCount || 0],
+        ["Quá hạn", data.borrowings?.overdueCount || 0],
+        ["Tổng bồi thường", data.borrowings?.totalCompensation || 0],
       ],
     });
 
     doc.autoTable({
       startY: doc.lastAutoTable.finalY + 6,
-      head: [["Top Book", "Borrowed"]],
+      head: [["Sách phổ biến", "Lượt mượn"]],
       body: (data.topBooks || []).map((t) => [
         t.book?.title || "-",
         t.count || 0,
@@ -183,7 +183,7 @@ export default function LibraryDashboard() {
       styles: { fontSize: 9 },
     });
 
-    doc.save("Library_Statistics.pdf");
+    doc.save("Thống kê thư viện.pdf");
   };
 
   // PIE DATA
@@ -204,16 +204,16 @@ export default function LibraryDashboard() {
 
   const topBooksColumns = [
     { title: "#", render: (_, __, idx) => idx + 1 },
-    { title: "Title", dataIndex: ["book", "title"] },
-    { title: "Borrowed Qty", dataIndex: "count" },
+    { title: "Tiêu đề", dataIndex: ["book", "title"] },
+    { title: "Lượt mượn", dataIndex: "count" },
   ];
 
   const topBorrowersColumns = [
     { title: "#", render: (_, __, idx) => idx + 1 },
-    { title: "FullName", dataIndex: ["userInfo", "fullName"] },
-    { title: "StudentCode", dataIndex: ["userInfo", "studentCode"] },
+    { title: "Họ tên", dataIndex: ["userInfo", "fullName"] },
+    { title: "Mã sinh viên", dataIndex: ["userInfo", "studentCode"] },
     { title: "Email", dataIndex: ["userInfo", "email"] },
-    { title: "BorrowCount", dataIndex: "borrowCount" },
+    { title: "Lượt mượn", dataIndex: "borrowCount" },
   ];
 
   if (loading)
@@ -228,37 +228,37 @@ export default function LibraryDashboard() {
       <Row gutter={[16, 16]}>
         <Col span={24}>
           <Card
-            title="📚 Library Dashboard"
+            title="📚 Bảng điều khiển thư viện"
             extra={
               <Space>
-                <Button onClick={exportExcel}>Export Excel</Button>
-                <Button onClick={exportPDF}>Export PDF</Button>
-                <Button onClick={fetchData}>Refresh</Button>
+                <Button onClick={exportExcel}>Xuất Excel</Button>
+                <Button onClick={exportPDF}>Xuất PDF</Button>
+                <Button onClick={fetchData}>Làm mới</Button>
               </Space>
             }
           >
             <Row gutter={[16, 16]}>
               <Col xs={24} sm={12} md={6}>
                 <Statistic
-                  title="Total Users"
+                  title="Tổng người dùng"
                   value={data?.users?.totalUsers || 0}
                 />
               </Col>
               <Col xs={24} sm={12} md={6}>
                 <Statistic
-                  title="Students"
+                  title="Sinh viên"
                   value={data?.users?.totalStudents || 0}
                 />
               </Col>
               <Col xs={24} sm={12} md={6}>
                 <Statistic
-                  title="Active Users"
+                  title="Người dùng hoạt động"
                   value={data?.users?.activeUsers || 0}
                 />
               </Col>
               <Col xs={24} sm={12} md={6}>
                 <Statistic
-                  title="Users borrowed"
+                  title="Người đã mượn sách"
                   value={data?.users?.countUsersBorrowed || 0}
                 />
               </Col>
@@ -267,9 +267,9 @@ export default function LibraryDashboard() {
         </Col>
 
         <Col lg={8} md={24}>
-          <Card title="Status Distribution">
+          <Card title="Phân bố trạng thái">
             {statusPieData.length === 0 ? (
-              <div style={{ textAlign: "center" }}>No data</div>
+              <div style={{ textAlign: "center" }}>Không có dữ liệu</div>
             ) : (
               <ResponsiveContainer width="100%" height={250}>
                 <PieChart>
@@ -293,7 +293,7 @@ export default function LibraryDashboard() {
             )}
           </Card>
 
-          <Card title="Top Books" style={{ marginTop: 12 }}>
+          <Card title="Sách được mượn nhiều nhất" style={{ marginTop: 12 }}>
             <Table
               columns={topBooksColumns}
               dataSource={data?.topBooks || []}
@@ -308,11 +308,11 @@ export default function LibraryDashboard() {
           <Card>
             <Row justify="space-between" align="middle">
               <Col>
-                <h3>Borrowings over months</h3>
+                <h3>Lượt mượn theo tháng</h3>
               </Col>
               <Col>
                 <Search
-                  placeholder="Filter top borrowers..."
+                  placeholder="Lọc những người mượn nhiều nhất..."
                   allowClear
                   onSearch={(v) => setFilter(v)}
                   style={{ width: 240 }}
@@ -336,7 +336,7 @@ export default function LibraryDashboard() {
               </LineChart>
             </ResponsiveContainer>
 
-            <Card style={{ marginTop: 12 }} title="Top Borrowers">
+            <Card style={{ marginTop: 12 }} title="Những người mượn sách nhiều nhất">
               <Table
                 columns={topBorrowersColumns}
                 dataSource={(data?.topBorrowers || []).filter((t) => {
@@ -356,7 +356,7 @@ export default function LibraryDashboard() {
         </Col>
 
         <Col span={24} style={{ marginTop: 12 }}>
-          <Card title="Raw / Debug JSON (Preview)">
+          <Card title="Dữ liệu JSON (Xem trước)">
             <pre style={{ maxHeight: 300, overflow: "auto" }}>
               {JSON.stringify(data, null, 2)}
             </pre>

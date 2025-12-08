@@ -4,6 +4,7 @@ import dotenv from "dotenv";
 import User from "../models/User.js";
 import { verifyToken, requireRole } from "../middleware/auth.js";
 import Course from "../models/Course.js";
+import { sendEmail } from "../utils/emailService.js";
 
 dotenv.config();
 const router = express.Router();
@@ -127,6 +128,21 @@ router.post("/register", async (req, res) => {
     selectedCourse.students.push({ studentCode, fullName });
     await selectedCourse.save();
 
+    // Gửi email thông báo (không chặn response)
+    sendEmail(
+      email,
+      "Đăng ký tài khoản thư viện thành công",
+      `
+    <h2>Chào ${fullName},</h2>
+    <p>Bạn đã đăng ký tài khoản thư viện thành công.</p>
+    <p><b>Mã sinh viên:</b> ${studentCode}</p>
+    <p><b>Mật khẩu đăng nhập:</b> ${passwordPlain}</p>
+    <p>Vui lòng đăng nhập và đổi mật khẩu ngay tại hệ thống!</p>
+    <br/>
+    <p>📚 <i>Thư viện Linova</i></p>
+  `
+    );
+
     res.status(201).json({
       message: "Đăng ký thành công!",
       password: passwordPlain, // Trả về mật khẩu sv + msv
@@ -135,6 +151,8 @@ router.post("/register", async (req, res) => {
     console.error("❌ Lỗi đăng ký:", err);
     res.status(500).json({ message: "Lỗi server khi đăng ký!" });
   }
+
+
 });
 
 // ====================== Set mật khẩu cho sinh viên (admin) ======================
