@@ -1,6 +1,12 @@
 import mongoose from "mongoose";
 const ImportWarehouseSchema = new mongoose.Schema(
   {
+    importCode: {
+      type: String,
+      unique: true,
+      trim: true,
+      required: true,
+    },
     book: {
       type: mongoose.Schema.Types.ObjectId,
       ref: "Book",

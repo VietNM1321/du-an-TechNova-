@@ -17,12 +17,13 @@ import notificationRoutes from "./routes/notification.js";
 import orderRoutes from "./routes/order.js";
 import aiRoutes from "./routes/aiRoutes.js";
 import statisticsRoutes from "./routes/statistics.js";
+import { migrateImportCodes } from "./utils/migrateImportCodes.js";
 dotenv.config({ override: true });
 const app = express();
 app.use(express.json());
 app.use(
   cors({
-    origin: "http://localhost:5174",
+    origin: "http://localhost:5173",
     credentials: true,
   })
 );
@@ -53,6 +54,9 @@ const startServer = async () => {
   try {
     await mongoose.connect(process.env.MONGO_URI);
     console.log("✅ Kết nối Database thành công!");
+
+    // Migrate existing import records without import codes
+    await migrateImportCodes();
 
     const port = process.env.PORT || 5000;
     app.listen(port, () => {

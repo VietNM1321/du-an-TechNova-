@@ -33,6 +33,7 @@ import BookCodeAdd from "./pages/admin/BookCodeAdd";
 import BookCodeEdit from "./pages/admin/BookCodeEdit";
 import ImportList from "./pages/admin/ImportList";
 import ImportAdd from "./pages/admin/ImportAdd";
+import ImportDetail from "./pages/admin/ImportDetail";
 import AuthorManager from "./pages/admin/AuthorManager";
 import AuthorAdd from "./pages/admin/AuthorAdd";
 import AuthorEdit from "./pages/admin/AuthorEdit";
@@ -128,6 +129,7 @@ function App() {
 
           <Route path="importlist" element={<ImportList />} />
           <Route path="importlist/add" element={<ImportAdd />} />
+          <Route path="importlist/:date" element={<ImportDetail />} />
 
           <Route path="author" element={<AuthorManager />} />
           <Route path="author/add" element={<AuthorAdd />} />

@@ -3,6 +3,7 @@ import mongoose from "mongoose";
 import ImportWarehouse from "../models/importWarehouse.js";
 import Book from "../models/books.js";
 import User from "../models/User.js";
+import { generateImportCode } from "../utils/generateImportCode.js";
 
 const router = express.Router();
 router.get("/", async (req, res) => {
@@ -66,7 +67,11 @@ router.post("/", async (req, res) => {
       userLabel = userRole === "librarian" ? "Thủ thư" : "Admin";
     }
 
+    // Tạo mã phiếu nhập
+    const importCode = await generateImportCode();
+
     const newImport = await ImportWarehouse.create({
+      importCode,
       book: bookId,
       quantity: Number(quantity),
       supplier,
