@@ -24,6 +24,9 @@ const userSchema = new mongoose.Schema(
 
     // Trạng thái quên mật khẩu
     forgotPassword: { type: Boolean, default: false },
+    
+    // Trạng thái cấp mật khẩu (granted: đã cấp, reset: đã reset, none: chưa)
+    passwordStatus: { type: String, enum: ["none", "granted", "reset"], default: "none" },
   },
   { timestamps: true, versionKey: false }
 );

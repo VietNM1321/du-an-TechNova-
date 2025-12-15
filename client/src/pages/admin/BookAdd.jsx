@@ -35,7 +35,7 @@ const BookAdd = () => {
     setFileList((prev) => prev.filter((f) => f.uid !== file.uid && f.name !== file.name));
   };
   const handleSubmit = async (values) => {
-    if (!values.title || !values.category || !values.publishedYear || !values.quantity) {
+    if (!values.title || !values.category || !values.publishedYear) {
       message.warning("Vui lòng điền đầy đủ thông tin bắt buộc");
       return;
     }
@@ -101,7 +101,7 @@ const BookAdd = () => {
             </div>
           </Col>
           <Col xs={24} md={16}>
-            <Form layout="vertical" onFinish={handleSubmit} initialValues={{ quantity: 1, Pricebook: 50000 }}>
+            <Form layout="vertical" onFinish={handleSubmit} initialValues={{ quantity: 0, Pricebook: 50000 }}>
               <Row gutter={16}>
                 <Col xs={24} sm={24}>
                   <Form.Item name="title" label="Tên sách" rules={[{ required: true, message: "Nhập tên sách" }]}> 
@@ -161,7 +161,7 @@ const BookAdd = () => {
 
                 <Col xs={12} sm={12}>
                   <Form.Item name="quantity" label="Số lượng" rules={[{ required: true, message: "Nhập số lượng" }]}> 
-                    <InputNumber min={1} style={{ width: "100%" }} size="large" />
+                    <InputNumber disabled style={{ width: "100%" }} size="large" />
                   </Form.Item>
                 </Col>
                 <Col xs={12} sm={12}>

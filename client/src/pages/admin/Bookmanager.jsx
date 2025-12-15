@@ -2,6 +2,7 @@ import React, { useEffect, useState } from "react";
 import axios from "axios";
 import { BookOpen } from "lucide-react";
 import { useNavigate, useLocation } from "react-router-dom";
+import { Modal, message } from "antd";
 const BookLManager = () => {
   const [books, setBooks] = useState([]);
   const [page, setPage] = useState(1);
@@ -114,25 +115,37 @@ const BookLManager = () => {
     fetchBooks(1, { q: "" });
   };
   const handleDelete = async (id) => {
-    if (window.confirm("❗ Bạn có chắc muốn xóa sách không?")) {
-      try {
-        const token = localStorage.getItem("adminToken");
-        if (!token) {
-          alert("⚠️ Vui lòng đăng nhập lại với quyền admin để xóa sách.");
-          navigate("/admin/login");
-          return;
+    Modal.confirm({
+      title: "Xóa sách",
+      content: "Bạn có chắc chắn muốn xóa sách này? Thao tác này không thể hoàn tác.",
+      okText: "Xóa",
+      cancelText: "Hủy",
+      okButtonProps: { danger: true },
+      onOk: async () => {
+        try {
+          const token = localStorage.getItem("adminToken");
+          if (!token) {
+            message.error("⚠️ Vui lòng đăng nhập lại với quyền admin để xóa sách.");
+            navigate("/admin/login");
+            return;
+          }
+          await axios.delete(`http://localhost:5000/api/books/${id}`, {
+            headers: {
+              Authorization: `Bearer ${token}`,
+            },
+          });
+          message.success("✅ Xóa sách thành công!");
+          fetchBooks(page);
+        } catch (err) {
+          console.error("❌ Xóa thất bại:", err);
+          if (err.response?.status === 400) {
+            message.error(err.response.data.message || "❌ Không thể xóa sách này!");
+          } else {
+            message.error("❌ Xóa thất bại!");
+          }
         }
-        await axios.delete(`http://localhost:5000/api/books/${id}`, {
-          headers: {
-            Authorization: `Bearer ${token}`,
-          },
-        });
-        fetchBooks(page);
-      } catch (err) {
-        console.error("❌ Xóa thất bại:", err);
-        alert("❌ Xóa thất bại!");
-      }
-    }
+      },
+    });
   };
   return (
     <div className="min-h-screen bg-gradient-to-br from-blue-50 via-slate-50 to-purple-50 py-8 px-4 md:px-8">

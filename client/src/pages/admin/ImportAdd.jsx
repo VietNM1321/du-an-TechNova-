@@ -1,133 +1,200 @@
 import React, { useEffect, useState } from "react";
 import axios from "axios";
-import { toast } from "react-toastify";
 import { useNavigate } from "react-router-dom";
+import { Card, Form, Input, Select, Row, Col, Button, Typography, message, InputNumber } from "antd";
+import { ArrowLeft, Package } from "lucide-react";
+
+const { Title, Text } = Typography;
+
 const ImportAdd = () => {
+  const [form] = Form.useForm();
   const [categories, setCategories] = useState([]);
   const [books, setBooks] = useState([]);
-  const [selectedCategory, setSelectedCategory] = useState("");
-  const [selectedBook, setSelectedBook] = useState("");
-  const [quantity, setQuantity] = useState("");
-  const [selectedRole, setSelectedRole] = useState("");
+  const [loading, setLoading] = useState(false);
+  const [submitting, setSubmitting] = useState(false);
   const navigate = useNavigate();
+
   useEffect(() => {
     const fetchCategories = async () => {
       try {
+        setLoading(true);
         const res = await axios.get("http://localhost:5000/api/category?limit=1000");
         setCategories(res.data.categories || []);
       } catch (err) {
-        toast.error("Lỗi khi tải danh mục");
+        console.error(err);
+        message.error("Lỗi khi tải danh mục");
+      } finally {
+        setLoading(false);
       }
     };
     fetchCategories();
   }, []);
-  const handleCategoryChange = async (e) => { // lấy dan mục và sách trongh đb
-    const categoryId = e.target.value;
-    setSelectedCategory(categoryId);
+
+  const handleCategoryChange = async (categoryId) => {
+    form.setFieldValue("bookId", undefined);
     setBooks([]);
-    setSelectedBook("");
-    if (!categoryId) return
+    if (!categoryId) return;
     try {
-      const res = await axios.get(
-        `http://localhost:5000/api/books?limit=1000&category=${categoryId}`
-      );
-      setBooks(res.data.books);
+      const res = await axios.get(`http://localhost:5000/api/books?limit=1000&category=${categoryId}`);
+      setBooks(res.data.books || []);
     } catch (err) {
-      toast.error("Không tìm thấy sách trong danh mục này");
+      console.error(err);
+      message.error("Không tìm thấy sách trong danh mục này");
     }
   };
-  const handleSubmit = async (e) => {
-    e.preventDefault();
-    if (!selectedBook || !quantity || !selectedRole) {
-      toast.warn("Vui lòng nhập đủ thông tin!");
+
+  const handleSubmit = async (values) => {
+    if (!values.categoryId || !values.bookId || !values.quantity || !values.userRole) {
+      message.warning("Vui lòng điền đầy đủ thông tin bắt buộc");
       return;
     }
+
+    setSubmitting(true);
     try {
       await axios.post("http://localhost:5000/api/imports", {
-        bookId: selectedBook,
-        quantity: Number(quantity),
-        userRole: selectedRole,
+        bookId: values.bookId,
+        quantity: Number(values.quantity),
+        userRole: values.userRole,
       });
-      alert("✅ Nhập kho thành công!");
+      message.success("✅ Nhập kho thành công!");
       navigate("/admin/importlist");
     } catch (err) {
       console.error("Lỗi khi nhập kho:", err);
-      toast.error("Lỗi khi nhập kho!");
+      message.error(err.response?.data?.message || "❌ Lỗi khi nhập kho!");
+    } finally {
+      setSubmitting(false);
     }
   };
-  return (
-    <div className="max-w-xl mx-auto bg-white shadow-lg rounded-2xl p-8 mt-8">
-      <div className="flex items-center justify-between mb-6">
-        <h2 className="text-2xl font-bold text-blue-700">📦 Nhập Sách Vào Kho</h2>
-        <button
-          onClick={() => navigate("/admin/importlist")}
-          className="flex items-center gap-2 bg-gray-100 text-gray-700 font-medium px-4 py-2 rounded-lg border border-gray-300 hover:bg-gray-200 hover:shadow-sm transition-all duration-200"
-        >
-          ⬅️ <span>Quay lại</span>
-        </button>
-      </div>
-      <form onSubmit={handleSubmit} className="space-y-5">
-        <div>
-          <label className="block font-semibold mb-1 text-gray-700">Danh mục</label>
-          <select
-            className="w-full border rounded-lg p-2 focus:ring-2 focus:ring-blue-400 outline-none transition"
-            value={selectedCategory}
-            onChange={handleCategoryChange}
-          >
-            <option value="">-- Chọn danh mục --</option>
-            {categories.map((cat) => (
-              <option key={cat._id} value={cat._id}>
-                {cat.name}
-              </option>
-            ))}
-          </select>
-        </div>
-        <div>
-          <label className="block font-semibold mb-1 text-gray-700">Chọn sách</label>
-          <select
-            className="w-full border rounded-lg p-2 focus:ring-2 focus:ring-blue-400 outline-none transition"
-            value={selectedBook}
-            onChange={(e) => setSelectedBook(e.target.value)}
-            disabled={!selectedCategory}
-          >
-            <option value="">-- Chọn sách --</option>
-            {books.map((book) => (
-              <option key={book._id} value={book._id}>
-                {book.title}
-              </option>
-            ))}
-          </select>
-        </div>
-        <div>
-          <label className="block font-semibold mb-1 text-gray-700">Người nhập kho</label>
-          <select
-            className="w-full border rounded-lg p-2 focus:ring-2 focus:ring-blue-400 outline-none transition"
-            value={selectedRole}
-            onChange={(e) => setSelectedRole(e.target.value)}
-          >
-            <option value="">-- Chọn người nhập --</option>
-            <option value="admin">Admin</option>
-            <option value="librarian">Thủ thư</option>
-          </select>
-        </div>
-        <div>
-          <label className="block font-semibold mb-1 text-gray-700">Số lượng nhập</label>
-          <input
-            type="number"
-            className="w-full border rounded-lg p-2 focus:ring-2 focus:ring-blue-400 outline-none transition"
-            value={quantity}
-            onChange={(e) => setQuantity(e.target.value)}
-            min="1"
-          />
-        </div>
 
-        <button
-          type="submit"
-          className="w-full bg-blue-600 text-white font-semibold py-2 rounded-lg hover:bg-blue-700 hover:shadow-md transition duration-200"
-        >
-          ✅ Thêm vào kho
-        </button>
-      </form>
+  return (
+    <div className="max-w-5xl mx-auto mt-10 p-4">
+      <Button
+        type="text"
+        onClick={() => navigate("/admin/importlist")}
+        className="mb-4 flex items-center gap-2"
+      >
+        <ArrowLeft size={18} /> Quay lại
+      </Button>
+
+      <Card className="shadow-xl rounded-2xl">
+        <Row gutter={[24, 24]} align="middle">
+          <Col xs={24} md={8} className="flex flex-col items-center justify-center">
+            <div className="bg-gradient-to-br from-blue-50 to-white rounded-lg p-6 w-full text-center">
+              <Title level={4}>📦 Nhập Kho Mới</Title>
+              <Text type="secondary">Thêm sách vào kho thư viện</Text>
+              <div className="mt-6 w-full">
+                <div className="bg-white rounded-lg border-2 border-dashed border-blue-300 p-6 flex flex-col items-center justify-center">
+                  <Package size={48} className="text-blue-400 mb-3" />
+                  <p className="text-sm text-gray-600">Điền thông tin sách để nhập kho</p>
+                </div>
+              </div>
+            </div>
+          </Col>
+
+          <Col xs={24} md={16}>
+            <Form
+              form={form}
+              layout="vertical"
+              onFinish={handleSubmit}
+              initialValues={{
+                categoryId: undefined,
+                bookId: undefined,
+                quantity: 1,
+                userRole: undefined,
+              }}
+            >
+              <Row gutter={16}>
+                <Col xs={24} sm={24}>
+                  <Form.Item
+                    name="categoryId"
+                    label="Danh mục"
+                    rules={[{ required: true, message: "Vui lòng chọn danh mục" }]}
+                  >
+                    <Select
+                      placeholder="Chọn danh mục sách"
+                      size="large"
+                      onChange={handleCategoryChange}
+                      loading={loading}
+                    >
+                      {categories.map((cat) => (
+                        <Select.Option key={cat._id} value={cat._id}>
+                          {cat.name}
+                        </Select.Option>
+                      ))}
+                    </Select>
+                  </Form.Item>
+                </Col>
+
+                <Col xs={24} sm={24}>
+                  <Form.Item
+                    name="bookId"
+                    label="Chọn sách"
+                    rules={[{ required: true, message: "Vui lòng chọn sách" }]}
+                  >
+                    <Select
+                      placeholder="Chọn sách cần nhập"
+                      size="large"
+                      disabled={books.length === 0}
+                    >
+                      {books.map((book) => (
+                        <Select.Option key={book._id} value={book._id}>
+                          {book.title}
+                        </Select.Option>
+                      ))}
+                    </Select>
+                  </Form.Item>
+                </Col>
+
+                <Col xs={12} sm={12}>
+                  <Form.Item
+                    name="quantity"
+                    label="Số lượng nhập"
+                    rules={[
+                      { required: true, message: "Vui lòng nhập số lượng" },
+                      { pattern: /^[1-9]\d*$/, message: "Số lượng phải lớn hơn 0" },
+                    ]}
+                  >
+                    <InputNumber
+                      min={1}
+                      style={{ width: "100%" }}
+                      size="large"
+                      placeholder="Nhập số lượng"
+                    />
+                  </Form.Item>
+                </Col>
+
+                <Col xs={12} sm={12}>
+                  <Form.Item
+                    name="userRole"
+                    label="Người nhập kho"
+                    rules={[{ required: true, message: "Vui lòng chọn người nhập" }]}
+                  >
+                    <Select placeholder="Chọn vai trò" size="large">
+                      <Select.Option value="admin">Admin</Select.Option>
+                      <Select.Option value="librarian">Thủ thư</Select.Option>
+                    </Select>
+                  </Form.Item>
+                </Col>
+
+                <Col xs={24} className="flex justify-end gap-3 mt-4">
+                  <Button onClick={() => navigate("/admin/importlist")} size="large">
+                    Hủy
+                  </Button>
+
+                  <Button
+                    type="primary"
+                    htmlType="submit"
+                    loading={submitting}
+                    size="large"
+                  >
+                    ✅ Thêm vào kho
+                  </Button>
+                </Col>
+              </Row>
+            </Form>
+          </Col>
+        </Row>
+      </Card>
     </div>
   );
 };

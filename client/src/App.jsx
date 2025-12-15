@@ -23,7 +23,6 @@ import ForgotPassword from "./pages/ForgotPassword";
 import Chat from "./pages/Chat";
 import AdminHome from "./pages/admin/AdminHome";
 import Users from "./pages/admin/Users";
-import SetPassword from "./pages/admin/SetPassword";
 import CourseManager from "./pages/admin/CourseManager";
 import BookManager from "./pages/admin/Bookmanager";
 import BookAdd from "./pages/admin/BookAdd";
@@ -115,7 +114,6 @@ function App() {
 
           {/* Admin-only */}
           <Route path="users" element={<AdminOnly><Users /></AdminOnly>} />
-          <Route path="setpassword" element={<AdminOnly><SetPassword /></AdminOnly>} />
           <Route path="course" element={<AdminOnly><CourseManager /></AdminOnly>} />
 
           {/* Admin + Librarian */}
