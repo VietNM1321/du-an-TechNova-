@@ -12,11 +12,9 @@ function Home() {
   const [categories, setCategories] = useState([]);
   const [selectedCategory, setSelectedCategory] = useState("");
   const [currentPage, setCurrentPage] = useState(1);
-  const itemsPerPage = 5; // mỗi trang hiển thị 5 danh mục
+  const itemsPerPage = 5;
   const sliderRefs = useRef({});
   const [isLoading, setIsLoading] = useState(false);
-
-  // Fetch dữ liệu danh mục + sách
   const fetchData = async (silent = false) => {
     try {
       if (!silent) setIsLoading(true);
@@ -28,7 +26,7 @@ function Home() {
       const dataWithBooks = await Promise.all(
         cats.map(async (cat) => {
           const resBooks = await axios.get(
-            `http://localhost:5000/api/books?category=${cat.name}`
+            `http://localhost:5000/api/books?category=${cat.name}&limit=1000`
           );
           return { ...cat, books: resBooks.data.books || [] };
         })
@@ -45,8 +43,6 @@ function Home() {
   useEffect(() => {
     fetchData();
   }, []);
-
-  // Polling tự động mỗi 5s nếu tab active
   useEffect(() => {
     const intervalId = setInterval(() => {
       if (document.visibilityState === "visible") {
@@ -55,8 +51,6 @@ function Home() {
     }, 5001);
     return () => clearInterval(intervalId);
   }, []);
-
-  // Cập nhật khi tab trở lại active
   useEffect(() => {
     const handleVisibilityChange = () => {
       if (document.visibilityState === "visible") fetchData(true);
@@ -65,12 +59,8 @@ function Home() {
     return () =>
       document.removeEventListener("visibilitychange", handleVisibilityChange);
   }, []);
-
-  // Slider controls
   const nextSlide = (id) => sliderRefs.current[id]?.slickNext();
   const prevSlide = (id) => sliderRefs.current[id]?.slickPrev();
-
-  // Lọc danh mục theo selected category
   const filteredCategories = selectedCategory
     ? categories.filter((cat) => cat.name === selectedCategory)
     : categories;
@@ -81,8 +71,6 @@ function Home() {
     startIndex,
     startIndex + itemsPerPage
   );
-
-  // Reset về trang 1 khi thay đổi filter
   useEffect(() => {
     setCurrentPage(1);
   }, [selectedCategory]);
