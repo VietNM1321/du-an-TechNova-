@@ -42,75 +42,68 @@ router.post("/add", verifyToken, async (req, res) => {
     const {bookId,quantity = 1,fullName,studentId,email,borrowDate,returnDate,} = req.body;
     const userId = req.user?.id;
     if (!userId || !bookId) return res.status(400).json({ message: "Thiếu dữ liệu bắt buộc" })
-    const unpaidLostBook = await Borrowing.findOne({
+
+    // Kiểm tra sách lost, damaged, overdue chưa thanh toán
+    const unpaidBorrowing = await Borrowing.findOne({
       user: userId,
-      status: "lost",
+      status: { $in: ["lost", "damaged", "overdue"] },
       $or: [
         { paymentStatus: { $ne: "completed" } },
         { paymentStatus: { $exists: false } }
       ]
     }).populate("book", "title");
 
-    if (unpaidLostBook) {
-      const bookTitle = unpaidLostBook.book?.title || unpaidLostBook.bookSnapshot?.title || "một cuốn sách";
-      return res.status(400).json({ 
-        message: `Bạn có sách "${bookTitle}" bị mất chưa thanh toán. Vui lòng hoàn tất thanh toán trước khi mượn sách khác!` 
-      });
-    }
-    const activeBorrowing = await Borrowing.findOne({
-      user: userId,
-      status: { $in: ["borrowed", "renewed", "pendingPickup", "overdue"] }
-    }).populate("book", "title");
-    if (activeBorrowing) {
-      const bookTitle = activeBorrowing.book?.title || activeBorrowing.bookSnapshot?.title || "một cuốn sách";
-      const statusLabels = {
-        borrowed: "đang mượn",
-        renewed: "đã gia hạn (đang mượn)",
-        pendingPickup: "chưa lấy sách",
-        overdue: "quá hạn"
-      };
-      const statusLabel = statusLabels[activeBorrowing.status] || activeBorrowing.status;
-      return res.status(400).json({ 
-        message: `Bạn đang có sách "${bookTitle}" ở trạng thái "${statusLabel}" chưa trả. Vui lòng trả sách trước khi mượn sách khác!` 
-      });
-    }
-    const lostOrDamagedBorrowing = await Borrowing.findOne({
-      user: userId,
-      book: bookId,
-      status: { $in: ["lost", "damaged"] },
-      $or: [
-        { paymentStatus: { $ne: "completed" } },
-        { paymentStatus: { $exists: false } }
-      ]
-    });
-
-    if (lostOrDamagedBorrowing) {
+    if (unpaidBorrowing) {
+      const bookTitle = unpaidBorrowing.book?.title || unpaidBorrowing.bookSnapshot?.title || "một cuốn sách";
       const statusLabels = {
         lost: "mất",
-        damaged: "hỏng"
+        damaged: "hỏng",
+        overdue: "quá hạn"
       };
-      const statusLabel = statusLabels[lostOrDamagedBorrowing.status] || lostOrDamagedBorrowing.status;
+      const statusLabel = statusLabels[unpaidBorrowing.status] || unpaidBorrowing.status;
       return res.status(400).json({ 
-        message: `Bạn đã mượn cuốn sách này và sách đã bị ${statusLabel}. Vui lòng hoàn tất thanh toán trước khi mượn lại!` 
+        message: `Bạn có sách "${bookTitle}" ở trạng thái "${statusLabel}" chưa thanh toán. Vui lòng hoàn tất thanh toán trước khi mượn sách khác!` 
       });
     }
-    const activeBorrowingUserBook  = await Borrowing.findOne({
+
+    // Đếm số sách đang mượn (borrowed + renewed)
+    const activeBorrowingsCount = await Borrowing.countDocuments({
+      user: userId,
+      status: { $in: ["borrowed", "renewed"] }
+    });
+
+    // Lấy giỏ hàng hiện tại
+    let currentCart = await Cart.findOne({ userId }) || new Cart({ userId, items: [] });
+
+    // Tổng số sách trong đơn mượn mới = sách đang mượn + sách trong giỏ + sách mới này
+    const totalBooksInOrder = activeBorrowingsCount + currentCart.items.length + 1;
+
+    if (totalBooksInOrder > 5) {
+      return res.status(400).json({ 
+        message: `Bạn chỉ được mượn tối đa 5 cuốn sách trong một đơn. Hiện tại bạn đã có ${activeBorrowingsCount} sách đang mượn và ${currentCart.items.length} sách trong giỏ.` 
+      });
+    }
+
+    // Kiểm tra nếu sách này đang được mượn bởi user này
+    const activeBorrowingUserBook = await Borrowing.findOne({
       user: userId,
       book: bookId,
       status: { $in: ["borrowed", "renewed", "pendingPickup"] }
     });
 
-    if (activeBorrowingUserBook ) {
+    if (activeBorrowingUserBook) {
       const statusLabels = {
         borrowed: "đang mượn",
         renewed: "đã gia hạn (đang mượn)",
         pendingPickup: "chưa lấy sách"
       };
-      const statusLabel = statusLabels[activeBorrowingUserBook .status] || activeBorrowingUserBook .status;
+      const statusLabel = statusLabels[activeBorrowingUserBook.status] || activeBorrowingUserBook.status;
       return res.status(400).json({ 
         message: `Bạn đã mượn cuốn sách này và đang ở trạng thái "${statusLabel}". Vui lòng trả sách trước khi mượn lại!` 
       });
     }
+
+    // Kiểm tra nếu sách này overdue
     const overdueBorrowing = await Borrowing.findOne({
       user: userId,
       book: bookId,
@@ -124,9 +117,7 @@ router.post("/add", verifyToken, async (req, res) => {
       });
     }
 
-    let cart = await Cart.findOne({ userId }) || new Cart({ userId, items: [] });
-
-    const existingItem = cart.items.find(i => i.bookId.toString() === bookId);
+    const existingItem = currentCart.items.find(i => i.bookId.toString() === bookId);
 
     if (existingItem) {
       existingItem.quantity += Number(quantity);
@@ -136,7 +127,7 @@ router.post("/add", verifyToken, async (req, res) => {
       existingItem.borrowDate = borrowDate;
       existingItem.returnDate = returnDate;
     } else {
-      cart.items.push({
+      currentCart.items.push({
         bookId,
         quantity: Number(quantity),
         fullName,
@@ -147,8 +138,8 @@ router.post("/add", verifyToken, async (req, res) => {
       });
     }
 
-    await cart.save();
-    const populated = await Cart.findById(cart._id).populate({
+    await currentCart.save();
+    const populated = await Cart.findById(currentCart._id).populate({
       path: "items.bookId",
       select: "title images author",
       populate: { path: "author", select: "name" }

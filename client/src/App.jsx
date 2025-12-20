@@ -27,6 +27,7 @@ import CourseManager from "./pages/admin/CourseManager";
 import BookManager from "./pages/admin/Bookmanager";
 import BookAdd from "./pages/admin/BookAdd";
 import BookEdit from "./pages/admin/BookEdit";
+import BookDetailAdmin from "./pages/admin/BookDetail";
 import BookCode from "./pages/admin/BookCode";
 import BookCodeAdd from "./pages/admin/BookCodeAdd";
 import BookCodeEdit from "./pages/admin/BookCodeEdit";
@@ -112,6 +113,7 @@ function App() {
           <Route path="bookmanager" element={<BookManager />} />
           <Route path="bookadd" element={<BookAdd />} />
           <Route path="book/edit/:id" element={<BookEdit />} />
+          <Route path="book/detail/:id" element={<BookDetailAdmin />} />
           <Route path="bookcode" element={<BookCode />} />
           <Route path="bookcode/add" element={<BookCodeAdd />} />
           <Route path="bookcode/edit/:id" element={<BookCodeEdit />} />

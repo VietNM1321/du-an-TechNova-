@@ -64,37 +64,45 @@ router.post("/", verifyToken, async (req, res) => {
     const { items } = req.body;
     if (!items?.length) return res.status(400).json({ message: "Danh sách sách mượn trống!" });
     const user = await User.findById(req.user.id).lean();
-    const unpaidLostBook = await Borrowing.findOne({
+
+    // Kiểm tra sách lost, damaged, overdue chưa thanh toán
+    const unpaidBorrowing = await Borrowing.findOne({
       user: req.user.id,
-      status: STATUS_ENUM.LOST,
+      status: { $in: [STATUS_ENUM.LOST, STATUS_ENUM.DAMAGED, STATUS_ENUM.OVERDUE] },
       $or: [
         { paymentStatus: { $ne: "completed" } },
         { paymentStatus: { $exists: false } }
       ]
     }).populate("book", "title");
-    if (unpaidLostBook) {
-      const bookTitle = unpaidLostBook.book?.title || unpaidLostBook.bookSnapshot?.title || "một cuốn sách";
-      return res.status(400).json({ 
-        message: `Bạn có sách "${bookTitle}" bị mất chưa thanh toán. Vui lòng hoàn tất thanh toán trước khi mượn sách khác!`,
-        errors: [`Bạn có sách "${bookTitle}" bị mất chưa thanh toán. Vui lòng hoàn tất thanh toán trước khi mượn sách khác!`]
-      });
-    }
-    const activeBorrowing = await Borrowing.findOne({
-      user: req.user.id,
-      status: { $in: [STATUS_ENUM.BORROWED, STATUS_ENUM.RENEWED, STATUS_ENUM.PENDING_PICKUP, STATUS_ENUM.OVERDUE] }
-    }).populate("book", "title");
-    if (activeBorrowing) {
-      const bookTitle = activeBorrowing.book?.title || activeBorrowing.bookSnapshot?.title || "một cuốn sách";
+
+    if (unpaidBorrowing) {
+      const bookTitle = unpaidBorrowing.book?.title || unpaidBorrowing.bookSnapshot?.title || "một cuốn sách";
       const statusLabels = {
-        borrowed: "đang mượn",
-        renewed: "đã gia hạn (đang mượn)",
-        pendingPickup: "chưa lấy sách",
+        lost: "mất",
+        damaged: "hỏng",
         overdue: "quá hạn"
       };
-      const statusLabel = statusLabels[activeBorrowing.status] || activeBorrowing.status;
+      const statusLabel = statusLabels[unpaidBorrowing.status] || unpaidBorrowing.status;
       return res.status(400).json({ 
-        message: `Bạn đang có sách "${bookTitle}" ở trạng thái "${statusLabel}" chưa trả. Vui lòng trả sách trước khi mượn sách khác!`,
-        errors: [`Bạn đang có sách "${bookTitle}" ở trạng thái "${statusLabel}" chưa trả. Vui lòng trả sách trước khi mượn sách khác!`]
+        message: `Bạn có sách "${bookTitle}" ở trạng thái "${statusLabel}" chưa thanh toán. Vui lòng hoàn tất thanh toán trước khi mượn sách khác!`,
+        errors: [`Bạn có sách "${bookTitle}" ở trạng thái "${statusLabel}" chưa thanh toán. Vui lòng hoàn tất thanh toán trước khi mượn sách khác!`]
+      });
+    }
+
+    // Đếm số sách đang mượn (borrowed + renewed)
+    const activeBorrowingsCount = await Borrowing.countDocuments({
+      user: req.user.id,
+      status: { $in: [STATUS_ENUM.BORROWED, STATUS_ENUM.RENEWED] }
+    });
+
+    // Tổng số sách trong đơn mượn mới = sách đang mượn + sách mới
+    const totalNewQuantity = items.reduce((sum, item) => sum + (item.quantity || 1), 0);
+    const totalBooksInOrder = activeBorrowingsCount + totalNewQuantity;
+
+    if (totalBooksInOrder > 5) {
+      return res.status(400).json({ 
+        message: `Bạn chỉ được mượn tối đa 5 cuốn sách trong một đơn. Hiện tại bạn đã có ${activeBorrowingsCount} sách đang mượn và đơn này có ${totalNewQuantity} sách.`,
+        errors: [`Vượt quá giới hạn 5 cuốn sách. Hiện tại: ${activeBorrowingsCount} đang mượn + ${totalNewQuantity} mới = ${totalBooksInOrder}`]
       });
     }
     const bookChecks = await Promise.all(
@@ -152,14 +160,6 @@ router.post("/", verifyToken, async (req, res) => {
     const firstBorrowDate = items[0]?.borrowDate ? new Date(items[0].borrowDate) : new Date();
     const normalizedDate = new Date(firstBorrowDate);
     normalizedDate.setHours(0, 0, 0, 0);
-    const totalNewQuantity = bookChecks.reduce((sum, { borrowQty }) => sum + borrowQty, 0);
-    const MAX_BOOKS_PER_ORDER = 5;
-    if (totalNewQuantity > MAX_BOOKS_PER_ORDER) {
-      return res.status(400).json({ 
-        message: `Vượt quá số lượng cho phép mượn! Đơn hàng này có ${totalNewQuantity} cuốn sách. Mỗi đơn mượn chỉ tối đa ${MAX_BOOKS_PER_ORDER} cuốn sách.`,
-        errors: [`Vượt quá số lượng cho phép mượn! Tối đa ${MAX_BOOKS_PER_ORDER} cuốn sách/đơn hàng`]
-      });
-    }
     const borrowings = await Promise.all(
       bookChecks.map(async ({ book, borrowQty, item }) => {
         const bookPopulated = await Book.findById(item.bookId).populate("author", "name").lean();
@@ -173,6 +173,7 @@ router.post("/", verifyToken, async (req, res) => {
           title: bookPopulated?.title || "Không rõ",
           author: typeof bookPopulated?.author === "string" ? bookPopulated.author : bookPopulated?.author?.name || "Không rõ",
           isbn: bookPopulated?.code || "N/A",
+          images: bookPopulated?.images || [],
         };
         const borrowDateToUse = item.borrowDate ? new Date(item.borrowDate) : normalizedDate;
         borrowDateToUse.setHours(0,0,0,0);
@@ -242,8 +243,8 @@ router.put(
       if (borrowing.isPickedUp)
         return res.status(400).json({ message: "Đã xác nhận lấy sách trước đó!" });
 
-      const pickupImage = req.files?.imgStudent?.[0]?.path;
-      const cardImage = req.files?.imgCard?.[0]?.path;
+      const pickupImage = "uploads/" + req.files?.imgStudent?.[0]?.filename;
+      const cardImage = "uploads/" + req.files?.imgCard?.[0]?.filename;
 
       if (!pickupImage || !cardImage)
         return res.status(400).json({ message: "Thiếu ảnh sinh viên hoặc thẻ!" });
@@ -503,7 +504,7 @@ router.get("/", verifyToken, requireRole("admin","librarian"), async (req,res)=>
     res.status(500).json({message:"Lỗi server khi lấy danh sách mượn"});
   }
 });
-router.put("/:id/return", verifyToken, requireRole("admin"), async (req,res)=>{
+router.put("/:id/return", verifyToken, requireRole("admin"), upload.single("returnImage"), async (req,res)=>{
   try{
     const borrowing = await Borrowing.findById(req.params.id);
     if(!borrowing) return res.status(404).json({ message:"Không tìm thấy đơn mượn!" });
@@ -511,6 +512,9 @@ router.put("/:id/return", verifyToken, requireRole("admin"), async (req,res)=>{
     const returnQty = borrowing.quantity || 1;
     borrowing.status = STATUS_ENUM.RETURNED;
     borrowing.returnDate = new Date();
+    if (req.file) {
+      borrowing.returnImage = "uploads/" + req.file.filename;
+    }
     await borrowing.save();
     if(borrowing.book){
       const book = await Book.findById(borrowing.book);

@@ -6,6 +6,7 @@ import { useNavigate } from "react-router-dom";
 const Cart = () => {
   const [loading, setLoading] = useState(false);
   const [cart, setCart] = useState({ items: [] });
+  const [activeBorrowingsCount, setActiveBorrowingsCount] = useState(0);
   const navigate = useNavigate();
   const token = localStorage.getItem("clientToken");
   const user = JSON.parse(localStorage.getItem("clientUser") || "null");
@@ -17,6 +18,7 @@ const Cart = () => {
       if (!token) throw new Error("UNAUTHENTICATED");
       if (isAdmin) {
         setCart({ items: [], userId: null });
+        setActiveBorrowingsCount(0);
         return;
       }
       const res = await axios.get("http://localhost:5000/api/cart", {
@@ -36,8 +38,24 @@ const Cart = () => {
       setCart({ items: [] });
     }
   };
+  const fetchActiveBorrowingsCount = async () => {
+    try {
+      if (!token || isAdmin) return;
+      const userId = user?._id || user?.id;
+      if (!userId) return;
+      const res = await axios.get(`http://localhost:5000/api/borrowings/history/${userId}`, {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      const borrowings = res.data || [];
+      const activeCount = borrowings.filter(b => b.status === "borrowed" || b.status === "renewed").length;
+      setActiveBorrowingsCount(activeCount);
+    } catch (err) {
+      console.error("❌ Lỗi khi lấy số sách đang mượn:", err);
+    }
+  };
   useEffect(() => {
     fetchCart();
+    fetchActiveBorrowingsCount();
   }, [token, isAdmin]);
   const handleQuantityChange = (_id, value) => {
     setCart((prev) => ({
@@ -160,6 +178,7 @@ const Cart = () => {
 
           setCart({ items: [] });
           message.success("✅ Mượn sách thành công!");
+          fetchActiveBorrowingsCount();
         } catch (error) {
           console.error(
             "❌ Borrow error:",
@@ -287,8 +306,14 @@ const Cart = () => {
                 bordered
               />
 
-              <div className="flex justify-end mt-4 text-sm text-slate-600">
-                Tổng đầu sách: <span className="font-semibold text-slate-900 ml-1">{items.length}</span>
+              <div className="flex justify-between mt-4 text-sm text-slate-600">
+                <div>
+                  Sách đang mượn: <span className="font-semibold text-slate-900">{activeBorrowingsCount}</span>
+                </div>
+                <div>
+                  Sách trong giỏ: <span className="font-semibold text-slate-900">{items.length}</span> | 
+                  Tổng: <span className="font-semibold text-slate-900 ml-1">{activeBorrowingsCount + items.length}</span> / 5
+                </div>
               </div>
             </>
           )}

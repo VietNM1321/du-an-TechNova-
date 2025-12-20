@@ -49,6 +49,8 @@ const BorrowingDetail = () => {
   const navigate = useNavigate();
   const [borrowing, setBorrowing] = useState(null);
   const [loading, setLoading] = useState(true);
+  const [imageModalVisible, setImageModalVisible] = useState(false);
+  const [selectedImage, setSelectedImage] = useState(null);
   const token = localStorage.getItem("adminToken");
   useEffect(() => {
     fetchBorrowingDetail();
@@ -67,6 +69,10 @@ const BorrowingDetail = () => {
     } finally {
       setLoading(false);
     }
+  };
+  const openImageModal = (imageUrl) => {
+    setSelectedImage(imageUrl);
+    setImageModalVisible(true);
   };
   const handleReturn = () => {
     Modal.confirm({
@@ -144,7 +150,7 @@ const BorrowingDetail = () => {
   const userEmail = borrowing.userSnapshot?.email || borrowing.user?.email || "";
   const bookTitle = borrowing.bookSnapshot?.title || borrowing.book?.title || "N/A";
   const bookAuthor = borrowing.bookSnapshot?.author || borrowing.book?.author || "N/A";
-  const bookImage = borrowing.book?.image || borrowing.book?.images?.[0] || null;
+  const bookImage = borrowing.bookSnapshot?.images?.[0] || borrowing.book?.images?.[0] || null;
   const bookImageUrl = bookImage 
     ? (bookImage.startsWith("http") ? bookImage : `http://localhost:5000/${bookImage}`)
     : "https://via.placeholder.com/60x80?text=?";
@@ -153,6 +159,9 @@ const BorrowingDetail = () => {
     : null;
   const imgCardUrl = borrowing.imgCard 
     ? `http://localhost:5000/${borrowing.imgCard}`
+    : null;
+  const returnImageUrl = borrowing.returnImage 
+    ? `http://localhost:5000/${borrowing.returnImage}`
     : null;
   const isDamagedOrLost =
     borrowing.status === STATUS_ENUM.DAMAGED ||
@@ -188,6 +197,7 @@ const BorrowingDetail = () => {
         student: imgStudentUrl,
         card: imgCardUrl,
       },
+      returnImage: returnImageUrl,
       quantity: borrowing.quantity || 1,
       renewCount: borrowing.renewCount || 0,
       borrowDate: borrowing.borrowDate,
@@ -246,20 +256,39 @@ const BorrowingDetail = () => {
             <img
               src={record.confirmImages.student}
               alt="Ảnh học sinh"
-              className="w-12 h-16 object-cover rounded"
+              className="w-12 h-16 object-cover rounded cursor-pointer hover:opacity-80"
+              onClick={() => openImageModal(record.confirmImages.student)}
             />
           )}
           {record.confirmImages.card && (
             <img
               src={record.confirmImages.card}
               alt="Ảnh CMND/CCCD"
-              className="w-12 h-16 object-cover rounded"
+              className="w-12 h-16 object-cover rounded cursor-pointer hover:opacity-80"
+              onClick={() => openImageModal(record.confirmImages.card)}
             />
           )}
           {!record.confirmImages.student && !record.confirmImages.card && (
             <span className="text-slate-400">—</span>
           )}
         </div>
+      ),
+    },
+    {
+      title: "Ảnh trả sách",
+      key: "returnImage",
+      width: 120,
+      render: (_, record) => (
+        record.status === STATUS_ENUM.RETURNED && record.returnImage ? (
+          <img
+            src={record.returnImage}
+            alt="Ảnh trả sách"
+            className="w-12 h-16 object-cover rounded cursor-pointer hover:opacity-80"
+            onClick={() => openImageModal(record.returnImage)}
+          />
+        ) : (
+          <span className="text-slate-400">—</span>
+        )
       ),
     },
     {
@@ -373,7 +402,7 @@ const BorrowingDetail = () => {
         </div>
         <Card
           className="rounded-lg shadow-sm border border-slate-200"
-          bodyStyle={{ padding: 0 }}>
+          styles={{ body: { padding: 0 } }}>
           <div className="p-4 border-b border-slate-200">
             <h2 className="text-lg font-semibold text-slate-900">Chi tiết đơn mượn</h2>
           </div>
@@ -397,6 +426,22 @@ const BorrowingDetail = () => {
           </Button>
         </div>
       </div>
+      <Modal
+        title="Ảnh xác nhận"
+        open={imageModalVisible}
+        onCancel={() => setImageModalVisible(false)}
+        footer={null}
+        width={600}
+        centered
+      >
+        {selectedImage && (
+          <img
+            src={selectedImage}
+            alt="Ảnh xác nhận"
+            className="w-full h-auto max-h-96 object-contain"
+          />
+        )}
+      </Modal>
     </div>
   );
 };

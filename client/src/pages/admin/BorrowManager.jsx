@@ -35,6 +35,10 @@ const BorrowManager = () => {
   const [previewCard, setPreviewCard] = useState(null);
   const [viewImageModal, setViewImageModal] = useState(false);
   const [viewImageData, setViewImageData] = useState(null);
+  const [returnModalVisible, setReturnModalVisible] = useState(false);
+  const [returnRecord, setReturnRecord] = useState(null);
+  const [returnImage, setReturnImage] = useState(null);
+  const [previewReturn, setPreviewReturn] = useState(null);
   const token = localStorage.getItem("adminToken");
   const fetchBorrowings = async (pageNum = 1, params = {}) => {
     setLoading(true);
@@ -61,8 +65,8 @@ const BorrowManager = () => {
         status: b.status || STATUS_ENUM.BORROWED,
         isPickedUp: b.isPickedUp ?? false,
         hasReturned: b.status === STATUS_ENUM.RETURNED,
-        imgStudent: b.imgStudent || null,
-        imgCard: b.imgCard || null,
+        imgStudent: b.studentPickupImage || null,
+        imgCard: b.studentCardImage || null,
       }));
       setBorrowings(mappedBorrowings);
       setTotalItems(payload.totalItems || 0);
@@ -121,6 +125,12 @@ const handleConfirmPickup = (record) => {
     setPreviewCard(null);
     setModalVisible(true);
   };
+  const openReturnModal = (record) => {
+    setReturnRecord(record);
+    setReturnImage(null);
+    setPreviewReturn(null);
+    setReturnModalVisible(true);
+  };
   const handlePickupConfirm = async () => {
     if (!imgStudent || !imgCard) {
       message.error("Vui lòng upload đủ 2 ảnh!");
@@ -158,6 +168,43 @@ const handleConfirmPickup = (record) => {
       console.error(error);
       message.error(
         error.response?.data?.message || "Lỗi khi xác nhận lấy sách!"
+      );
+    }
+  };
+  const handleReturnConfirm = async () => {
+    if (!returnImage) {
+      message.error("Vui lòng upload ảnh xác nhận trả sách!");
+      return;
+    }
+    try {
+      const formData = new FormData();
+      formData.append("returnImage", returnImage);
+      const res = await axios.put(`http://localhost:5000/api/borrowings/${returnRecord._id}/return`, formData,
+        {
+          headers: {
+            Authorization: `Bearer ${token}`,
+            "Content-Type": "multipart/form-data",
+          },
+        }
+      );
+      message.success(res.data.message || "✅ Đã xác nhận trả sách!");
+      setBorrowings((prev) =>
+        prev.map((b) =>
+          b._id === returnRecord._id
+            ? {
+                ...b,
+                status: STATUS_ENUM.RETURNED,
+                hasReturned: true,
+                returnImage: res.data.borrowing?.returnImage,
+              }
+            : b
+        )
+      );
+      setReturnModalVisible(false);
+    } catch (error) {
+      console.error(error);
+      message.error(
+        error.response?.data?.message || "Lỗi khi xác nhận trả sách!"
       );
     }
   };
@@ -366,9 +413,7 @@ const handleReturnOrStatusChange = (record, newStatus) => {
               <Button
                 size="small"
                 type="primary"
-                onClick={() =>
-                  handleReturnOrStatusChange(record, STATUS_ENUM.RETURNED)
-                }>
+                onClick={() => openReturnModal(record)}>
                 ✅ Trả sách
               </Button>
             )}
@@ -505,6 +550,36 @@ const handleReturnOrStatusChange = (record, newStatus) => {
                 <img
                   src={previewCard}
                   alt="Card"
+                  className="mt-2 w-32 h-40 object-cover rounded"
+                />
+              )}
+            </div>
+          </div>
+        </Modal>
+        <Modal
+          title="Xác nhận trả sách"
+          open={returnModalVisible}
+          onOk={handleReturnConfirm}
+          onCancel={() => setReturnModalVisible(false)}
+          okText="Xác nhận"
+          cancelText="Hủy">
+          <div className="flex flex-col gap-4">
+            <div>
+              <Upload
+                beforeUpload={(file) => {
+                  setReturnImage(file);
+                  const reader = new FileReader();
+                  reader.onload = (e) => setPreviewReturn(e.target.result);
+                  reader.readAsDataURL(file);
+                  return false;
+                }}
+                showUploadList={false}>
+                <Button icon={<UploadOutlined />}>Upload ảnh xác nhận trả sách</Button>
+              </Upload>
+              {previewReturn && (
+                <img
+                  src={previewReturn}
+                  alt="Return"
                   className="mt-2 w-32 h-40 object-cover rounded"
                 />
               )}

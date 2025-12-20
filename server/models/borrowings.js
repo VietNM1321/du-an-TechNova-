@@ -79,8 +79,13 @@ const BorrowingSchema = new mongoose.Schema(
     qrCodeImage: { type: String },
     paymentNote: { type: String },
 
+    returnImage: { type: String }, // ảnh xác nhận trả sách
+
     studentPickupImage: { type: String },
-studentCardImage: { type: String },
+    studentCardImage: { type: String },
+
+    imgStudent: { type: String },
+    imgCard: { type: String },
 
 
 
@@ -97,6 +102,7 @@ studentCardImage: { type: String },
       title: String,
       author: String,
       isbn: String,
+      images: [String],
     },
 
     // 🔖 Mã đơn mượn (gộp những đơn cùng ngày)
