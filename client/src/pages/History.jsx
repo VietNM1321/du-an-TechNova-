@@ -439,11 +439,7 @@ const History = ({ userId, refreshFlag }) => {
                   <Button type="link" danger size="small" onClick={() => handleReportBroken(record)}>Báo hỏng</Button>
                 </>
               )}
-              {record.status === "borrowed" && (record.renewCount || 0) < 3 ? (
-                <Button type="link" size="small" onClick={() => renewBorrowing(record._id)}>Gia hạn</Button>
-              ) : record.status === "borrowed" && (record.renewCount || 0) >= 3 ? (
-                <span className="text-sm text-gray-500">Đã hết lượt gia hạn</span>
-              ) : null}
+
             </>
           )}
 

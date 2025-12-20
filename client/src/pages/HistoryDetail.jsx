@@ -50,10 +50,8 @@ const HistoryDetail = () => {
 
   const isWithinOneDayOfDueDate = (dueDate) => {
     if (!dueDate) return false;
-    const now = new Date();
-    const due = new Date(dueDate);
-    const diffTime = due.getTime() - now.getTime();
-    const diffDays = diffTime / (1000 * 3600 * 24);
+    const diffDays = dayjs(dueDate).diff(dayjs(), 'day');
+    console.log('dueDate:', dueDate, 'diffDays:', diffDays);
     return diffDays <= 1 && diffDays >= 0; // Còn 1 ngày hoặc ít hơn, và chưa quá hạn
   };
 
@@ -390,6 +388,27 @@ const HistoryDetail = () => {
                   (record.renewCount || 0) >= 3 ? (
                 <span className="text-sm text-gray-500">Đã hết lượt gia hạn</span>
               ) : record.status === "borrowed" && 
+                  !isWithinOneDayOfDueDate(record.dueDate) ? (
+                <span className="text-sm text-gray-400">
+                  Gia hạn khi còn 1 ngày
+                </span>
+              ) : null}
+              {record.status === "renewed" && 
+               isWithinOneDayOfDueDate(record.dueDate) && 
+               (record.renewCount || 0) < 3 ? (
+                <Button
+                  type="link"
+                  size="small"
+                  style={{ color: "#faad14" }}
+                  onClick={() => handleRenewWithConfirm(record)}
+                >
+                  🔄 Gia hạn ({3 - (record.renewCount || 0)} lượt)
+                </Button>
+              ) : record.status === "renewed" && 
+                  isWithinOneDayOfDueDate(record.dueDate) && 
+                  (record.renewCount || 0) >= 3 ? (
+                <span className="text-sm text-gray-500">Đã hết lượt gia hạn</span>
+              ) : record.status === "renewed" && 
                   !isWithinOneDayOfDueDate(record.dueDate) ? (
                 <span className="text-sm text-gray-400">
                   Gia hạn khi còn 1 ngày
