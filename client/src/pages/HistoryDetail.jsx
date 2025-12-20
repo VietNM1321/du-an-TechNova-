@@ -37,7 +37,6 @@ const HistoryDetail = () => {
   }
 
   const OVERDUE_FEE_PER_DAY = 5000;
-
   const calculateOverdueFee = (record) => {
     if (!record.dueDate) return 0;
     const due = new Date(record.dueDate);
@@ -100,12 +99,10 @@ const HistoryDetail = () => {
       },
     });
   };
-  
   const handleReportDamage = (record) => {
     let reportType = "lost"; // Mặc định là báo mất
     let reason = "";
     let file = null;
-
     Modal.confirm({
       title: "Báo cáo sách mất/hỏng",
       content: (
@@ -228,17 +225,20 @@ const HistoryDetail = () => {
       "http://localhost:5000/vnpay/create_payment_for_borrowing",
       {
         borrowingId: record._id,
+        borrowId: record._id,
         amount: record.compensationAmount,
       },
       { headers: { Authorization: `Bearer ${token}` } }
     );
 
     console.log("✅ Payment response:", res.data);
-    if (res.data?.url) {
-      window.location.href = res.data.url;
-    } else {
-      message.error("Không tạo được giao dịch VNPay.");
+    // server may return either `paymentUrl` or `url` depending on route
+    const redirectUrl = res.data?.paymentUrl || res.data?.url;
+    if (redirectUrl) {
+      window.location.href = redirectUrl;
+      return;
     }
+    message.error("Không tạo được giao dịch VNPay.");
   } catch (error) {
     console.error("❌ Payment error:", error.response?.data || error.message);
     message.error(error.response?.data?.error || "Lỗi thanh toán!");
@@ -288,11 +288,13 @@ const HistoryDetail = () => {
       title: "Trạng thái",
       key: "status",
       render: (_, record) => {
-        const displayStatus = !record.isPickedUp
+        let displayStatus = !record.isPickedUp
           ? "pendingPickup"
           : record.status === "borrowed" && new Date(record.dueDate) < new Date()
           ? "overdue"
           : record.status;
+        // Show compensated if payment already completed
+        if (record.paymentStatus === "completed") displayStatus = "compensated";
 
         return (
           <div>
@@ -330,7 +332,7 @@ const HistoryDetail = () => {
                     <p>{record.book?.title || record.bookSnapshot?.title}</p>
                     <p>
                       Trạng thái:{" "}
-                      {STATUS_LABEL[!record.isPickedUp ? "pendingPickup" : record.status]}
+                      {STATUS_LABEL[record.paymentStatus === "completed" ? "compensated" : (!record.isPickedUp ? "pendingPickup" : record.status)]}
                     </p>
                     {["damaged", "lost"].includes(record.status) &&
                       record.compensationAmount > 0 && (

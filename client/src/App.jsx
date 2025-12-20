@@ -43,16 +43,14 @@ import AddCategory from "./pages/admin/Addcategory";
 import EditCategory from "./pages/admin/Editcategory";
 import ReviewManager from "./pages/admin/ReviewManager";
 import NotificationList from "./pages/admin/NotificationList";
+import PaymentSuccess from "./pages/PaymentSuccess";
+import PaymentResult from "./pages/PaymentResult";
+import PaymentFail from "./pages/PaymentFail";
 import AddNotification from "./pages/admin/AddNotification";
 import EditNotification from "./pages/admin/EditNotification";
 import NotificationDetail from "./components/NotificationDetail";
 import LibraryFund from "./pages/admin/LibraryFund";
-
-// ⭐ NEW: thống kê thư viện
 import LibraryDashboard from "./pages/admin/LibraryDashboard";
-
-// ---------------------------- ROUTE GUARDS ---------------------------------
-
 const AdminRoute = ({ children }) => {
   const stored = localStorage.getItem("adminUser");
   const adminUser = stored ? JSON.parse(stored) : null;
@@ -61,7 +59,6 @@ const AdminRoute = ({ children }) => {
   }
   return children;
 };
-
 const AdminOnly = ({ children }) => {
   const stored = localStorage.getItem("adminUser");
   const adminUser = stored ? JSON.parse(stored) : null;
@@ -70,9 +67,6 @@ const AdminOnly = ({ children }) => {
   }
   return children;
 };
-
-// ---------------------------- APP ROUTE ---------------------------------
-
 function App() {
   return (
     <Router>
@@ -90,8 +84,13 @@ function App() {
           <Route path="news" element={<News />} />
           <Route path="contact" element={<Contact />} />
           <Route path="policies" element={<Policies />} />
+          <Route path="payment-result" element={<PaymentResult />} />
+          <Route path="vnpay/vnpay_return" element={<PaymentResult />} />
+          <Route path="vnpay_return" element={<PaymentResult />} />
           <Route path="search" element={<SearchResults />} />
           <Route path="profile/:id" element={<Profile />} />
+          <Route path="/payment-success" element={<PaymentSuccess />} />
+          <Route path="/payment-fail" element={<PaymentFail />} />
           <Route path="history" element={<History />} />
           <Route path="history/:code" element={<HistoryDetail />} />
           <Route path="payment/:id" element={<Payment />} />
@@ -99,7 +98,6 @@ function App() {
           <Route path="forgot-password" element={<ForgotPassword />} />
           <Route path="chat" element={<Chat />} />
         </Route>
-
         {/* ADMIN */}
         <Route
           path="/admin/*"
@@ -107,51 +105,34 @@ function App() {
             <AdminRoute>
               <AdminLayout />
             </AdminRoute>
-          }
-        >
-
+          }>
           <Route index element={<AdminHome />} />
-
-          {/* Admin-only */}
           <Route path="users" element={<AdminOnly><Users /></AdminOnly>} />
           <Route path="course" element={<AdminOnly><CourseManager /></AdminOnly>} />
-
-          {/* Admin + Librarian */}
           <Route path="bookmanager" element={<BookManager />} />
           <Route path="bookadd" element={<BookAdd />} />
           <Route path="book/edit/:id" element={<BookEdit />} />
-
           <Route path="bookcode" element={<BookCode />} />
           <Route path="bookcode/add" element={<BookCodeAdd />} />
           <Route path="bookcode/edit/:id" element={<BookCodeEdit />} />
-
           <Route path="importlist" element={<ImportList />} />
           <Route path="importlist/add" element={<ImportAdd />} />
           <Route path="importlist/:date" element={<ImportDetail />} />
-
           <Route path="author" element={<AuthorManager />} />
           <Route path="author/add" element={<AuthorAdd />} />
           <Route path="authoredit/:id" element={<AuthorEdit />} />
-
           <Route path="borrowings" element={<BorrowManager />} />
           <Route path="borrowing/:id" element={<BorrowingDetail />} />
-
           <Route path="fund" element={<LibraryFund />} />
-
           <Route path="category" element={<CategoryManager />} />
           <Route path="category/add" element={<AddCategory />} />
           <Route path="category/edit/:id" element={<EditCategory />} />
-
           <Route path="reviews" element={<ReviewManager />} />
-
           <Route path="notifications" element={<NotificationList />} />
           <Route path="notifications/add" element={<AddNotification />} />
           <Route path="notifications/edit/:id" element={<EditNotification />} />
           <Route path="notification/:id" element={<NotificationDetail />} />
-
-          {/* NEW: Dashboard thống kê */}
           <Route path="library" element={<LibraryDashboard />} />
-
         </Route>
 
       </Routes>

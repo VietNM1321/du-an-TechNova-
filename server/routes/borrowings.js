@@ -268,61 +268,101 @@ const reportUpload = multer({
   }),
   limits: { fileSize: 5 * 1024 * 1024 }, // 5MB limit
 });
-router.put("/:id/user-report", verifyToken, reportUpload.single("image"), async (req, res) => {
-  try {
-    const { status, reason, quantityAffected } = req.body; // status: "lost" hoặc "damaged"
-    
-    if (![STATUS_ENUM.DAMAGED, STATUS_ENUM.LOST].includes(status)) {
-      return res.status(400).json({ message: "Trạng thái không hợp lệ! Chỉ chấp nhận 'lost' hoặc 'damaged'" });
-    }
-    
-    if (!reason || reason.trim() === "") {
-      return res.status(400).json({ message: "Vui lòng nhập lý do báo cáo!" });
-    }
-
-    const borrowing = await Borrowing.findById(req.params.id).populate("book");
-    if (!borrowing) return res.status(404).json({ message: "Không tìm thấy đơn mượn!" });
-    
-    if (borrowing.user.toString() !== req.user.id) {
-      return res.status(403).json({ message: "Bạn không có quyền báo cáo đơn mượn này!" });
-    }
-    
-    if (![STATUS_ENUM.BORROWED, STATUS_ENUM.OVERDUE].includes(borrowing.status)) {
-      return res.status(400).json({ message: "Chỉ có thể báo cáo sách đang mượn hoặc quá hạn!" });
-    }
-
-    const totalQuantity = borrowing.quantity || 1;
-    const affectedQuantity = quantityAffected ? parseInt(quantityAffected) : totalQuantity;
-    
-    if (affectedQuantity > totalQuantity || affectedQuantity <= 0) {
-      return res.status(400).json({ message: "Số lượng báo cáo không hợp lệ!" });
-    }
-    let reportImage = null;
-    if (req.file) {
-      reportImage = req.file.path;
-    }
-    if (affectedQuantity >= totalQuantity) {
+router.put("/:id/user-report",verifyToken,reportUpload.single("image"),async (req, res) => {
+    try {
+      const { status, reason, quantityAffected } = req.body;
+      // status chỉ được là lost | damaged
+      if (![STATUS_ENUM.LOST, STATUS_ENUM.DAMAGED].includes(status)) {
+        return res.status(400).json({
+          message: "Trạng thái không hợp lệ! Chỉ chấp nhận 'lost' hoặc 'damaged'",
+        });
+      }
+      if (!reason || reason.trim() === "") {
+        return res.status(400).json({
+          message: "Vui lòng nhập lý do báo cáo!",
+        });
+      }
+      const borrowing = await Borrowing.findById(req.params.id).populate("book");
+      if (!borrowing) {
+        return res.status(404).json({ message: "Không tìm thấy đơn mượn!" });
+      }
+      if (borrowing.user.toString() !== req.user.id) {
+        return res.status(403).json({
+          message: "Bạn không có quyền báo cáo đơn mượn này!",
+        });
+      }
+      if (!borrowing.isPickedUp) {
+        return res.status(400).json({
+          message: "Bạn phải lấy sách trước khi báo mất hoặc hỏng!",
+        });
+      }
+      if ([STATUS_ENUM.LOST, STATUS_ENUM.DAMAGED].includes(borrowing.status)) {
+        return res.status(400).json({
+          message: "Đơn mượn này đã được báo mất hoặc hỏng trước đó!",
+        });
+      }
+      const now = new Date();
+      let effectiveStatus = borrowing.status;
+      if (
+        [STATUS_ENUM.BORROWED, STATUS_ENUM.RENEWED].includes(borrowing.status) &&
+        borrowing.dueDate &&
+        new Date(borrowing.dueDate) < now
+      ) {
+        effectiveStatus = STATUS_ENUM.OVERDUE;
+      }
+      if (
+        ![
+          STATUS_ENUM.BORROWED,
+          STATUS_ENUM.RENEWED,
+          STATUS_ENUM.OVERDUE,
+        ].includes(effectiveStatus)
+      ) {
+        return res.status(400).json({
+          message: "Chỉ có thể báo cáo sách đang mượn hoặc quá hạn!",
+        });
+      }
+      const totalQuantity = borrowing.quantity || 1;
+      const affectedQuantity = quantityAffected
+        ? parseInt(quantityAffected)
+        : totalQuantity;
+      if (
+        Number.isNaN(affectedQuantity) ||
+        affectedQuantity <= 0 ||
+        affectedQuantity > totalQuantity
+      ) {
+        return res.status(400).json({
+          message: "Số lượng báo cáo không hợp lệ!",
+        });
+      }
+      if (affectedQuantity < totalQuantity) {
+        return res.status(400).json({
+          message: "Tính năng báo mất/hỏng một phần đang được phát triển!",
+        });
+      }
+      let reportImage = null;
+      if (req.file) {
+        reportImage = req.file.path;
+      }
       borrowing.status = status;
-      borrowing.isPickedUp = true;
       borrowing.paymentStatus = "pending";
       borrowing.reportReason = reason;
       borrowing.reportImage = reportImage;
       borrowing.reportDate = new Date();
-    } else {
-      return res.status(400).json({ message: "Tính năng báo một phần quantity đang được phát triển!" });
+      await borrowing.save();
+      const statusText = status === STATUS_ENUM.LOST ? "mất" : "hỏng";
+      return res.json({
+        message: `✅ Đã báo ${statusText} sách thành công!`,
+        borrowing,
+        quantityAffected: affectedQuantity,
+      });
+    } catch (err) {
+      console.error("❌ Lỗi báo cáo:", err);
+      return res.status(500).json({
+        message: "Lỗi server khi báo cáo!",
+      });
     }
-    await borrowing.save();
-    const statusText = status === STATUS_ENUM.LOST ? "mất" : "hỏng";
-    res.json({ 
-      message: `✅ Đã báo ${statusText} sách thành công!`, 
-      borrowing,
-      quantityAffected: affectedQuantity
-    });
-  } catch (err) {
-    console.error("❌ Lỗi báo cáo:", err);
-    res.status(500).json({ message: "Lỗi server khi báo cáo!" });
   }
-});
+);
 router.put("/:id/compensate", verifyToken, async (req,res)=>{
   try{
     const borrowing = await Borrowing.findById(req.params.id);

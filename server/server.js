@@ -15,10 +15,11 @@ import bookcodeRoutes from "./routes/bookcode.js";
 import courseRoutes from "./routes/courseRoutes.js";
 import notificationRoutes from "./routes/notification.js";
 import orderRoutes from "./routes/order.js";
+import vnpayRoutes from "./routes/vnpay.js";
 import aiRoutes from "./routes/aiRoutes.js";
 import statisticsRoutes from "./routes/statistics.js";
 import { migrateImportCodes } from "./utils/migrateImportCodes.js";
-dotenv.config({ override: true });
+dotenv.config({path: "./.env",override: true,});
 const app = express();
 app.use(express.json());
 app.use(
@@ -28,6 +29,7 @@ app.use(
   })
 );
 app.use("/vnpay", orderRoutes);
+app.use("/vnpay", vnpayRoutes);
 app.use("/api/borrowings", borrowingRoutes);
 app.use("/api/cart", cartRoutes);
 app.use("/uploads", express.static("uploads"));

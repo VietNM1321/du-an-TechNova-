@@ -19,7 +19,9 @@ export function CartProvider({ children }) {
       return;
     }
     try {
-      const res = await axios.get(API, { params: { userId } });
+      const token = localStorage.getItem("clientToken");
+      const headers = token ? { Authorization: `Bearer ${token}` } : {};
+      const res = await axios.get(API, { params: { userId }, headers });
       setCart(res.data || { userId, items: [] });
     } catch (err) {
       console.error("❌ Lỗi fetchCart:", err);
@@ -42,7 +44,9 @@ export function CartProvider({ children }) {
         borrowDate,
         returnDate,
       };
-      const res = await axios.post(`${API}/add`, payload);
+      const token = localStorage.getItem("clientToken");
+      const headers = token ? { Authorization: `Bearer ${token}` } : {};
+      const res = await axios.post(`${API}/add`, payload, { headers });
       setCart(res.data);
       return { success: true };
     } catch (err) {
@@ -55,7 +59,9 @@ export function CartProvider({ children }) {
   const updateItem = async ({ bookId, quantity }) => {
     if (!userId || isAdmin) return;
     try {
-      const res = await axios.put(`${API}/update`, { userId, bookId, quantity });
+      const token = localStorage.getItem("clientToken");
+      const headers = token ? { Authorization: `Bearer ${token}` } : {};
+      const res = await axios.put(`${API}/update`, { userId, bookId, quantity }, { headers });
       setCart(res.data);
     } catch (err) {
       console.error("❌ Lỗi updateItem:", err);
@@ -65,7 +71,9 @@ export function CartProvider({ children }) {
   const removeItem = async (bookId) => {
     if (!userId || isAdmin) return;
     try {
-      const res = await axios.delete(`${API}/remove`, { data: { userId, bookId } });
+      const token = localStorage.getItem("clientToken");
+      const headers = token ? { Authorization: `Bearer ${token}` } : {};
+      const res = await axios.delete(`${API}/remove`, { data: { userId, bookId }, headers });
       setCart(res.data);
     } catch (err) {
       console.error("❌ Lỗi removeItem:", err);
@@ -75,7 +83,9 @@ export function CartProvider({ children }) {
   const clearCart = async () => {
     if (!userId || isAdmin) return;
     try {
-      const res = await axios.delete(`${API}/clear`, { data: { userId } });
+      const token = localStorage.getItem("clientToken");
+      const headers = token ? { Authorization: `Bearer ${token}` } : {};
+      const res = await axios.delete(`${API}/clear`, { data: { userId }, headers });
       setCart(res.data || { userId, items: [] });
     } catch (err) {
       console.error("❌ Lỗi clearCart:", err);

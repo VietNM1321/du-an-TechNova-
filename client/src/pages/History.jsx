@@ -88,12 +88,10 @@ const History = ({ userId, refreshFlag }) => {
 
       const groups = Array.from(groupsMap.values()).map((g) => {
         const totalQuantity = g.items.reduce((sum, it) => sum + (it.quantity || 1), 0);
-
-        // Xác định trạng thái tổng quát của đơn lớn
         let summaryStatus = "returned";
-        if (g.items.some((it) => ["lost", "damaged"].includes(it.status))) summaryStatus = "damaged";
+        if (g.items.some((it) => it.paymentStatus === "completed" || it.status === "compensated")) summaryStatus = "compensated";
+        else if (g.items.some((it) => ["lost", "damaged"].includes(it.status))) summaryStatus = "damaged";
         else if (g.items.some((it) => it.status === "overdue")) summaryStatus = "overdue";
-        else if (g.items.some((it) => it.status === "compensated")) summaryStatus = "compensated";
         else if (g.items.some((it) => ["borrowed", "renewed", "pendingPickup"].includes(it.status)))
           summaryStatus = "borrowed";
 
@@ -105,10 +103,7 @@ const History = ({ userId, refreshFlag }) => {
             it.isPickedUp &&
             ["borrowed", "renewed", "overdue"].includes(it.status)
         );
-
-        // Tổng tiền (quá hạn + đền bù) nếu có
         const totalCompensation = g.items.reduce((sum, it) => {
-          // Nếu có tiền đền bù (kể cả khi status đã là compensated) thì cộng trực tiếp
           if (it.compensationAmount && it.compensationAmount > 0) {
             return sum + it.compensationAmount;
           }
@@ -116,8 +111,6 @@ const History = ({ userId, refreshFlag }) => {
           const fee = calculateOverdueFee(it);
           return sum + fee;
         }, 0);
-
-        // Cập nhật compensationAmount cho từng item nếu là overdue
         const processedItems = g.items.map((it) => {
           if (it.status === "overdue" && !it.compensationAmount) {
             return {
@@ -393,10 +386,14 @@ const History = ({ userId, refreshFlag }) => {
       key: "status",
       render: (_, record) => {
         let displayStatus = !record.isPickedUp
-          ? "pendingPickup"
-          : record.status === "borrowed" && new Date(record.dueDate) < new Date()
-            ? "overdue"
-            : record.status;
+            ? "pendingPickup"
+            : record.status === "borrowed" && new Date(record.dueDate) < new Date()
+              ? "overdue"
+              : record.status;
+        // If payment already completed for this record, show compensated status instead
+        if (record.paymentStatus === "completed") {
+          displayStatus = "compensated";
+        }
 
         return (
           <div>
@@ -423,7 +420,7 @@ const History = ({ userId, refreshFlag }) => {
             content: (
               <div>
                 <p>{record.book?.title || record.bookSnapshot?.title}</p>
-                <p>Trạng thái: {STATUS_LABEL[!record.isPickedUp ? "pendingPickup" : record.status]}</p>
+                <p>Trạng thái: {STATUS_LABEL[record.paymentStatus === "completed" ? "compensated" : (!record.isPickedUp ? "pendingPickup" : (record.status === "borrowed" && new Date(record.dueDate) < new Date() ? "overdue" : record.status))]}</p>
                 {["damaged", "lost"].includes(record.status) && record.compensationAmount > 0 &&
                   <p>Tiền đền: {record.compensationAmount.toLocaleString("vi-VN")} VNĐ</p>}
                 {record.status === "borrowed" && new Date(record.dueDate) < new Date() &&
